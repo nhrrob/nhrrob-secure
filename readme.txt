@@ -1,6 +1,6 @@
-=== NHR Secure ===
+=== NHR Secure | Protect Admin, Debug Logs & Limit Logins ===
 Contributors: nhrrob
-Tags: security, admin, login, debug, protection, limit
+Tags: security, admin, login, debug, protection
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4

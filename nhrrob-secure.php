@@ -40,7 +40,7 @@ define( 'NHRROB_SECURE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
  */
 function nhrrob_secure_limit_login_attempts() {
     add_action( 'wp_login_failed', function( $username ) {
-        $ip   = sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? 'unknown' );
+        $ip   = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
         $key  = 'nhrrob_secure_failed_' . md5( $ip );
         $fails = (int) get_transient( $key );
     
@@ -55,7 +55,7 @@ function nhrrob_secure_limit_login_attempts() {
     });
     
     add_filter( 'authenticate', function( $user ) {
-        $ip = sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? 'unknown' );
+        $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
         $blocked = get_transient( 'nhrrob_secure_block_' . md5( $ip ) );
         
         if ( $blocked ) {
@@ -100,8 +100,12 @@ function nhrrob_secure_custom_login_url() {
     add_action( 'template_redirect', function() {
         $custom_login_slug = apply_filters( 'nhrrob_secure_custom_login_url', 'login' );
         $custom_login_slug = sanitize_title( $custom_login_slug );
-        $request_uri       = trim( $_SERVER['REQUEST_URI'], '/' );
+        $request_uri       = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ), '/' ) : '';
     
+        if ( empty( $request_uri ) ) {
+            return;
+        }
+
         if ( $request_uri === $custom_login_slug ) {
             status_header( 200 );
             nocache_headers();
@@ -126,7 +130,11 @@ function nhrrob_secure_custom_login_url() {
  */
 function nhrrob_secure_protect_sensitive_files() {
     add_action( 'init', function() {
-        $request_uri = sanitize_text_field( $_SERVER['REQUEST_URI'] ?? '' );
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+
+        if ( empty( $request_uri ) ) {
+            return;
+        }
 
         $sensitive_files = apply_filters(
             'nhrrob_secure_protected_files',
