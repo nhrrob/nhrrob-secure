@@ -42,7 +42,7 @@ function nhrrob_secure_get_ip() {
         if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
             $ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_CONNECTING_IP'] ) );
         } elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-            $parts = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
+            $parts = explode( ',', sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
             $ip = sanitize_text_field( trim( $parts[0] ) );
         }
     }
@@ -58,7 +58,7 @@ function nhrrob_secure_get_ip() {
  * @param string $username The username of the user.
  * @return array The array contains the failed_key, block_key, failed_value, and block_value.
  */
-function get_limit_login_transients( $username ) {
+function nhrrob_secure_get_limit_login_transients( $username ) {
     $ip = nhrrob_secure_get_ip();
     $username_clean = is_string( $username ) ? strtolower( sanitize_user( $username, true ) ) : 'unknown';
     $md5 = md5( $ip . '|' . $username_clean );
