@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: NHR Secure | Protect Admin, Debug Logs & Limit Logins
+ * Plugin Name: NHR Secure | Protect Admin Area
  * Plugin URI: http://wordpress.org/plugins/nhrrob-secure/
  * Description: Lightweight WordPress security plugin that protects your admin area, hides debug logs, and limits login attempts. Minimal code, maximum protection.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-secure
@@ -15,7 +15,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define( 'NHRROB_SECURE_VERSION', '1.0.0' );
+define( 'NHRROB_SECURE_VERSION', '1.0.1' );
 define( 'NHRROB_SECURE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
@@ -135,53 +135,9 @@ function nhrrob_secure_limit_login_attempts_init() {
 add_action( 'init', 'nhrrob_secure_limit_login_attempts_init' );
 
 /**
- * ============================================================
- * 2. PROTECT SENSITIVE FILES (debug.log)
- * ============================================================
- *
- * Protects sensitive files from unauthorized access.
- *
- * Usage:
- * - Add more files to protect:
- *   add_filter( 'nhrrob_secure_protected_files', fn( $files ) => array_merge( $files, ['my-secret-file.txt'] ) );
- * - Turn off the feature:
- *   add_filter( 'nhrrob_secure_protect_sensitive_files', fn() => false );
- */
-function nhrrob_secure_protect_sensitive_files_init() {
-    if ( ! apply_filters( 'nhrrob_secure_protect_sensitive_files', true ) ) {
-        return;
-    }
-
-    add_action( 'init', function() {
-        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-        
-        if ( empty( $request_uri ) ) {
-            return;
-        }
-
-        $sensitive_files = apply_filters(
-            'nhrrob_secure_protected_files',
-            ['debug.log', '.env', '.git', 'readme.html', 'readme.txt']
-        );
-
-        foreach ( $sensitive_files as $file ) {
-            if ( strpos( $request_uri, $file ) !== false ) {
-                wp_safe_redirect( home_url() );
-                exit;
-            }
-        }
-    }, 1 );
-}
-
-add_action( 'init', 'nhrrob_secure_protect_sensitive_files_init' );
-
-/**
  * Enable/Disable Features
  * Example usages are shown below
  */
 
 // Turn off limit login attempts
 // add_filter( 'nhrrob_secure_limit_login_attempts', '__return_false' );
-
-// Turn off protect sensitive files
-// add_filter( 'nhrrob_secure_protect_sensitive_files', '__return_false' );
