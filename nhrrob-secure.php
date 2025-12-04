@@ -5,7 +5,7 @@
  * Description: Lightweight WordPress security plugin that protects your admin area, hides debug logs, and limits login attempts. Minimal code, maximum protection.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-secure
@@ -15,7 +15,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define( 'NHRROB_SECURE_VERSION', '1.0.1' );
+define( 'NHRROB_SECURE_VERSION', '1.0.2' );
 define( 'NHRROB_SECURE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
@@ -95,7 +95,7 @@ function nhrrob_secure_limit_login_attempts_init() {
     }
 
     add_action( 'wp_login_failed', function( $username ) {
-        $transients = get_limit_login_transients( $username );
+        $transients = nhrrob_secure_get_limit_login_transients( $username );
         $failed_value = (int) $transients['failed_value'] + 1;
 
         set_transient( $transients['failed_key'], $failed_value, HOUR_IN_SECONDS );
@@ -108,7 +108,7 @@ function nhrrob_secure_limit_login_attempts_init() {
     });
 
     add_action( 'wp_login', function( $user_login ) {
-        $transients = get_limit_login_transients( $user_login );
+        $transients = nhrrob_secure_get_limit_login_transients( $user_login );
         delete_transient( $transients['failed_key'] );
         delete_transient( $transients['block_key'] );
     });
@@ -119,7 +119,7 @@ function nhrrob_secure_limit_login_attempts_init() {
             return $user;
         }
 
-        $transients = get_limit_login_transients( $username_clean );
+        $transients = nhrrob_secure_get_limit_login_transients( $username_clean );
 
         if ( $transients['block_value'] ) {
             return new WP_Error(
