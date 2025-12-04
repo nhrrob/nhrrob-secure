@@ -56,7 +56,7 @@ No. NHR Secure is lightweight and designed to have minimal impact on your WordPr
 
 = 1.0.2 - 04/12/2025 =
 - Initial release. Cheers!!
-- Added plugin assets.
+- Added plugin assets (icons, banners & screenshot).
 - Fixed fatal error related to function name.
 
 = 1.0.1 - 30/11/2025 =
