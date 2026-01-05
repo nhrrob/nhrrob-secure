@@ -1,4 +1,4 @@
-=== NHR Secure | Protect Admin Area ===
+=== NHR Secure | Protect Admin, Debug Logs & Limit Logins ===
 Contributors: nhrrob
 Tags: security, admin, login, debug, protection
 Requires at least: 6.0
@@ -8,7 +8,7 @@ Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A lightweight WordPress security plugin that protects your admin area by limiting login attempts.
+A lightweight WordPress security plugin that protects your admin area, hides debug logs, and limits login attempts.
 
 == Description ==
 
@@ -16,6 +16,7 @@ Keep your WordPress site safe with minimal effort. NHR Secure helps you:
 
 - Hide or protect your admin area from unauthorized access.
 - Limit login attempts to prevent brute-force attacks.
+- Hide debug logs to prevent sensitive information disclosure.
 
 **Features at a glance:**
 
@@ -50,6 +51,9 @@ No. NHR Secure is lightweight and designed to have minimal impact on your WordPr
 == Screenshots ==
 
 1. Failed login attempts are blocked.
+2. Custom login page.
+3. /wp-login.php or /wp-admin goes to 404.
+4. Debug log is hidden.
 
 
 == Changelog ==

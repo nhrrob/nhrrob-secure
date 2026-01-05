@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: NHR Secure | Protect Admin Area
+ * Plugin Name: NHR Secure | Protect Admin, Debug Logs & Limit Logins
  * Plugin URI: http://wordpress.org/plugins/nhrrob-secure/
  * Description: Lightweight WordPress security plugin that protects your admin area, hides debug logs, and limits login attempts. Minimal code, maximum protection.
  * Author: Nazmul Hasan Robin
@@ -188,7 +188,7 @@ function nhrrob_secure_custom_login_page_init() {
         $custom_login_url = '/' . ltrim( $custom_login_url, '/' );
 
         $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-        $parsed_url = parse_url( $request_uri );
+        $parsed_url = wp_parse_url( $request_uri );
         $path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
 
         // Normalize path (remove trailing slash for comparison)
@@ -264,7 +264,7 @@ function nhrrob_secure_protect_debug_log_init() {
     // Check early to catch direct file access
     add_action( 'plugins_loaded', function() {
         $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-        $parsed_url = parse_url( $request_uri );
+        $parsed_url = wp_parse_url( $request_uri );
         $path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
 
         // Check if request is for debug.log in wp-content directory
@@ -286,7 +286,7 @@ function nhrrob_secure_protect_debug_log_init() {
     // Also check in template_redirect as backup
     add_action( 'template_redirect', function() {
         $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-        $parsed_url = parse_url( $request_uri );
+        $parsed_url = wp_parse_url( $request_uri );
         $path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
 
         // Check if request is for debug.log in wp-content directory
