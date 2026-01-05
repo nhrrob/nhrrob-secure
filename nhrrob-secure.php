@@ -214,17 +214,12 @@ function nhrrob_secure_custom_login_page_init() {
                 nocache_headers();
             }
 
-            // Suppress warnings for re-definition of constants in wp-config.php
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                $error_reporting = error_reporting( E_ERROR | E_PARSE );
-            }
+
             
             // Load WordPress login
             require_once( ABSPATH . 'wp-login.php' );
             
-            if ( isset( $error_reporting ) ) {
-                error_reporting( $error_reporting );
-            }
+
             
             exit;
         }
