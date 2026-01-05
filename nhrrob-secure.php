@@ -5,7 +5,7 @@
  * Description: Lightweight WordPress security plugin that protects your admin area, hides debug logs, and limits login attempts. Minimal code, maximum protection.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.0.2
+ * Version: 1.0.3
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-secure
@@ -15,7 +15,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define( 'NHRROB_SECURE_VERSION', '1.0.2' );
+define( 'NHRROB_SECURE_VERSION', '1.0.3' );
 define( 'NHRROB_SECURE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**

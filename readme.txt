@@ -4,7 +4,7 @@ Tags: security, admin, login, debug, protection
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,10 @@ No. NHR Secure is lightweight and designed to have minimal impact on your WordPr
 
 
 == Changelog ==
+
+= 1.0.3 - 05/01/2026 =
+- Added: Custom login page.
+- Added: Hide debug log.
 
 = 1.0.2 - 04/12/2025 =
 - Initial release. Cheers!!
