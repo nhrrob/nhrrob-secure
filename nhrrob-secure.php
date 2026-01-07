@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: NHR Secure | Protect Admin Area
+ * Plugin Name: NHR Secure | Protect Admin, Debug Logs & Limit Logins
  * Plugin URI: http://wordpress.org/plugins/nhrrob-secure/
  * Description: Lightweight WordPress security plugin that protects your admin area, hides debug logs, and limits login attempts. Minimal code, maximum protection.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.0.2
+ * Version: 1.0.3
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-secure
@@ -15,13 +15,14 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-define( 'NHRROB_SECURE_VERSION', '1.0.2' );
+define( 'NHRROB_SECURE_VERSION', '1.0.3' );
 define( 'NHRROB_SECURE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
  * Feature List
  * 1. Limit Login Attempts
- * 2. Protect Sensitive Files (debug.log)
+ * 2. Custom Login Page (/hidden-access-52w instead of /wp-login.php)
+ * 3. Protect Sensitive Files (debug.log)
  */
 
  /**
@@ -74,6 +75,16 @@ function nhrrob_secure_get_limit_login_transients( $username ) {
         'failed_value' => $failed_value, 
         'block_value' => $block_value,
     ];
+}
+
+/**
+ * ============================
+ * Helper: Render 404 Page
+ * ============================
+ */
+function nhrrob_secure_render_404() {
+    wp_safe_redirect( home_url( '404' ) );
+    exit;
 }
 
 /**
@@ -135,9 +146,167 @@ function nhrrob_secure_limit_login_attempts_init() {
 add_action( 'init', 'nhrrob_secure_limit_login_attempts_init' );
 
 /**
+ * ============================================================
+ * 2. CUSTOM LOGIN PAGE
+ * ============================================================
+ *
+ * Changes default login URL from /wp-login.php to /hidden-access-52w
+ *
+ * Usage:
+ * - Change the custom login URL:
+ *   add_filter( 'nhrrob_secure_custom_login_url', fn() => '/my-custom-login' );
+ * - Turn off the feature:
+ *   add_filter( 'nhrrob_secure_custom_login_page', '__return_false' );
+ */
+function nhrrob_secure_custom_login_page_init() {
+    if ( ! apply_filters( 'nhrrob_secure_custom_login_page', true ) ) {
+        return;
+    }
+
+    // Block direct access to wp-login.php
+    $script_name = isset( $_SERVER['SCRIPT_NAME'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SCRIPT_NAME'] ) ) : '';
+    if ( strpos( $script_name, '/wp-login.php' ) !== false ) {
+        nhrrob_secure_render_404();
+    }
+    
+    // Block direct access to wp-admin for guests
+    add_action( 'init', function() {
+        $script_name = isset( $_SERVER['SCRIPT_NAME'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SCRIPT_NAME'] ) ) : '';
+        
+        if ( is_admin() && ! is_user_logged_in() && ! defined( 'DOING_AJAX' ) && ! defined( 'DOING_CRON' ) ) {
+             // Allow admin-post.php for frontend form submissions
+             if ( strpos( $script_name, 'admin-post.php' ) === false ) {
+                 nhrrob_secure_render_404();
+             }
+        }
+    });
+
+    // Handle custom login URL (use template_redirect for proper WordPress context)
+    add_action( 'template_redirect', function() {
+        $custom_login_url = apply_filters( 'nhrrob_secure_custom_login_url', '/hidden-access-52w' );
+        $custom_login_url = trim( $custom_login_url, '/' );
+        $custom_login_url = '/' . ltrim( $custom_login_url, '/' );
+
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+        $parsed_url = wp_parse_url( $request_uri );
+        $path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
+
+        // Normalize path (remove trailing slash for comparison)
+        $path_normalized = rtrim( $path, '/' );
+        $custom_login_url_normalized = rtrim( $custom_login_url, '/' );
+
+        // Check if request is for custom login URL
+        if ( $path_normalized === $custom_login_url_normalized || $path === $custom_login_url || $path === $custom_login_url . '/' ) {
+            // Preserve query string
+            $query_string = isset( $parsed_url['query'] ) ? '?' . $parsed_url['query'] : '';
+            
+            // Temporarily modify REQUEST_URI to load wp-login.php
+            $_SERVER['REQUEST_URI'] = '/wp-login.php' . $query_string;
+            
+            // Bring globals into scope for wp-login.php
+            global $error, $interim_login, $action, $wp_error, $user_login;
+            
+            // Override 404 status (since WP thinks this slug doesn't exist)
+            if ( function_exists( 'status_header' ) ) {
+                status_header( 200 );
+            }
+            if ( function_exists( 'nocache_headers' ) ) {
+                nocache_headers();
+            }
+
+
+            
+            // Load WordPress login
+            require_once( ABSPATH . 'wp-login.php' );
+            
+
+            
+            exit;
+        }
+    }, 1 );
+
+    // Rewrite wp-login.php URLs to custom login URL
+    add_filter( 'site_url', function( $url, $path, $scheme ) {
+        if ( strpos( $url, 'wp-login.php' ) !== false ) {
+            $custom_login_url = apply_filters( 'nhrrob_secure_custom_login_url', '/hidden-access-52w' );
+            $custom_login_url = trim( $custom_login_url, '/' ); 
+            $url = str_replace( 'wp-login.php', $custom_login_url, $url );
+            $url = str_replace( '//' . $custom_login_url, '/' . $custom_login_url, $url ); // fix potential double slash if any
+        }
+        return $url;
+    }, 10, 3 );
+}
+
+add_action( 'init', 'nhrrob_secure_custom_login_page_init', 0 );
+
+/**
+ * ============================================================
+ * 3. PROTECT DEBUG LOG FILE
+ * ============================================================
+ *
+ * Blocks direct access to /wp-content/debug.log
+ * Shows 403 Forbidden for all users
+ *
+ * Usage:
+ * - Turn off the feature:
+ *   add_filter( 'nhrrob_secure_protect_debug_log', '__return_false' );
+ */
+function nhrrob_secure_protect_debug_log_init() {
+    if ( ! apply_filters( 'nhrrob_secure_protect_debug_log', true ) ) {
+        return;
+    }
+
+    // Check early to catch direct file access
+    add_action( 'plugins_loaded', function() {
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+        $parsed_url = wp_parse_url( $request_uri );
+        $path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
+
+        // Check if request is for debug.log in wp-content directory
+        if ( strpos( $path, '/wp-content/debug.log' ) !== false || 
+             ( strpos( $path, 'debug.log' ) !== false && strpos( $path, 'wp-content' ) !== false ) ) {
+            if ( function_exists( 'status_header' ) ) {
+                status_header( 403 );
+            } else {
+                http_response_code( 403 );
+            }
+            if ( function_exists( 'nocache_headers' ) ) {
+                nocache_headers();
+            }
+            header( 'Content-Type: text/html; charset=utf-8' );
+            die( '403 Forbidden' );
+        }
+    }, 1 );
+
+    // Also check in template_redirect as backup
+    add_action( 'template_redirect', function() {
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+        $parsed_url = wp_parse_url( $request_uri );
+        $path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
+
+        // Check if request is for debug.log in wp-content directory
+        if ( strpos( $path, '/wp-content/debug.log' ) !== false || 
+             ( strpos( $path, 'debug.log' ) !== false && strpos( $path, 'wp-content' ) !== false ) ) {
+            status_header( 403 );
+            nocache_headers();
+            header( 'Content-Type: text/html; charset=utf-8' );
+            die( '403 Forbidden' );
+        }
+    }, 1 );
+}
+
+add_action( 'init', 'nhrrob_secure_protect_debug_log_init', 0 );
+
+/**
  * Enable/Disable Features
  * Example usages are shown below
  */
 
 // Turn off limit login attempts
 // add_filter( 'nhrrob_secure_limit_login_attempts', '__return_false' );
+
+// Turn off custom login page
+// add_filter( 'nhrrob_secure_custom_login_page', '__return_false' );
+
+// Turn off debug log protection
+// add_filter( 'nhrrob_secure_protect_debug_log', '__return_false' );
