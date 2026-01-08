@@ -2,6 +2,11 @@
 
 namespace NHRRob\Secure;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+
 use RobThree\Auth\TwoFactorAuth;
 
 /**
@@ -42,7 +47,7 @@ class TwoFactor extends App {
      * Handle custom login actions
      */
     public function handle_login_actions() {
-        $action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '';
+        $action = isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         if ( 'nhrrob_secure_2fa' === $action ) {
             $this->render_2fa_form();
@@ -86,6 +91,10 @@ class TwoFactor extends App {
             return;
         }
 
+        if ( ! isset( $_POST['nhr_2fa_profile_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nhr_2fa_profile_nonce'] ) ), 'nhrrob_secure_save_2fa' ) ) {
+            return;
+        }
+
         $enabled = isset( $_POST['nhrrob_secure_2fa_enabled'] ) ? 1 : 0;
         update_user_meta( $user_id, 'nhrrob_secure_2fa_enabled', $enabled );
     }
@@ -108,7 +117,7 @@ class TwoFactor extends App {
         set_transient( 'nhrrob_2fa_' . $token, $user->ID, 5 * MINUTE_IN_SECONDS );
 
         // Store the redirect URL if any
-        $redirect_to = isset( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : admin_url();
+        $redirect_to = isset( $_REQUEST['redirect_to'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['redirect_to'] ) ) : admin_url(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         // Redirect to 2FA verification page
         $login_url = wp_login_url();
@@ -118,7 +127,7 @@ class TwoFactor extends App {
             'redirect_to' => urlencode( $redirect_to ),
         ], $login_url );
 
-        wp_redirect( $verification_url );
+        wp_safe_redirect( $verification_url );
         exit;
     }
 
@@ -126,14 +135,14 @@ class TwoFactor extends App {
      * Render the 2FA verification form
      */
     public function render_2fa_form() {
-        $token = isset( $_GET['nhr_token'] ) ? sanitize_text_field( $_GET['nhr_token'] ) : '';
-        $redirect_to = isset( $_GET['redirect_to'] ) ? $_GET['redirect_to'] : admin_url();
+        $token = isset( $_GET['nhr_token'] ) ? sanitize_text_field( wp_unslash( $_GET['nhr_token'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $redirect_to = isset( $_GET['redirect_to'] ) ? sanitize_text_field( wp_unslash( $_GET['redirect_to'] ) ) : admin_url(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         if ( ! get_transient( 'nhrrob_2fa_' . $token ) ) {
-            wp_die( __( 'Invalid or expired 2FA token.', 'nhrrob-secure' ) );
+            wp_die( esc_html__( 'Invalid or expired 2FA token.', 'nhrrob-secure' ) );
         }
-
-        $error = isset( $_GET['error'] ) ? $_GET['error'] : '';
+        
+        $error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         
         $this->render( 'login-2fa-form', [
             'token'       => $token,
@@ -146,14 +155,18 @@ class TwoFactor extends App {
      * Verify the 2FA code
      */
     public function verify_2fa_code() {
-        $token = isset( $_POST['nhr_token'] ) ? sanitize_text_field( $_POST['nhr_token'] ) : '';
-        $code = isset( $_POST['nhr_2fa_code'] ) ? sanitize_text_field( $_POST['nhr_2fa_code'] ) : '';
-        $redirect_to = isset( $_POST['redirect_to'] ) ? $_POST['redirect_to'] : admin_url();
+        if ( ! isset( $_POST['nhr_2fa_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nhr_2fa_nonce'] ) ), 'nhrrob_secure_2fa_verify' ) ) {
+            wp_die( esc_html__( 'Nonce verification failed.', 'nhrrob-secure' ) );
+        }
+
+        $token = isset( $_POST['nhr_token'] ) ? sanitize_text_field( wp_unslash( $_POST['nhr_token'] ) ) : '';
+        $code = isset( $_POST['nhr_2fa_code'] ) ? sanitize_text_field( wp_unslash( $_POST['nhr_2fa_code'] ) ) : '';
+        $redirect_to = isset( $_POST['redirect_to'] ) ? sanitize_text_field( wp_unslash( $_POST['redirect_to'] ) ) : admin_url();
 
         $user_id = get_transient( 'nhrrob_2fa_' . $token );
 
         if ( ! $user_id ) {
-            wp_die( __( 'Invalid or expired 2FA token.', 'nhrrob-secure' ) );
+            wp_die( esc_html__( 'Invalid or expired 2FA token.', 'nhrrob-secure' ) );
         }
 
         $user = get_userdata( $user_id );
@@ -173,7 +186,7 @@ class TwoFactor extends App {
                 'redirect_to' => urlencode( $redirect_to ),
                 'error' => 'invalid_code',
             ], wp_login_url() );
-            wp_redirect( $verification_url );
+            wp_safe_redirect( $verification_url );
             exit;
         }
     }

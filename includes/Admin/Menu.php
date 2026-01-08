@@ -2,6 +2,11 @@
 
 namespace NHRRob\Secure\Admin;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+
 /**
  * Menu handler class
  */

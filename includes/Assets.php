@@ -2,6 +2,11 @@
 
 namespace NHRRob\Secure;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+
 /**
  * Assets handler class
  */

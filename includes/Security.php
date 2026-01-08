@@ -2,6 +2,11 @@
 
 namespace NHRRob\Secure;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+
 /**
  * Security Features Handler
  */
@@ -125,7 +130,7 @@ class Security {
         if ( $transients['block_value'] ) {
             return new \WP_Error(
                 'nhrrob_secure_blocked',
-                __( 'Too many failed login attempts for this account from your IP. Try again later.', 'nhrrob-secure' )
+                esc_html__( 'Too many failed login attempts for this account from your IP. Try again later.', 'nhrrob-secure' )
             );
         }
 
