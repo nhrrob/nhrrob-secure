@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .nhr-secure-settings {
+        @apply max-w-screen-xl mx-0 my-5;
+    }
+
+    .nhr-secure-header {
+        @apply mb-8;
+    }
+
+    .nhr-secure-header h1 {
+        @apply text-3xl font-semibold m-0 mb-2 text-gray-900;
+    }
+
+    .nhr-secure-subtitle {
+        @apply text-sm text-gray-600 m-0;
+    }
+
+    .nhr-secure-loading {
+        @apply flex items-center justify-center min-h-[400px];
+    }
+
+    .nhr-secure-cards {
+        @apply grid gap-5 mb-6;
+    }
+
+    .nhr-secure-card {
+        @apply border border-gray-300 shadow-sm transition-shadow duration-200 hover:shadow-md;
+    }
+
+    .nhr-secure-card-title {
+        @apply text-lg font-semibold m-0 mb-5 text-gray-900 pb-3 border-b border-gray-200;
+    }
+
+    .nhr-secure-card .components-base-control {
+        @apply mb-6 last:mb-0;
+    }
+
+    .nhr-secure-info {
+        @apply bg-blue-50 border border-blue-600 rounded px-4 py-3 mt-4;
+    }
+
+    .nhr-secure-info strong {
+        @apply block mb-1.5 text-blue-600 text-xs;
+    }
+
+    .nhr-secure-info code {
+        @apply inline-block bg-white border border-gray-300 px-3 py-1.5 rounded font-mono text-xs text-gray-900;
+    }
+
+    .nhr-secure-actions {
+        @apply flex gap-3 pt-2;
+    }
+
+    .nhr-secure-actions .components-button {
+        @apply min-w-[140px];
+    }
+
+    /* WordPress component overrides */
+    .nhr-secure-card .components-toggle-control {
+        @apply items-start;
+    }
+
+    .nhr-secure-card .components-toggle-control .components-base-control__field {
+        @apply mb-0;
+    }
+
+    .nhr-secure-card .components-text-control__input {
+        @apply max-w-md;
+    }
+
+    /* Notice styling */
+    .nhr-secure-settings .components-notice {
+        @apply m-0 mb-5;
+    }
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+    .nhr-secure-header h1 {
+        @apply text-2xl;
+    }
+
+    .nhr-secure-card .components-text-control__input {
+        @apply max-w-full;
+    }
+}
