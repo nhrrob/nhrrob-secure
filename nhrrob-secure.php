@@ -78,6 +78,9 @@ final class NHRRob_Secure {
         // Initialize security features
         new \NHRRob\Secure\Security();
 
+        // Initialize 2FA features
+        new \NHRRob\Secure\TwoFactor();
+
         // Initialize assets
         new \NHRRob\Secure\Assets();
 

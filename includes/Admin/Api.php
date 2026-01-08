@@ -59,6 +59,10 @@ class Api {
                     'type' => 'boolean',
                     'sanitize_callback' => 'rest_sanitize_boolean',
                 ],
+                'nhrrob_secure_enable_2fa' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
             ],
         ]);
     }
@@ -74,6 +78,7 @@ class Api {
             'nhrrob_secure_custom_login_url' => get_option( 'nhrrob_secure_custom_login_url', '/hidden-access-52w' ),
             'nhrrob_secure_protect_debug_log' => (bool) get_option( 'nhrrob_secure_protect_debug_log', 1 ),
             'nhrrob_secure_enable_proxy_ip' => (bool) get_option( 'nhrrob_secure_enable_proxy_ip', false ),
+            'nhrrob_secure_enable_2fa' => (bool) get_option( 'nhrrob_secure_enable_2fa', 0 ),
         ];
     }
 
