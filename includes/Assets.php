@@ -53,7 +53,7 @@ class Assets {
 
         return [
             'nhrrob-secure-settings' => [
-                'src'     => plugins_url( 'assets/css/admin.css', NHRROB_SECURE_PLUGIN_DIR . 'nhrrob-secure.php' ),
+                'src'     => plugins_url( 'assets/js/style-admin.css', NHRROB_SECURE_PLUGIN_DIR . 'nhrrob-secure.php' ),
                 'version' => $asset['version'],
                 'deps'    => [ 'wp-components' ]
             ],
@@ -84,7 +84,7 @@ class Assets {
             wp_enqueue_style( $handle, $style['src'], $deps, $style['version'] );
         }
 
-        wp_localize_script( 'nhrrob-secure-settings', 'nhrSecureSettings', [
+        wp_localize_script( 'nhrrob-secure-settings', 'nhrrobSecureSettings', [
             'root'  => esc_url_raw( rest_url() ),
             'nonce' => wp_create_nonce( 'wp_rest' ),
         ]);
