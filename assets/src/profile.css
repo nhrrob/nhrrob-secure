@@ -1,0 +1,24 @@
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .nhr-secure-2fa-section {
+        @apply pt-5 border-t border-gray-300;
+    }
+
+    .nhr-secure-2fa-qr-code {
+        @apply mt-5 p-4 border border-gray-300 bg-white rounded shadow-sm inline-block;
+    }
+
+    .nhr-secure-2fa-secret {
+        @apply px-3 py-1.5 bg-gray-100 border border-gray-300 rounded font-mono text-sm mt-1 inline-block tracking-wider;
+    }
+
+    .nhr-secure-2fa-warning {
+        @apply text-red-600 font-medium flex items-center gap-1 mt-4;
+    }
+
+    .nhr-secure-2fa-success {
+        @apply text-green-600 font-medium flex items-center gap-1;
+    }
+}
