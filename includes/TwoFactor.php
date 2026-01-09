@@ -73,7 +73,6 @@ class TwoFactor extends App {
         }
 
         // Generate QR Code URL
-        // We use a direct URL to the QR service instead of DataURI to avoid issues with allow_url_fopen or curl on some servers
         $label = $user->user_email;
         $issuer = 'NHR Secure';
         $otpauth_url = sprintf( 'otpauth://totp/%s:%s?secret=%s&issuer=%s', urlencode( $issuer ), urlencode( $label ), $secret, urlencode( $issuer ) );

@@ -1,6 +1,6 @@
-=== NHR Secure | Protect Admin, Debug Logs & Limit Logins ===
+=== NHR Secure – Hide Admin, Limit Login & 2FA ===
 Contributors: nhrrob
-Tags: security, admin, login, debug, protection
+Tags: security, hide admin, login protection, debug log, 2fa
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
@@ -8,8 +8,7 @@ Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A lightweight WordPress security plugin that protects your admin area, hides debug logs, and limits login attempts.
-
+A lightweight WordPress security plugin to protect your admin area with a custom login URL, hide debug logs, limit login attempts, and add 2FA.
 == Description ==
 
 Keep your WordPress site safe with minimal effort. NHR Secure helps you:
@@ -17,6 +16,7 @@ Keep your WordPress site safe with minimal effort. NHR Secure helps you:
 - Hide or protect your admin area from unauthorized access.
 - Limit login attempts to prevent brute-force attacks.
 - Hide debug logs to prevent sensitive information disclosure.
+- Add 2FA to your WordPress site.
 
 **Features at a glance:**
 
@@ -40,8 +40,14 @@ Configure everything from a beautiful React-powered interface.
 - Located under **Tools → NHR Secure**
 - Enable/disable each feature
 
+### 🔐 Two-Factor Authentication (2FA)
+Enable two-factor authentication for users.
+- QR code is generated and displayed on the user profile page
+- User must enter the code from their 2FA app to login
+
 ### ⚡ Lightweight & Minimal
 Designed to deliver maximum security with minimal code. No bloat, no complexity.
+- Compatible with most WordPress themes and plugins.
 
 == Installation ==
 
@@ -60,28 +66,30 @@ Yes. Repeated failed login attempts from the same IP will be temporarily blocked
 = What is the default custom login URL? =
 The default custom login URL is `/hidden-access-52w`. You can change this in the settings page under Tools → NHR Secure.
 
-= Do I need other plugins? =
-No. NHR Secure is standalone and works independently.
+= How does 2FA work? =
+2FA (Two-Factor Authentication) adds an extra layer of security to your WordPress site. When enabled, users must enter a code from their 2FA app (e.g., Google Authenticator, Authy) in addition to their username and password to log in.
 
-= Will it affect my site performance? =
-No. NHR Secure is lightweight and designed to have minimal impact on your WordPress performance.
-
+= Can I disable specific features? =
+Yes. You can enable or disable each feature from the settings page under Tools → NHR Secure.
 
 == Screenshots ==
 
 1. Failed login attempts are blocked.
 2. Custom login page.
-3. /wp-login.php or /wp-admin goes to 404.
-4. Debug log is hidden.
+3. Debug log is hidden.
+4. Modern React-powered settings page.
+5. Modern React-powered settings page - part 2.
+6. 2FA setup in user profile.
 
 
 == Changelog ==
 
-= 1.0.4 - 08/01/2026 =
+= 1.0.4 - 09/01/2026 =
 - Added: Modern React-powered settings page under Tools → NHR Secure
 - Added: Enable/disable all features from admin interface
 - Added: Configurable login attempts limit (1-20)
 - Added: Customizable login page URL from settings
+- Added: Two-factor authentication (2FA) feature
 
 = 1.0.3 - 05/01/2026 =
 - Added: Custom login page.
