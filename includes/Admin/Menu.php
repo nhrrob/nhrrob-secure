@@ -35,9 +35,9 @@ class Menu {
      * Enqueue assets
      */
     public function enqueue_assets() {
-        wp_enqueue_style( 'nhrrob-secure-admin' );
+        wp_enqueue_style( 'nhrrob-secure-admin-style' );
         
-        wp_enqueue_script( 'nhrrob-secure-admin' );
+        wp_enqueue_script( 'nhrrob-secure-admin-script' );
     }
 
     /**

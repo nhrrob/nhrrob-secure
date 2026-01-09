@@ -35,7 +35,7 @@ class Assets {
         $asset = require $asset_file;
 
         return [
-            'nhrrob-secure-admin' => [
+            'nhrrob-secure-admin-script' => [
                 'src'     => plugins_url( 'build/admin.js', NHRROB_SECURE_FILE ),
                 'version' => $asset['version'],
                 'deps'    => $asset['dependencies']
@@ -55,7 +55,7 @@ class Assets {
         $admin_asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/admin.asset.php';
         if ( file_exists( $admin_asset_file ) ) {
             $asset = require $admin_asset_file;
-            $styles['nhrrob-secure-admin'] = [
+            $styles['nhrrob-secure-admin-style'] = [
                 'src'     => plugins_url( 'build/admin.css', NHRROB_SECURE_FILE ),
                 'version' => $asset['version'],
                 'deps'    => [ 'wp-components' ]
@@ -66,7 +66,7 @@ class Assets {
         $profile_asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/profile.asset.php';
         if ( file_exists( $profile_asset_file ) ) {
             $asset = require $profile_asset_file;
-            $styles['nhrrob-secure-profile'] = [
+            $styles['nhrrob-secure-profile-style'] = [
                 'src'     => plugins_url( 'build/profile.css', NHRROB_SECURE_FILE ),
                 'version' => $asset['version'],
                 'deps'    => []
@@ -103,7 +103,7 @@ class Assets {
             wp_register_style( $handle, $style['src'], $deps, $style['version'] );
         }
 
-        wp_localize_script( 'nhrrob-secure-admin', 'nhrrobSecureSettings', [
+        wp_localize_script( 'nhrrob-secure-admin-script', 'nhrrobSecureSettings', [
             'root'        => esc_url_raw( rest_url() ),
             'nonce'       => wp_create_nonce( 'wp_rest' ),
             'profile_url' => admin_url( 'profile.php' ),
@@ -111,7 +111,7 @@ class Assets {
 
         // Enqueue profile assets
         if ( $is_profile_page ) {
-            wp_enqueue_style( 'nhrrob-secure-profile' );
+            wp_enqueue_style( 'nhrrob-secure-profile-style' );
         }
     }
 }
