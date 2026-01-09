@@ -24,7 +24,7 @@ class TwoFactor extends App {
      */
     public function __construct() {
         $this->tfa = new \RobThree\Auth\TwoFactorAuth(
-            new \RobThree\Auth\Providers\Qr\GoogleChartsQrCodeProvider(),
+            new \RobThree\Auth\Providers\Qr\QRServerProvider(),
             'NHR Secure'
         );
 
@@ -72,12 +72,18 @@ class TwoFactor extends App {
             update_user_meta( $user->ID, 'nhrrob_secure_2fa_secret', $secret );
         }
 
-        $qrCodeUrl = $this->tfa->getQRCodeImageAsDataUri( $user->user_email, $secret, 'NHR Secure' );
+        // Generate QR Code URL
+        // We use a direct URL to the QR service instead of DataURI to avoid issues with allow_url_fopen or curl on some servers
+        $label = $user->user_email;
+        $issuer = 'NHR Secure';
+        $otpauth_url = sprintf( 'otpauth://totp/%s:%s?secret=%s&issuer=%s', urlencode( $issuer ), urlencode( $label ), $secret, urlencode( $issuer ) );
+        $qrCodeUrl = sprintf( 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s', urlencode( $otpauth_url ) );
 
         $this->render( 'profile-2fa', [
-            'qrCodeUrl' => $qrCodeUrl,
-            'secret'    => $secret,
-            'enabled'   => $enabled,
+            'qrCodeUrl'   => $qrCodeUrl,
+            'secret'      => $secret,
+            'enabled'     => $enabled,
+            'profile_url' => admin_url( 'profile.php' ),
         ] );
     }
 
