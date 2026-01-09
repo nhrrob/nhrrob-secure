@@ -238,6 +238,18 @@
     margin: 0px;
     margin-bottom: 1.25rem
 }
+.mt-0 {
+    margin-top: 0px
+}
+.mt-4 {
+    margin-top: 1rem
+}
+.table {
+    display: table
+}
+.hidden {
+    display: none
+}
 
 /* Responsive */
 @media (max-width: 782px) {

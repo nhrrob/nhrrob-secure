@@ -9,11 +9,8 @@
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 ?>
-<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccd0d4;">
+<div class="nhr-secure-2fa-section">
     <h3><?php esc_html_e( 'Two-Factor Authentication (NHR Secure)', 'nhrrob-secure' ); ?></h3>
-    <p class="description" style="font-size: 14px; margin-bottom: 20px; max-width: 800px; display: none;">
-        <?php esc_html_e( 'Two-factor authentication (2FA) strengthens your account security by requiring a second method of verification. Once enabled, you will need to provide a code from your mobile device every time you log in to your WordPress dashboard.', 'nhrrob-secure' ); ?>
-    </p>
     
     <?php wp_nonce_field( 'nhrrob_secure_save_2fa', 'nhr_2fa_profile_nonce' ); ?>
     <table class="form-table">
@@ -31,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <tr>
                 <th><?php esc_html_e( 'Setup Instructions', 'nhrrob-secure' ); ?></th>
                 <td>
-                    <ol style="margin-top: 0;">
+                    <ol class="mt-0">
                         <li><?php esc_html_e( 'Install an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator on your mobile device.', 'nhrrob-secure' ); ?></li>
                         <li><?php printf( 
                             /* translators: 1: profile page link */
@@ -41,17 +38,17 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                         <li><?php esc_html_e( 'Once scanned, check the box above and click "Update Profile" to activate 2FA.', 'nhrrob-secure' ); ?></li>
                     </ol>
                     
-                    <div style="margin-top: 20px;">
-                        <img src="<?php echo esc_url( $qrCodeUrl ); ?>" alt="<?php esc_attr_e( '2FA QR Code', 'nhrrob-secure' ); ?>" style="border: 1px solid #ccc; padding: 15px; background: #fff; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" />
+                    <div class="nhr-secure-2fa-qr-code">
+                        <img src="<?php echo esc_url( $qrCodeUrl ); ?>" alt="<?php esc_attr_e( '2FA QR Code', 'nhrrob-secure' ); ?>" />
                     </div>
                     
-                    <p style="margin-top: 15px;">
+                    <p class="mt-4">
                         <strong><?php esc_html_e( 'Secret Key:', 'nhrrob-secure' ); ?></strong><br>
-                        <code style="padding: 5px 10px; background: #f0f0f1; border: 1px solid #ccd0d4; border-radius: 3px; font-size: 14px; margin-top: 5px; display: inline-block; letter-spacing: 1px;"><?php echo esc_html( $secret ); ?></code>
+                        <code class="nhr-secure-2fa-secret"><?php echo esc_html( $secret ); ?></code>
                     </p>
                     
-                    <p class="description" style="color: #d63638; font-weight: 500;">
-                        <span class="dashicons dashicons-warning" style="font-size: 18px; width: 18px; height: 18px; vertical-align: middle;"></span>
+                    <p class="nhr-secure-2fa-warning">
+                        <span class="dashicons dashicons-warning"></span>
                         <?php esc_html_e( 'Important: If you enable this, you will be required to provide a code every time you log in.', 'nhrrob-secure' ); ?>
                     </p>
                 </td>
@@ -60,8 +57,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <tr>
                 <th><?php esc_html_e( 'Configuration', 'nhrrob-secure' ); ?></th>
                 <td>
-                    <p style="color: #00a32a; font-weight: 500;">
-                        <span class="dashicons dashicons-yes-alt" style="font-size: 18px; width: 18px; height: 18px; vertical-align: middle;"></span>
+                    <p class="nhr-secure-2fa-success">
+                        <span class="dashicons dashicons-yes-alt"></span>
                         <?php esc_html_e( 'Two-Factor Authentication is currently active on your account.', 'nhrrob-secure' ); ?>
                     </p>
                     <p class="description">

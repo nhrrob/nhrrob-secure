@@ -2,6 +2,8 @@
 module.exports = {
     content: [
         './assets/src/**/*.{js,jsx,ts,tsx}',
+        './templates/**/*.php',
+        './includes/**/*.php',
     ],
     theme: {
         extend: {
@@ -13,7 +15,7 @@ module.exports = {
     },
     plugins: [],
     corePlugins: {
-        preflight: false, // Disable Tailwind's base styles to avoid conflicts with WordPress
+        preflight: false,
     },
 }
 

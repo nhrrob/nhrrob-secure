@@ -49,21 +49,31 @@ class Assets {
      * @return array
      */
     public function get_styles() {
-        $asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/admin.asset.php';
-        
-        if ( ! file_exists( $asset_file ) ) {
-            return [];
-        }
+        $styles = [];
 
-        $asset = require $asset_file;
-
-        return [
-            'nhrrob-secure-admin' => [
-                'src'     => plugins_url( 'build/style-admin.css', NHRROB_SECURE_FILE ),
+        // Admin settings styles
+        $admin_asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/admin.asset.php';
+        if ( file_exists( $admin_asset_file ) ) {
+            $asset = require $admin_asset_file;
+            $styles['nhrrob-secure-admin'] = [
+                'src'     => plugins_url( 'build/admin.css', NHRROB_SECURE_FILE ),
                 'version' => $asset['version'],
                 'deps'    => [ 'wp-components' ]
-            ],
-        ];
+            ];
+        }
+
+        // Profile styles
+        $profile_asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/profile.asset.php';
+        if ( file_exists( $profile_asset_file ) ) {
+            $asset = require $profile_asset_file;
+            $styles['nhrrob-secure-profile'] = [
+                'src'     => plugins_url( 'build/profile.css', NHRROB_SECURE_FILE ),
+                'version' => $asset['version'],
+                'deps'    => []
+            ];
+        }
+
+        return $styles;
     }
 
     /**
@@ -73,7 +83,10 @@ class Assets {
      * @return void
      */
     public function register_assets( $hook ) {
-        if ( $hook !== 'tools_page_nhrrob-secure-settings' ) {
+        $is_settings_page = $hook === 'tools_page_nhrrob-secure-settings';
+        $is_profile_page = $hook === 'profile.php' || $hook === 'user-edit.php';
+
+        if ( ! $is_settings_page && ! $is_profile_page ) {
             return;
         }
 
@@ -94,6 +107,11 @@ class Assets {
             'root'  => esc_url_raw( rest_url() ),
             'nonce' => wp_create_nonce( 'wp_rest' ),
         ]);
+
+        // Enqueue profile assets
+        if ( $is_profile_page ) {
+            wp_enqueue_style( 'nhrrob-secure-profile' );
+        }
     }
 }
 
