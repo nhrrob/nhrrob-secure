@@ -17,6 +17,21 @@ class Menu {
      */
     public function __construct() {
         add_action( 'admin_menu', [ $this, 'admin_menu' ] );
+        add_filter( 'plugin_action_links_' . plugin_basename( NHRROB_SECURE_FILE ), [ $this, 'plugin_action_links' ] );
+    }
+
+    /**
+     * Add settings link to the plugin action links
+     *
+     * @param array $links
+     * @return array
+     */
+    public function plugin_action_links( $links ) {
+        $new_links = [
+            '<a href="' . admin_url( 'tools.php?page=nhrrob-secure-settings' ) . '">' . __( 'Settings', 'nhrrob-secure' ) . '</a>',
+        ];
+
+        return array_merge( $new_links, $links );
     }
 
     /**
