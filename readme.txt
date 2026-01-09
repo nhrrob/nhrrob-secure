@@ -18,7 +18,7 @@ Keep your WordPress site safe with minimal effort. NHR Secure helps you:
 - Hide debug logs to prevent sensitive information disclosure.
 - Add 2FA to your WordPress site.
 
-**Features at a glance:**
+### **Features at a glance:**
 
 ### 🔒 Limit Login Attempts
 Stop brute-force attacks by temporarily blocking IPs after repeated failed login attempts.
