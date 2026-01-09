@@ -21,6 +21,6 @@ class Admin {
      * @return void
      */
     public function dispatch_actions() {
-        // Future admin actions can be added here
+        //
     }
 }

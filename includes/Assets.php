@@ -17,6 +17,7 @@ class Assets {
      */
     public function __construct() {
         add_action( 'admin_enqueue_scripts', [ $this, 'register_assets' ] );
+        add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
     }
 
     /**
@@ -25,7 +26,7 @@ class Assets {
      * @return array
      */
     public function get_scripts() {
-        $asset_file = NHRROB_SECURE_PLUGIN_DIR . 'assets/js/admin.asset.php';
+        $asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/admin.asset.php';
         
         if ( ! file_exists( $asset_file ) ) {
             return [];
@@ -34,8 +35,8 @@ class Assets {
         $asset = require $asset_file;
 
         return [
-            'nhrrob-secure-settings' => [
-                'src'     => plugins_url( 'assets/js/admin.js', NHRROB_SECURE_PLUGIN_DIR . 'nhrrob-secure.php' ),
+            'nhrrob-secure-admin' => [
+                'src'     => plugins_url( 'build/admin.js', NHRROB_SECURE_FILE ),
                 'version' => $asset['version'],
                 'deps'    => $asset['dependencies']
             ],
@@ -48,7 +49,7 @@ class Assets {
      * @return array
      */
     public function get_styles() {
-        $asset_file = NHRROB_SECURE_PLUGIN_DIR . 'assets/js/admin.asset.php';
+        $asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/admin.asset.php';
         
         if ( ! file_exists( $asset_file ) ) {
             return [];
@@ -57,8 +58,8 @@ class Assets {
         $asset = require $asset_file;
 
         return [
-            'nhrrob-secure-settings' => [
-                'src'     => plugins_url( 'assets/js/style-admin.css', NHRROB_SECURE_PLUGIN_DIR . 'nhrrob-secure.php' ),
+            'nhrrob-secure-admin' => [
+                'src'     => plugins_url( 'build/style-admin.css', NHRROB_SECURE_FILE ),
                 'version' => $asset['version'],
                 'deps'    => [ 'wp-components' ]
             ],
@@ -81,15 +82,15 @@ class Assets {
 
         foreach ( $scripts as $handle => $script ) {
             $deps = isset( $script['deps'] ) ? $script['deps'] : [];
-            wp_enqueue_script( $handle, $script['src'], $deps, $script['version'], true );
+            wp_register_script( $handle, $script['src'], $deps, $script['version'], true );
         }
 
         foreach ( $styles as $handle => $style ) {
             $deps = isset( $style['deps'] ) ? $style['deps'] : [];
-            wp_enqueue_style( $handle, $style['src'], $deps, $style['version'] );
+            wp_register_style( $handle, $style['src'], $deps, $style['version'] );
         }
 
-        wp_localize_script( 'nhrrob-secure-settings', 'nhrrobSecureSettings', [
+        wp_localize_script( 'nhrrob-secure-admin', 'nhrrobSecureSettings', [
             'root'  => esc_url_raw( rest_url() ),
             'nonce' => wp_create_nonce( 'wp_rest' ),
         ]);
