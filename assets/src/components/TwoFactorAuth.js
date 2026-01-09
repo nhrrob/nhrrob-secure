@@ -1,0 +1,23 @@
+import { Card, CardBody, ToggleControl } from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
+
+const TwoFactorAuth = ({ settings, updateSetting }) => {
+    return (
+        <Card className="nhr-secure-card">
+            <CardBody>
+                <h2 className="nhr-secure-card-title">
+                    {__('Two-Factor Authentication', 'nhrrob-secure')}
+                </h2>
+                
+                <ToggleControl
+                    label={__('Enable Global 2FA', 'nhrrob-secure')}
+                    help={__('Enables Google Authenticator support for all users. Users can set it up in their profile.', 'nhrrob-secure')}
+                    checked={settings.nhrrob_secure_enable_2fa}
+                    onChange={(value) => updateSetting('nhrrob_secure_enable_2fa', value)}
+                />
+            </CardBody>
+        </Card>
+    );
+};
+
+export default TwoFactorAuth;
