@@ -223,7 +223,7 @@
 .nhr-secure-actions .components-button {
     min-width: 140px
 }
-/* WordPress component overrides */
+/* Core component overrides */
 .nhr-secure-card .components-toggle-control {
     align-items: flex-start
 }

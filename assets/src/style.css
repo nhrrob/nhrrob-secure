@@ -59,7 +59,7 @@
         @apply min-w-[140px];
     }
 
-    /* WordPress component overrides */
+    /* Core component overrides */
     .nhr-secure-card .components-toggle-control {
         @apply items-start;
     }
