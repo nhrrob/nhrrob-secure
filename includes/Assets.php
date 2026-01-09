@@ -104,8 +104,9 @@ class Assets {
         }
 
         wp_localize_script( 'nhrrob-secure-admin', 'nhrrobSecureSettings', [
-            'root'  => esc_url_raw( rest_url() ),
-            'nonce' => wp_create_nonce( 'wp_rest' ),
+            'root'        => esc_url_raw( rest_url() ),
+            'nonce'       => wp_create_nonce( 'wp_rest' ),
+            'profile_url' => admin_url( 'profile.php' ),
         ]);
 
         // Enqueue profile assets

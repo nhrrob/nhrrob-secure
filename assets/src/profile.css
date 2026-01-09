@@ -3,7 +3,7 @@
 
 @layer components {
     .nhr-secure-2fa-section {
-        @apply mt-8 pt-5 border-t border-gray-300;
+        @apply pt-5 border-t border-gray-300;
     }
 
     .nhr-secure-2fa-qr-code {
