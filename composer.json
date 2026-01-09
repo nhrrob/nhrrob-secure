@@ -1,0 +1,21 @@
+{
+    "name": "nhrrob/nhrrob-secure",
+    "description": "Protect Admin, Debug Logs & Limit Logins",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Nazmul Hasan Robin",
+            "email": "robin.sust08@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "robthree/twofactorauth": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "NHRRob\\Secure\\": "includes/"
+        }
+    }
+}
