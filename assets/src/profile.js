@@ -2,52 +2,94 @@ import './profile.css';
 
 document.addEventListener('DOMContentLoaded', () => {
     const copyButton = document.getElementById('nhrrob-secure-copy-recovery-codes');
-    if (!copyButton) return;
+    const downloadButton = document.getElementById('nhrrob-secure-download-recovery-codes');
 
-    copyButton.addEventListener('click', () => {
+    /**
+     * Get all recovery codes from the list
+     */
+    const getCodes = () => {
         const codesList = document.querySelectorAll('.nhrrob-secure-recovery-codes-item');
-        const codes = Array.from(codesList).map(li => li.innerText.trim()).join('\n');
+        return Array.from(codesList).map(li => li.innerText.trim()).join('\n');
+    };
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(codes).then(() => {
-                showSuccess(copyButton);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-            });
-        } else {
-            // Fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = codes;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showSuccess(copyButton);
-            } catch (err) {
-                console.error('Fallback copy failed: ', err);
+    /**
+     * Copy codes to clipboard
+     */
+    if (copyButton) {
+        copyButton.addEventListener('click', () => {
+            const codes = getCodes();
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(codes).then(() => {
+                    showSuccess(copyButton);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = codes;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showSuccess(copyButton);
+                } catch (err) {
+                    console.error('Fallback copy failed: ', err);
+                }
+                document.body.removeChild(textArea);
             }
-            document.body.removeChild(textArea);
-        }
-    });
+        });
+    }
 
+    /**
+     * Download codes as .txt file
+     */
+    if (downloadButton) {
+        downloadButton.addEventListener('click', () => {
+            const codes = getCodes();
+            const blob = new Blob([codes], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            a.href = url;
+            a.download = 'nhrrob-secure-recovery-codes.txt';
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showSuccess(downloadButton);
+        });
+    }
+
+    /**
+     * Show success state on button
+     * @param {HTMLElement} button 
+     */
     function showSuccess(button) {
-        const originalText = button.querySelector('span:last-child').innerText;
-        const originalIcon = button.querySelector('.dashicons');
+        const textSpan = button.querySelector('span:last-child');
+        const iconSpan = button.querySelector('.dashicons');
         
-        button.querySelector('span:last-child').innerText = 'Copied!';
-        button.classList.add('nhrrob-secure-copy-success');
+        if (!textSpan) return;
+
+        const originalText = textSpan.innerText;
+        const originalIconClass = iconSpan ? Array.from(iconSpan.classList).find(c => c.startsWith('dashicons-')) : null;
         
-        if (originalIcon) {
-            originalIcon.classList.remove('dashicons-clipboard');
-            originalIcon.classList.add('dashicons-yes');
+        textSpan.innerText = (button.id === 'nhrrob-secure-copy-recovery-codes') ? 'Copied!' : 'Saved!';
+        button.classList.add('nhrrob-secure-action-success');
+        
+        if (iconSpan) {
+            iconSpan.classList.remove(originalIconClass);
+            iconSpan.classList.add('dashicons-yes');
         }
 
         setTimeout(() => {
-            button.querySelector('span:last-child').innerText = originalText;
-            button.classList.remove('nhrrob-secure-copy-success');
-            if (originalIcon) {
-                originalIcon.classList.remove('dashicons-yes');
-                originalIcon.classList.add('dashicons-clipboard');
+            textSpan.innerText = originalText;
+            button.classList.remove('nhrrob-secure-action-success');
+            if (iconSpan) {
+                iconSpan.classList.remove('dashicons-yes');
+                iconSpan.classList.add(originalIconClass);
             }
         }, 2000);
     }

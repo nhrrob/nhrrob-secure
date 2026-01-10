@@ -61,10 +61,16 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                         
                         <?php if ( ! empty( $raw_recovery_codes ) ) : ?>
                             <div class="nhrrob-secure-recovery-codes-display">
-                                <button type="button" class="nhrrob-secure-copy-button" id="nhrrob-secure-copy-recovery-codes">
-                                    <span class="dashicons dashicons-clipboard"></span>
-                                    <span><?php esc_html_e( 'Copy Codes', 'nhrrob-secure' ); ?></span>
-                                </button>
+                                <div class="nhrrob-secure-recovery-codes-actions">
+                                    <button type="button" class="nhrrob-secure-action-button" id="nhrrob-secure-copy-recovery-codes">
+                                        <span class="dashicons dashicons-clipboard"></span>
+                                        <span><?php esc_html_e( 'Copy', 'nhrrob-secure' ); ?></span>
+                                    </button>
+                                    <button type="button" class="nhrrob-secure-action-button" id="nhrrob-secure-download-recovery-codes">
+                                        <span class="dashicons dashicons-download"></span>
+                                        <span><?php esc_html_e( 'Download', 'nhrrob-secure' ); ?></span>
+                                    </button>
+                                </div>
                                 
                                 <p><strong><?php esc_html_e( 'Your New Recovery Codes:', 'nhrrob-secure' ); ?></strong></p>
                                 <p class="nhrrob-secure-2fa-warning">

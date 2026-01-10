@@ -13,11 +13,12 @@ if ( ! function_exists( 'login_header' ) ) {
     require_once ABSPATH . 'wp-includes/general-template.php';
 }
 
-login_header( esc_html__( '2FA Verification', 'nhrrob-secure' ) );
-
+$wp_error = new \WP_Error();
 if ( 'invalid_code' === $error ) {
-    echo '<div id="login_error">' . esc_html__( 'Invalid authentication code. Please try again.', 'nhrrob-secure' ) . '</div>';
+    $wp_error->add( 'invalid_code', esc_html__( 'Invalid authentication code. Please try again.', 'nhrrob-secure' ) );
 }
+
+login_header( esc_html__( '2FA Verification', 'nhrrob-secure' ), '', $wp_error );
 ?>
 <form name="nhrrob_2fa_form" id="nhrrob_2fa_form" action="<?php echo esc_url( wp_login_url() ); ?>" method="post">
     <p>
