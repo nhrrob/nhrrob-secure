@@ -41,6 +41,9 @@ class TwoFactor extends App {
         // Login verification
         add_filter( 'authenticate', [ $this, 'check_2fa_requirement' ], 50, 3 );
         add_action( 'login_init', [ $this, 'handle_login_actions' ] );
+
+        // Enforcement logic
+        add_action( 'admin_init', [ $this, 'enforce_2fa_for_roles' ] );
     }
 
     /**
@@ -247,5 +250,60 @@ class TwoFactor extends App {
             ], wp_login_url() );
             wp_safe_redirect( $verification_url );
             exit;
+    }
+
+    /**
+     * Enforce 2FA for specific roles
+     */
+    public function enforce_2fa_for_roles() {
+        if ( ! is_user_logged_in() || defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+            return;
+        }
+
+        $user = wp_get_current_user();
+        $enabled = get_user_meta( $user->ID, 'nhrrob_secure_2fa_enabled', true );
+        
+        if ( $enabled ) {
+            return;
+        }
+
+        $enforced_roles = (array) get_option( 'nhrrob_secure_2fa_enforced_roles', [] );
+        $user_roles = (array) $user->roles;
+        
+        $is_enforced = false;
+        foreach ( $user_roles as $role ) {
+            if ( in_array( $role, $enforced_roles, true ) ) {
+                $is_enforced = true;
+                break;
+            }
+        }
+
+        if ( ! $is_enforced ) {
+            return;
+        }
+
+        // Add notice
+        add_action( 'admin_notices', [ $this, 'enforced_2fa_notice' ] );
+
+        // Redirect to profile page if not already there
+        global $pagenow;
+        if ( 'profile.php' !== $pagenow ) {
+            wp_safe_redirect( admin_url( 'profile.php' ) );
+            exit;
+        }
+    }
+
+    /**
+     * Display enforcement notice
+     */
+    public function enforced_2fa_notice() {
+        ?>
+        <div class="notice notice-error">
+            <p>
+                <strong><?php esc_html_e( 'Security Requirement:', 'nhrrob-secure' ); ?></strong>
+                <?php esc_html_e( 'Your account role requires Two-Factor Authentication. Please enable it below to restore full access to the dashboard.', 'nhrrob-secure' ); ?>
+            </p>
+        </div>
+        <?php
     }
 }
