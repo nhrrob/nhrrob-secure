@@ -21,4 +21,28 @@
     .nhrrob-secure-2fa-success {
         @apply text-green-600 font-medium flex items-center gap-1;
     }
+
+    .nhrrob-secure-recovery-codes-display {
+        @apply bg-gray-50 p-5 border-l-4 border-blue-500 my-4 shadow-sm rounded-r relative;
+    }
+
+    .nhrrob-secure-recovery-codes-list {
+        @apply grid grid-cols-2 gap-x-6 list-none m-0 p-0 font-mono text-base;
+    }
+
+    .nhrrob-secure-recovery-codes-item {
+        @apply py-1.5 border-b border-gray-100 last:border-0;
+    }
+
+    .nhrrob-secure-copy-button {
+        @apply absolute top-4 right-4 p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors flex items-center gap-1 text-xs font-medium cursor-pointer shadow-sm;
+    }
+
+    .nhrrob-secure-copy-button:active {
+        @apply bg-gray-100;
+    }
+
+    .nhrrob-secure-copy-success {
+        @apply text-green-600 !border-green-300;
+    }
 }

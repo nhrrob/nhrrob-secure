@@ -5,7 +5,7 @@ module.exports = {
     ...defaultConfig,
     entry: {
         admin: path.resolve(__dirname, 'assets/src', 'index.js'),
-        profile: path.resolve(__dirname, 'assets/src', 'profile.css'),
+        profile: path.resolve(__dirname, 'assets/src', 'profile.js'),
     },
     output: {
         ...defaultConfig.output,

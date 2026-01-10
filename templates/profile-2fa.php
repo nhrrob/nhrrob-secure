@@ -54,18 +54,26 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                     </p>
                     
                     <div class="nhrrob-secure-recovery-codes-section">
-                        <h4><?php esc_html_e( 'Recovery Codes', 'nhrrob-secure' ); ?></h4>
+                        <h4 class="mt-4 mb-2"><?php esc_html_e( 'Recovery Codes', 'nhrrob-secure' ); ?></h4>
                         <p class="description">
                             <?php esc_html_e( 'Recovery codes allow you to access your account if you lose your phone. Each code can be used only once.', 'nhrrob-secure' ); ?>
                         </p>
                         
                         <?php if ( ! empty( $raw_recovery_codes ) ) : ?>
-                            <div class="nhrrob-secure-recovery-codes-display" style="background: #f0f0f1; padding: 15px; border-left: 4px solid #00a0d2; margin: 10px 0;">
+                            <div class="nhrrob-secure-recovery-codes-display">
+                                <button type="button" class="nhrrob-secure-copy-button" id="nhrrob-secure-copy-recovery-codes">
+                                    <span class="dashicons dashicons-clipboard"></span>
+                                    <span><?php esc_html_e( 'Copy Codes', 'nhrrob-secure' ); ?></span>
+                                </button>
+                                
                                 <p><strong><?php esc_html_e( 'Your New Recovery Codes:', 'nhrrob-secure' ); ?></strong></p>
-                                <p style="color: #d63638; font-weight: bold;"><?php esc_html_e( 'IMPORTANT: Copy these codes now. They will not be shown again!', 'nhrrob-secure' ); ?></p>
-                                <ul style="column-count: 2; list-style-type: none; margin: 0; padding: 0; font-family: monospace; font-size: 14px;">
+                                <p class="nhrrob-secure-2fa-warning">
+                                    <span class="dashicons dashicons-warning"></span>
+                                    <?php esc_html_e( 'IMPORTANT: Copy these codes now. They will not be shown again!', 'nhrrob-secure' ); ?>
+                                </p>
+                                <ul class="nhrrob-secure-recovery-codes-list">
                                     <?php foreach ( $raw_recovery_codes as $code ) : ?>
-                                        <li style="padding: 5px 0;"><?php echo esc_html( $code ); ?></li>
+                                        <li class="nhrrob-secure-recovery-codes-item"><?php echo esc_html( $code ); ?></li>
                                     <?php endforeach; ?>
                                 </ul>
                             </div>
