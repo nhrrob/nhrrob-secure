@@ -78,11 +78,16 @@ class TwoFactor extends App {
         $otpauth_url = sprintf( 'otpauth://totp/%s:%s?secret=%s&issuer=%s', urlencode( $issuer ), urlencode( $label ), $secret, urlencode( $issuer ) );
         $qrCodeUrl = sprintf( 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s', urlencode( $otpauth_url ) );
 
+        $raw_codes = get_transient( 'nhrrob_2fa_raw_codes_' . $user->ID );
+        $has_recovery_codes = (bool) get_user_meta( $user->ID, 'nhrrob_secure_2fa_recovery_codes', true );
+
         $this->render( 'profile-2fa', [
-            'qrCodeUrl'   => $qrCodeUrl,
-            'secret'      => $secret,
-            'enabled'     => $enabled,
-            'profile_url' => admin_url( 'profile.php' ),
+            'qrCodeUrl'          => $qrCodeUrl,
+            'secret'             => $secret,
+            'enabled'            => $enabled,
+            'profile_url'        => admin_url( 'profile.php' ),
+            'raw_recovery_codes' => $raw_codes,
+            'has_recovery_codes' => $has_recovery_codes,
         ] );
     }
 
@@ -101,7 +106,38 @@ class TwoFactor extends App {
         }
 
         $enabled = isset( $_POST['nhrrob_secure_2fa_enabled'] ) ? 1 : 0;
+        $old_enabled = get_user_meta( $user_id, 'nhrrob_secure_2fa_enabled', true );
+
         update_user_meta( $user_id, 'nhrrob_secure_2fa_enabled', $enabled );
+
+        // If 2FA was just enabled, or if regeneration is requested
+        if ( ( $enabled && ! $old_enabled ) || isset( $_POST['nhrrob_secure_regenerate_recovery_codes'] ) ) {
+            $this->generate_recovery_codes( $user_id );
+        }
+    }
+
+    /**
+     * Generate and save recovery codes
+     * 
+     * @param int $user_id
+     * @return array The raw recovery codes
+     */
+    public function generate_recovery_codes( $user_id ) {
+        $codes = [];
+        $hashed_codes = [];
+
+        for ( $i = 0; $i < 8; $i++ ) {
+            $code = wp_generate_password( 10, false );
+            $codes[] = $code;
+            $hashed_codes[] = wp_hash_password( $code );
+        }
+
+        update_user_meta( $user_id, 'nhrrob_secure_2fa_recovery_codes', $hashed_codes );
+        
+        // Store raw codes in a transient for immediate display (valid for 30 seconds)
+        set_transient( 'nhrrob_2fa_raw_codes_' . $user_id, $codes, 30 );
+
+        return $codes;
     }
 
     /**
@@ -183,9 +219,27 @@ class TwoFactor extends App {
             wp_set_auth_cookie( $user_id, true );
             wp_safe_redirect( $redirect_to );
             exit;
-        } else {
-            // Fail!
-            $verification_url = add_query_arg( [
+        }
+
+        // Check recovery codes
+        $hashed_recovery_codes = get_user_meta( $user_id, 'nhrrob_secure_2fa_recovery_codes', true );
+        if ( is_array( $hashed_recovery_codes ) ) {
+            foreach ( $hashed_recovery_codes as $index => $hashed_code ) {
+                if ( wp_check_password( $code, $hashed_code ) ) {
+                    // Success with recovery code!
+                    unset( $hashed_recovery_codes[ $index ] );
+                    update_user_meta( $user_id, 'nhrrob_secure_2fa_recovery_codes', array_values( $hashed_recovery_codes ) );
+
+                    delete_transient( 'nhrrob_2fa_' . $token );
+                    wp_set_auth_cookie( $user_id, true );
+                    wp_safe_redirect( $redirect_to );
+                    exit;
+                }
+            }
+        }
+
+        // Fail!
+        $verification_url = add_query_arg( [
                 'action' => 'nhrrob_secure_2fa',
                 'nhr_token' => $token,
                 'redirect_to' => urlencode( $redirect_to ),
@@ -193,7 +247,5 @@ class TwoFactor extends App {
             ], wp_login_url() );
             wp_safe_redirect( $verification_url );
             exit;
-        }
     }
-
 }

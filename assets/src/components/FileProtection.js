@@ -3,9 +3,9 @@ import { __ } from '@wordpress/i18n';
 
 const FileProtection = ({ settings, updateSetting }) => {
     return (
-        <Card className="nhr-secure-card">
+        <Card className="nhrrob-secure-card">
             <CardBody>
-                <h2 className="nhr-secure-card-title">
+                <h2 className="nhrrob-secure-card-title">
                     {__('File Protection', 'nhrrob-secure')}
                 </h2>
                 

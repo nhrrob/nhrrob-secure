@@ -1,5 +1,5 @@
 
-    .nhr-secure-2fa-section {
+    .nhrrob-secure-2fa-section {
 
     border-top-width: 1px;
 
@@ -10,7 +10,7 @@
     padding-top: 1.25rem
 }
 
-    .nhr-secure-2fa-qr-code {
+    .nhrrob-secure-2fa-qr-code {
 
     margin-top: 1.25rem;
 
@@ -37,7 +37,7 @@
     box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
 }
 
-    .nhr-secure-2fa-secret {
+    .nhrrob-secure-2fa-secret {
 
     margin-top: 0.25rem;
 
@@ -72,7 +72,7 @@
     letter-spacing: 0.05em
 }
 
-    .nhr-secure-2fa-success {
+    .nhrrob-secure-2fa-success {
 
     display: flex;
 

@@ -1,5 +1,5 @@
 
-    .nhr-secure-settings {
+    .nhrrob-secure-settings {
 
     margin-left: 0px;
 
@@ -12,12 +12,12 @@
     max-width: 1280px
 }
 
-    .nhr-secure-header {
+    .nhrrob-secure-header {
 
     margin-bottom: 2rem
 }
 
-    .nhr-secure-header h1 {
+    .nhrrob-secure-header h1 {
 
     margin: 0px;
 
@@ -34,7 +34,7 @@
     color: rgb(17 24 39 / var(--tw-text-opacity, 1))
 }
 
-    .nhr-secure-subtitle {
+    .nhrrob-secure-subtitle {
 
     margin: 0px;
 
@@ -47,7 +47,7 @@
     color: rgb(75 85 99 / var(--tw-text-opacity, 1))
 }
 
-    .nhr-secure-loading {
+    .nhrrob-secure-loading {
 
     display: flex;
 
@@ -58,7 +58,7 @@
     justify-content: center
 }
 
-    .nhr-secure-cards {
+    .nhrrob-secure-cards {
 
     margin-bottom: 1.5rem;
 
@@ -67,7 +67,7 @@
     gap: 1.25rem
 }
 
-    .nhr-secure-card {
+    .nhrrob-secure-card {
 
     border-width: 1px;
 
@@ -88,7 +88,7 @@
     transition-duration: 200ms
 }
 
-    .nhr-secure-card:hover {
+    .nhrrob-secure-card:hover {
 
     --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 
@@ -97,7 +97,7 @@
     box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
 }
 
-    .nhr-secure-card-title {
+    .nhrrob-secure-card-title {
 
     margin: 0px;
 
@@ -122,17 +122,17 @@
     color: rgb(17 24 39 / var(--tw-text-opacity, 1))
 }
 
-    .nhr-secure-card .components-base-control {
+    .nhrrob-secure-card .components-base-control {
 
     margin-bottom: 1.5rem
 }
 
-    .nhr-secure-card .components-base-control:last-child {
+    .nhrrob-secure-card .components-base-control:last-child {
 
     margin-bottom: 0px
 }
 
-    .nhr-secure-info {
+    .nhrrob-secure-info {
 
     margin-top: 1rem;
 
@@ -157,7 +157,7 @@
     padding-bottom: 0.75rem
 }
 
-    .nhr-secure-info strong {
+    .nhrrob-secure-info strong {
 
     margin-bottom: 0.375rem;
 
@@ -172,7 +172,7 @@
     color: rgb(37 99 235 / var(--tw-text-opacity, 1))
 }
 
-    .nhr-secure-info code {
+    .nhrrob-secure-info code {
 
     display: inline-block;
 
@@ -207,7 +207,7 @@
     color: rgb(17 24 39 / var(--tw-text-opacity, 1))
 }
 
-    .nhr-secure-actions {
+    .nhrrob-secure-actions {
 
     display: flex;
 
@@ -216,29 +216,29 @@
     padding-top: 0.5rem
 }
 
-    .nhr-secure-actions .components-button {
+    .nhrrob-secure-actions .components-button {
 
     min-width: 140px
 }
 
     /* Core component overrides */
-    .nhr-secure-card .components-toggle-control {
+    .nhrrob-secure-card .components-toggle-control {
 
     align-items: flex-start
 }
 
-    .nhr-secure-card .components-toggle-control .components-base-control__field {
+    .nhrrob-secure-card .components-toggle-control .components-base-control__field {
 
     margin-bottom: 0px
 }
 
-    .nhr-secure-card .components-text-control__input {
+    .nhrrob-secure-card .components-text-control__input {
 
     max-width: 28rem
 }
 
     /* Notice styling */
-    .nhr-secure-settings .components-notice {
+    .nhrrob-secure-settings .components-notice {
 
     margin: 0px;
 
@@ -263,14 +263,14 @@
 
 /* Responsive */
 @media (max-width: 782px) {
-    .nhr-secure-header h1 {
+    .nhrrob-secure-header h1 {
 
         font-size: 1.5rem;
 
         line-height: 2rem
     }
 
-    .nhr-secure-card .components-text-control__input {
+    .nhrrob-secure-card .components-text-control__input {
 
         max-width: 100%
     }

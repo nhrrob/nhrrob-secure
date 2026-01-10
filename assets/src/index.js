@@ -57,17 +57,17 @@ const SettingsApp = () => {
 
     if (loading) {
         return (
-            <div className="nhr-secure-loading">
+            <div className="nhrrob-secure-loading">
                 <Spinner />
             </div>
         );
     }
 
     return (
-        <div className="nhr-secure-settings">
-            <div className="nhr-secure-header">
+        <div className="nhrrob-secure-settings">
+            <div className="nhrrob-secure-header">
                 <h1>{__('NHR Secure Settings', 'nhrrob-secure')}</h1>
-                <p className="nhr-secure-subtitle">
+                <p className="nhrrob-secure-subtitle">
                     {__('Configure security features for your WordPress site', 'nhrrob-secure')}
                 </p>
             </div>
@@ -82,14 +82,14 @@ const SettingsApp = () => {
                 </Notice>
             )}
 
-            <div className="nhr-secure-cards">
+            <div className="nhrrob-secure-cards">
                 <LoginProtection settings={settings} updateSetting={updateSetting} />
                 <CustomLoginPage settings={settings} updateSetting={updateSetting} />
                 <TwoFactorAuth settings={settings} updateSetting={updateSetting} />
                 <FileProtection settings={settings} updateSetting={updateSetting} />
             </div>
 
-            <div className="nhr-secure-actions">
+            <div className="nhrrob-secure-actions">
                 <Button 
                     variant="primary" 
                     onClick={handleSave}
