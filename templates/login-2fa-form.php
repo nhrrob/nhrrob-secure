@@ -30,7 +30,13 @@ login_header( esc_html__( '2FA Verification', 'nhrrob-secure' ), '', $errors );
         <input type="text" name="nhr_2fa_code" id="nhr_2fa_code" class="input" value="" size="20" autofocus /></label>
     </p>
     <p class="description" style="margin-top: -10px; margin-bottom: 20px; font-size: 12px; color: #646970;">
-        <?php esc_html_e( 'Enter the 6-digit code from your app or a 10-character recovery code.', 'nhrrob-secure' ); ?>
+        <?php 
+        if ( isset( $type ) && 'email' === $type ) {
+            esc_html_e( 'Enter the 6-digit code sent to your email address.', 'nhrrob-secure' );
+        } else {
+            esc_html_e( 'Enter the 6-digit code from your app or a 10-character recovery code.', 'nhrrob-secure' );
+        }
+        ?>
     </p>
     <input type="hidden" name="action" value="nhrrob_secure_2fa_verify" />
     <input type="hidden" name="nhr_token" value="<?php echo esc_attr( $token ); ?>" />

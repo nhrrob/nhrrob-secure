@@ -28,20 +28,27 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <tr>
                 <th><?php esc_html_e( 'Setup Instructions', 'nhrrob-secure' ); ?></th>
                 <td>
-                    <ol class="mt-0 ml-5">
-                        <li><?php esc_html_e( 'Install an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator on your mobile device.', 'nhrrob-secure' ); ?></li>
-                        <li><?php esc_html_e( 'Scan the QR code below or manually enter the secret key into the app.', 'nhrrob-secure' ); ?></li>
-                        <li><?php esc_html_e( 'Once scanned, check the box above and click "Update Profile" to activate 2FA.', 'nhrrob-secure' ); ?></li>
-                    </ol>
-                    
-                    <div class="nhrrob-secure-2fa-qr-code">
-                        <img width="96" height="96" src="<?php echo esc_url( $qrCodeUrl ); ?>" alt="<?php esc_attr_e( '2FA QR Code', 'nhrrob-secure' ); ?>" />
-                    </div>
-                    
-                    <p>
-                        <strong><?php esc_html_e( 'Secret Key:', 'nhrrob-secure' ); ?></strong>
-                        <code class="nhrrob-secure-2fa-secret"><?php echo esc_html( $secret ); ?></code>
-                    </p>
+                    <?php if ( isset( $type ) && 'email' === $type ) : ?>
+                        <div class="nhrrob-secure-2fa-email-instructions">
+                            <p><?php printf( wp_kses_post( __( 'Two-Factor Authentication is currently set to <strong>Email OTP</strong> mode.', 'nhrrob-secure' ) ) ); ?></p>
+                            <p class="description"><?php printf( wp_kses_post( __( 'You will receive a verification code at <strong>%s</strong> when you log in.', 'nhrrob-secure' ) ), esc_html( $user->user_email ?? 'your email address' ) ); ?></p>
+                        </div>
+                    <?php else : ?>
+                        <ol class="mt-0 ml-5">
+                            <li><?php esc_html_e( 'Install an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator on your mobile device.', 'nhrrob-secure' ); ?></li>
+                            <li><?php esc_html_e( 'Scan the QR code below or manually enter the secret key into the app.', 'nhrrob-secure' ); ?></li>
+                            <li><?php esc_html_e( 'Once scanned, check the box above and click "Update Profile" to activate 2FA.', 'nhrrob-secure' ); ?></li>
+                        </ol>
+                        
+                        <div class="nhrrob-secure-2fa-qr-code">
+                            <img width="96" height="96" src="<?php echo esc_url( $qrCodeUrl ); ?>" alt="<?php esc_attr_e( '2FA QR Code', 'nhrrob-secure' ); ?>" />
+                        </div>
+                        
+                        <p>
+                            <strong><?php esc_html_e( 'Secret Key:', 'nhrrob-secure' ); ?></strong>
+                            <code class="nhrrob-secure-2fa-secret"><?php echo esc_html( $secret ); ?></code>
+                        </p>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php else : ?>

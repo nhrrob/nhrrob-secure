@@ -83,6 +83,7 @@ class TwoFactor extends App {
 
         $raw_codes = get_transient( 'nhrrob_2fa_raw_codes_' . $user->ID );
         $has_recovery_codes = (bool) get_user_meta( $user->ID, 'nhrrob_secure_2fa_recovery_codes', true );
+        $type = get_option( 'nhrrob_secure_2fa_type', 'app' );
 
         $this->render( 'profile-2fa', [
             'qrCodeUrl'          => $qrCodeUrl,
@@ -91,6 +92,7 @@ class TwoFactor extends App {
             'profile_url'        => admin_url( 'profile.php' ),
             'raw_recovery_codes' => $raw_codes,
             'has_recovery_codes' => $has_recovery_codes,
+            'type'               => $type,
         ] );
     }
 
@@ -146,6 +148,9 @@ class TwoFactor extends App {
     /**
      * Check if user needs 2FA verification
      */
+    /**
+     * Check if user needs 2FA verification
+     */
     public function check_2fa_requirement( $user, $username, $password ) {
         if ( is_wp_error( $user ) || ! $user instanceof \WP_User ) {
             return $user;
@@ -156,9 +161,22 @@ class TwoFactor extends App {
             return $user;
         }
 
+        // Get 2FA type
+        $type = get_option( 'nhrrob_secure_2fa_type', 'app' );
+
         // Create a temporary token for the session
         $token = wp_generate_password( 32, false );
         set_transient( 'nhrrob_2fa_' . $token, $user->ID, 5 * MINUTE_IN_SECONDS );
+
+        // If Email OTP, generate and send code
+        if ( 'email' === $type ) {
+            $otp = rand( 100000, 999999 );
+            set_transient( 'nhrrob_2fa_otp_' . $user->ID, $hashed_otp = wp_hash_password( $otp ), 5 * MINUTE_IN_SECONDS );
+            
+            $subject = sprintf( __( '[%s] Login Verification Code', 'nhrrob-secure' ), get_bloginfo( 'name' ) );
+            $message = sprintf( __( 'Your login verification code is: %s', 'nhrrob-secure' ), $otp );
+            wp_mail( $user->user_email, $subject, $message );
+        }
 
         // Store the redirect URL if any
         $redirect_to = isset( $_REQUEST['redirect_to'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['redirect_to'] ) ) : admin_url(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -187,11 +205,13 @@ class TwoFactor extends App {
         }
         
         $error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $type = get_option( 'nhrrob_secure_2fa_type', 'app' );
         
         $this->render( 'login-2fa-form', [
             'token'       => $token,
             'redirect_to' => $redirect_to,
             'error'       => $error,
+            'type'        => $type,
         ] );
     }
 
@@ -213,10 +233,24 @@ class TwoFactor extends App {
             wp_die( esc_html__( 'Invalid or expired 2FA token.', 'nhrrob-secure' ) );
         }
 
-        $user = get_userdata( $user_id );
-        $secret = get_user_meta( $user_id, 'nhrrob_secure_2fa_secret', true );
+        $type = get_option( 'nhrrob_secure_2fa_type', 'app' );
+        $verified = false;
 
-        if ( $this->tfa->verifyCode( $secret, $code ) ) {
+        if ( 'email' === $type ) {
+            $hashed_otp = get_transient( 'nhrrob_2fa_otp_' . $user_id );
+            if ( $hashed_otp && wp_check_password( $code, $hashed_otp ) ) {
+                $verified = true;
+                delete_transient( 'nhrrob_2fa_otp_' . $user_id );
+            }
+        } else {
+            $user = get_userdata( $user_id );
+            $secret = get_user_meta( $user_id, 'nhrrob_secure_2fa_secret', true );
+            if ( $this->tfa->verifyCode( $secret, $code ) ) {
+                $verified = true;
+            }
+        }
+
+        if ( $verified ) {
             // Success! Delete the transient and log the user in
             delete_transient( 'nhrrob_2fa_' . $token );
             wp_set_auth_cookie( $user_id, true );
