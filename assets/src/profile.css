@@ -2,23 +2,55 @@
 @tailwind utilities;
 
 @layer components {
-    .nhr-secure-2fa-section {
+    .nhrrob-secure-2fa-section {
         @apply pt-5 border-t border-gray-300;
     }
 
-    .nhr-secure-2fa-qr-code {
+    .nhrrob-secure-2fa-qr-code {
         @apply mt-5 p-4 border border-gray-300 bg-white rounded shadow-sm inline-block;
     }
 
-    .nhr-secure-2fa-secret {
+    .nhrrob-secure-2fa-secret {
         @apply px-3 py-1.5 bg-gray-100 border border-gray-300 rounded font-mono text-sm mt-1 inline-block tracking-wider;
     }
 
-    .nhr-secure-2fa-warning {
+    .nhrrob-secure-2fa-warning {
         @apply text-red-600 font-medium flex items-center gap-1 mt-4;
     }
 
-    .nhr-secure-2fa-success {
+    .nhrrob-secure-2fa-success {
         @apply text-green-600 font-medium flex items-center gap-1;
+    }
+
+    .nhrrob-secure-recovery-codes-display {
+        @apply bg-gray-50 p-4 border-l-4 border-blue-500 my-4 shadow-sm rounded-r relative;
+    }
+
+    .nhrrob-secure-recovery-codes-list {
+        @apply grid grid-cols-2 gap-x-6 list-none m-0 p-0 font-mono text-sm;
+    }
+
+    .nhrrob-secure-recovery-codes-item {
+        @apply pt-1.5 mb-0 border-b border-gray-100 last:border-0;
+    }
+
+    .nhrrob-secure-recovery-codes-actions {
+        @apply absolute top-4 right-4 flex gap-2;
+    }
+
+    .nhrrob-secure-action-button {
+        @apply p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors flex items-center gap-1 text-xs font-medium cursor-pointer shadow-sm;
+    }
+
+    .nhrrob-secure-action-button:active {
+        @apply bg-gray-100;
+    }
+
+    .nhrrob-secure-action-success {
+        @apply text-green-600 !border-green-300;
+    }
+
+    .nhrrob-secure-recovery-codes-actions .dashicons {
+        @apply w-4 h-4 text-sm;
     }
 }
