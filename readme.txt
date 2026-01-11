@@ -4,7 +4,7 @@ Tags: security, hide admin, login protection, debug log, 2fa
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,12 +38,15 @@ Blocks direct access to `/wp-content/debug.log`
 ### ⚙️ Modern Settings Page
 Configure everything from a beautiful React-powered interface.
 - Located under **Tools → NHR Secure**
+- **Dark Mode** support for comfortable viewing
 - Enable/disable each feature
 
 ### 🔐 Two-Factor Authentication (2FA)
 Enable two-factor authentication for users.
-- QR code is generated and displayed on the user profile page
-- User must enter the code from their 2FA app to login
+- Support for **Authenticator Apps** and **Email OTP**
+- **Enforce 2FA** for specific user roles (e.g., Administrators)
+- **Recovery Codes** for emergency access
+- QR code setup for Authenticator Apps
 
 ### ⚡ Lightweight & Minimal
 Designed to deliver maximum security with minimal code. No bloat, no complexity.
@@ -80,9 +83,17 @@ Yes. You can enable or disable each feature from the settings page under Tools �
 4. Modern React-powered settings page.
 5. Modern React-powered settings page - part 2.
 6. 2FA setup in user profile.
+7. Dark mode support.
 
 
 == Changelog ==
+
+= 1.0.5 - 11/01/2026 =
+- Added: Email OTP feature
+- Added: Recovery codes for 2FA
+- Added: Enforce 2FA for specific roles
+- Added: Dark mode support
+- Few minor bug fixing & improvements
 
 = 1.0.4 - 09/01/2026 =
 - Added: Modern React-powered settings page under Tools → NHR Secure
