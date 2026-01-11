@@ -4,7 +4,7 @@ Tags: security, hide admin, login protection, debug log, 2fa
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -89,6 +89,9 @@ Yes. You can enable or disable each feature from the settings page under Tools â
 
 
 == Changelog ==
+
+= 1.0.6 - 11/01/2026 =
+- Fixed: Fatal error due to missing vendor files
 
 = 1.0.5 - 11/01/2026 =
 - Added: Email OTP feature
