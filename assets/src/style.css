@@ -2,20 +2,79 @@
 @tailwind utilities;
 
 @layer components {
+    :root {
+        --nhrrob-secure-bg: #f0f2f5;
+        --nhrrob-secure-card-bg: #ffffff;
+        --nhrrob-secure-text: #1e1e1e;
+        --nhrrob-secure-text-muted: #646970;
+        --nhrrob-secure-border: #dcdcde;
+        --nhrrob-secure-primary: #2271b1;
+        --nhrrob-secure-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .nhrrob-secure-settings.dark-mode {
+        --nhrrob-secure-bg: #101113;
+        --nhrrob-secure-card-bg: #1e1e1e;
+        --nhrrob-secure-text: #f0f0f1;
+        --nhrrob-secure-text-muted: #a7aaad;
+        --nhrrob-secure-border: #2c3338;
+        --nhrrob-secure-primary: #72aee6;
+        --nhrrob-secure-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Global Body Overrides for Dark Mode */
+    body,
+    #wpcontent,
+    #wpbody,
+    #wpbody-content,
+    #wpadminbar {
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    body.nhrrob-secure-dark-mode-active #wpcontent,
+    body.nhrrob-secure-dark-mode-active #wpbody,
+    body.nhrrob-secure-dark-mode-active #wpbody-content,
+    body.nhrrob-secure-dark-mode-active {
+        background-color: #101113 !important;
+    }
+
+    body.nhrrob-secure-dark-mode-active #wpadminbar {
+        background-color: #1e1e1e;
+    }
+
     .nhrrob-secure-settings {
-        @apply max-w-screen-xl mx-0 my-5;
+        @apply mx-0 my-0 min-h-[calc(100vh-100px)];
+        background-color: var(--nhrrob-secure-bg);
+        color: var(--nhrrob-secure-text);
+        transition: all 0.3s ease;
     }
 
     .nhrrob-secure-header {
         @apply mb-8;
     }
 
+    .nhrrob-secure-header-main {
+        @apply flex items-center justify-between mb-2;
+    }
+
     .nhrrob-secure-header h1 {
-        @apply text-3xl font-semibold m-0 mb-2 text-gray-900;
+        @apply text-3xl font-semibold m-0;
+        color: var(--nhrrob-secure-text);
+    }
+
+    .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle {
+        @apply text-white hover:text-white;
+    }
+
+    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle,
+    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:focus {
+        @apply text-black hover:text-black outline-none;
+        box-shadow: none;
     }
 
     .nhrrob-secure-subtitle {
-        @apply text-sm text-gray-600 m-0;
+        @apply text-sm m-0;
+        color: var(--nhrrob-secure-text-muted);
     }
 
     .nhrrob-secure-loading {
@@ -27,52 +86,62 @@
     }
 
     .nhrrob-secure-card {
-        @apply border border-gray-300 shadow-sm transition-shadow duration-200 hover:shadow-md;
+        @apply border shadow-sm transition-all duration-200 hover:shadow-md;
+        background-color: var(--nhrrob-secure-card-bg);
+        border-color: var(--nhrrob-secure-border);
+        border-radius: 8px;
+    }
+
+    .nhrrob-secure-card .components-text-control__input {
+        @apply max-w-[28rem];
     }
 
     .nhrrob-secure-card-title {
-        @apply text-lg font-semibold m-0 mb-5 text-gray-900 pb-3 border-b border-gray-200;
+        @apply text-lg font-semibold m-0 pb-3 border-b;
+        color: var(--nhrrob-secure-text);
+        border-color: var(--nhrrob-secure-border);
     }
 
-    .nhrrob-secure-card .components-base-control {
-        @apply mb-6 last:mb-0;
+    .nhrrob-secure-card-header-flex {
+        @apply flex items-center justify-between gap-4;
     }
 
-    .nhrrob-secure-enforced-roles .components-base-control {
-        @apply mb-0;
+    .nhrrob-secure-card-header-actions {
+        @apply flex items-center gap-3;
     }
 
-    .nhrrob-secure-info {
-        @apply bg-blue-50 border border-blue-600 rounded px-4 py-3 mt-4;
+    .nhrrob-secure-last-checked {
+        @apply text-xs font-normal opacity-70;
+        color: var(--nhrrob-secure-text-muted);
     }
 
-    .nhrrob-secure-info strong {
-        @apply block mb-1.5 text-blue-600 text-xs;
+    /* Core component overrides for Dark Mode */
+    .dark-mode .components-toggle-control__label,
+    .dark-mode .components-base-control__label,
+    .dark-mode .components-checkbox-control__label,
+    .dark-mode .components-placeholder__label,
+    .dark-mode .components-placeholder__instructions {
+        color: var(--nhrrob-secure-text) !important;
     }
 
-    .nhrrob-secure-info code {
-        @apply inline-block bg-white border border-gray-300 px-3 py-1.5 rounded font-mono text-xs text-gray-900;
+    .dark-mode .components-placeholder {
+        background-color: var(--nhrrob-secure-vuln-bg) !important;
+        border-color: var(--nhrrob-secure-vuln-border) !important;
+        box-shadow: none !important;
     }
 
-    .nhrrob-secure-actions {
-        @apply flex gap-3 pt-2;
+    .dark-mode .components-text-control__input {
+        background-color: #2c3338 !important;
+        border-color: #43494e !important;
+        color: #f0f0f1 !important;
     }
 
-    .nhrrob-secure-actions .components-button {
-        @apply min-w-[140px];
-    }
-
-    /* Core component overrides */
     .nhrrob-secure-card .components-toggle-control {
         @apply items-start;
     }
 
     .nhrrob-secure-card .components-toggle-control .components-base-control__field {
         @apply mb-0;
-    }
-
-    .nhrrob-secure-card .components-text-control__input {
-        @apply max-w-md;
     }
 
     /* Notice styling */
@@ -89,5 +158,9 @@
 
     .nhrrob-secure-card .components-text-control__input {
         @apply max-w-full;
+    }
+
+    .nhrrob-secure-vuln-footer {
+        @apply flex-col items-start gap-2;
     }
 }

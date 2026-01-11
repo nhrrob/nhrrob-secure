@@ -77,8 +77,13 @@ class Api {
                         return is_array( $roles ) ? array_map( 'sanitize_text_field', $roles ) : [];
                     },
                 ],
+                'nhrrob_secure_dark_mode' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
             ],
         ]);
+
     }
 
     /**
@@ -94,6 +99,7 @@ class Api {
             'nhrrob_secure_enable_proxy_ip' => (bool) get_option( 'nhrrob_secure_enable_proxy_ip', false ),
             'nhrrob_secure_enable_2fa' => (bool) get_option( 'nhrrob_secure_enable_2fa', 0 ),
             'nhrrob_secure_2fa_enforced_roles' => (array) get_option( 'nhrrob_secure_2fa_enforced_roles', [] ),
+            'nhrrob_secure_dark_mode' => (bool) get_option( 'nhrrob_secure_dark_mode', false ),
             'available_roles' => $this->get_available_roles(),
         ];
     }
