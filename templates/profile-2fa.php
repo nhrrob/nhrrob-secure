@@ -31,7 +31,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                     <?php if ( isset( $type ) && 'email' === $type ) : ?>
                         <div class="nhrrob-secure-2fa-email-instructions">
                             <p><?php printf( wp_kses_post( __( 'Two-Factor Authentication is currently set to <strong>Email OTP</strong> mode.', 'nhrrob-secure' ) ) ); ?></p>
-                            <p class="description"><?php printf( wp_kses_post( __( 'You will receive a verification code at <strong>%s</strong> when you log in.', 'nhrrob-secure' ) ), esc_html( $user->user_email ?? 'your email address' ) ); ?></p>
+                            <p class="description"><?php 
+                                /* translators: %s: User email address */
+                                printf( wp_kses_post( __( 'You will receive a verification code at <strong>%s</strong> when you log in.', 'nhrrob-secure' ) ), esc_html( $user->user_email ?? 'your email address' ) ); 
+                            ?></p>
                         </div>
                     <?php else : ?>
                         <ol class="mt-0 ml-5">
@@ -85,8 +88,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                                     <?php esc_html_e( 'IMPORTANT: Copy these codes now. They will not be shown again!', 'nhrrob-secure' ); ?>
                                 </p>
                                 <ul class="nhrrob-secure-recovery-codes-list">
-                                    <?php foreach ( $raw_recovery_codes as $code ) : ?>
-                                        <li class="nhrrob-secure-recovery-codes-item"><?php echo esc_html( $code ); ?></li>
+                                    <?php foreach ( $raw_recovery_codes as $nhrrob_secure_recovery_code ) : ?>
+                                        <li class="nhrrob-secure-recovery-codes-item"><?php echo esc_html( $nhrrob_secure_recovery_code ); ?></li>
                                     <?php endforeach; ?>
                                 </ul>
                             </div>

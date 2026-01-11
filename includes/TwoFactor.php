@@ -170,10 +170,12 @@ class TwoFactor extends App {
 
         // If Email OTP, generate and send code
         if ( 'email' === $type ) {
-            $otp = rand( 100000, 999999 );
+            $otp = wp_rand( 100000, 999999 );
             set_transient( 'nhrrob_2fa_otp_' . $user->ID, $hashed_otp = wp_hash_password( $otp ), 5 * MINUTE_IN_SECONDS );
             
+            /* translators: %s: Site name */
             $subject = sprintf( __( '[%s] Login Verification Code', 'nhrrob-secure' ), get_bloginfo( 'name' ) );
+            /* translators: %s: Verification code */
             $message = sprintf( __( 'Your login verification code is: %s', 'nhrrob-secure' ), $otp );
             wp_mail( $user->user_email, $subject, $message );
         }
