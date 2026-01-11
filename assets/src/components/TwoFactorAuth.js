@@ -35,7 +35,7 @@ const TwoFactorAuth = ({ settings, updateSetting }) => {
 
                 {settings.nhrrob_secure_enable_2fa && (
                     <>
-                        <div className="nhrrob-secure-2fa-method mt-4 pt-4 border-t border-gray-100">
+                        <div className="nhrrob-secure-2fa-method pt-4 border-t border-gray-100">
                             <h3 className="text-sm font-semibold mb-3">
                                 {__('2FA Method', 'nhrrob-secure')}
                             </h3>
@@ -49,7 +49,7 @@ const TwoFactorAuth = ({ settings, updateSetting }) => {
                             />
                         </div>
 
-                        <div className="nhrrob-secure-enforced-roles mt-4 pt-4 border-t border-gray-100">
+                        <div className="nhrrob-secure-enforced-roles pt-4 border-t border-gray-100">
                             <h3 className="text-sm font-semibold mb-3">
                                 {__('Enforced 2FA by Role', 'nhrrob-secure')}
                             </h3>

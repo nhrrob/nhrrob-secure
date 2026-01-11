@@ -159,6 +159,7 @@
     .dark-mode .components-toggle-control__label,
     .dark-mode .components-base-control__label,
     .dark-mode .components-checkbox-control__label,
+    .dark-mode .components-radio-control__label,
     .dark-mode .components-placeholder__label,
     .dark-mode .components-placeholder__instructions {
         color: var(--nhrrob-secure-text) !important;

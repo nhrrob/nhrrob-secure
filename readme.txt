@@ -83,7 +83,9 @@ Yes. You can enable or disable each feature from the settings page under Tools â
 4. Modern React-powered settings page.
 5. Modern React-powered settings page - part 2.
 6. 2FA setup in user profile.
-7. Dark mode support.
+7. 2FA setup in user profile - Email OTP.
+8. 2FA setup in user profile - Recovery codes.
+9. Dark mode support.
 
 
 == Changelog ==
