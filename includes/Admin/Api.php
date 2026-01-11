@@ -68,8 +68,27 @@ class Api {
                     'type' => 'boolean',
                     'sanitize_callback' => 'rest_sanitize_boolean',
                 ],
+                'nhrrob_secure_2fa_enforced_roles' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string',
+                    ],
+                    'sanitize_callback' => function( $roles ) {
+                        return is_array( $roles ) ? array_map( 'sanitize_text_field', $roles ) : [];
+                    },
+                ],
+                'nhrrob_secure_2fa_type' => [
+                    'type' => 'string',
+                    'enum' => [ 'app', 'email' ],
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'nhrrob_secure_dark_mode' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
             ],
         ]);
+
     }
 
     /**
@@ -84,7 +103,32 @@ class Api {
             'nhrrob_secure_protect_debug_log' => (bool) get_option( 'nhrrob_secure_protect_debug_log', 1 ),
             'nhrrob_secure_enable_proxy_ip' => (bool) get_option( 'nhrrob_secure_enable_proxy_ip', false ),
             'nhrrob_secure_enable_2fa' => (bool) get_option( 'nhrrob_secure_enable_2fa', 0 ),
+            'nhrrob_secure_2fa_enforced_roles' => (array) get_option( 'nhrrob_secure_2fa_enforced_roles', [] ),
+            'nhrrob_secure_2fa_type' => get_option( 'nhrrob_secure_2fa_type', 'app' ),
+            'nhrrob_secure_dark_mode' => (bool) get_option( 'nhrrob_secure_dark_mode', false ),
+            'available_roles' => $this->get_available_roles(),
         ];
+    }
+
+    /**
+     * Get available user roles
+     */
+    private function get_available_roles() {
+        if ( ! function_exists( 'get_editable_roles' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/user.php';
+        }
+        
+        $roles = get_editable_roles();
+        $output = [];
+        
+        foreach ( $roles as $role_key => $role_data ) {
+            $output[] = [
+                'value' => $role_key,
+                'label' => translate_user_role( $role_data['name'] ),
+            ];
+        }
+        
+        return $output;
     }
 
     /**

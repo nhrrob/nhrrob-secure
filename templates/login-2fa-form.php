@@ -13,16 +13,30 @@ if ( ! function_exists( 'login_header' ) ) {
     require_once ABSPATH . 'wp-includes/general-template.php';
 }
 
-login_header( esc_html__( '2FA Verification', 'nhrrob-secure' ) );
+global $errors;
+if ( ! is_wp_error( $errors ) ) {
+    $errors = new \WP_Error();
+}
 
 if ( 'invalid_code' === $error ) {
-    echo '<div id="login_error">' . esc_html__( 'Invalid authentication code. Please try again.', 'nhrrob-secure' ) . '</div>';
+    $errors->add( 'invalid_code', esc_html__( 'Invalid authentication code. Please try again.', 'nhrrob-secure' ) );
 }
+
+login_header( esc_html__( '2FA Verification', 'nhrrob-secure' ), '', $errors );
 ?>
 <form name="nhrrob_2fa_form" id="nhrrob_2fa_form" action="<?php echo esc_url( wp_login_url() ); ?>" method="post">
     <p>
         <label for="nhr_2fa_code"><?php esc_html_e( 'Authentication Code', 'nhrrob-secure' ); ?><br />
         <input type="text" name="nhr_2fa_code" id="nhr_2fa_code" class="input" value="" size="20" autofocus /></label>
+    </p>
+    <p class="description" style="margin-top: -10px; margin-bottom: 20px; font-size: 12px; color: #646970;">
+        <?php 
+        if ( isset( $type ) && 'email' === $type ) {
+            esc_html_e( 'Enter the 6-digit code sent to your email address.', 'nhrrob-secure' );
+        } else {
+            esc_html_e( 'Enter the 6-digit code from your app or a 10-character recovery code.', 'nhrrob-secure' );
+        }
+        ?>
     </p>
     <input type="hidden" name="action" value="nhrrob_secure_2fa_verify" />
     <input type="hidden" name="nhr_token" value="<?php echo esc_attr( $token ); ?>" />

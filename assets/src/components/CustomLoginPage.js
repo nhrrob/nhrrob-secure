@@ -3,9 +3,9 @@ import { __ } from '@wordpress/i18n';
 
 const CustomLoginPage = ({ settings, updateSetting }) => {
     return (
-        <Card className="nhr-secure-card">
+        <Card className="nhrrob-secure-card">
             <CardBody>
-                <h2 className="nhr-secure-card-title">
+                <h2 className="nhrrob-secure-card-title">
                     {__('Custom Login Page', 'nhrrob-secure')}
                 </h2>
                 
@@ -27,7 +27,7 @@ const CustomLoginPage = ({ settings, updateSetting }) => {
                 )}
 
                 {settings.nhrrob_secure_custom_login_page && (
-                    <div className="nhr-secure-info">
+                    <div className="nhrrob-secure-info">
                         <strong>{__('Your login URL:', 'nhrrob-secure')}</strong>
                         <code>{window.location.origin}{settings.nhrrob_secure_custom_login_url}</code>
                     </div>

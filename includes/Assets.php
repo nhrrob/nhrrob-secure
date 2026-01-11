@@ -26,21 +26,31 @@ class Assets {
      * @return array
      */
     public function get_scripts() {
-        $asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/admin.asset.php';
-        
-        if ( ! file_exists( $asset_file ) ) {
-            return [];
-        }
+        $scripts = [];
 
-        $asset = require $asset_file;
-
-        return [
-            'nhrrob-secure-admin-script' => [
+        // Admin settings script
+        $admin_asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/admin.asset.php';
+        if ( file_exists( $admin_asset_file ) ) {
+            $asset = require $admin_asset_file;
+            $scripts['nhrrob-secure-admin-script'] = [
                 'src'     => plugins_url( 'build/admin.js', NHRROB_SECURE_FILE ),
                 'version' => $asset['version'],
                 'deps'    => $asset['dependencies']
-            ],
-        ];
+            ];
+        }
+
+        // Profile script
+        $profile_asset_file = NHRROB_SECURE_PLUGIN_DIR . 'build/profile.asset.php';
+        if ( file_exists( $profile_asset_file ) ) {
+            $asset = require $profile_asset_file;
+            $scripts['nhrrob-secure-profile-script'] = [
+                'src'     => plugins_url( 'build/profile.js', NHRROB_SECURE_FILE ),
+                'version' => $asset['version'],
+                'deps'    => $asset['dependencies']
+            ];
+        }
+
+        return $scripts;
     }
 
     /**
@@ -112,6 +122,7 @@ class Assets {
         // Enqueue profile assets
         if ( $is_profile_page ) {
             wp_enqueue_style( 'nhrrob-secure-profile-style' );
+            wp_enqueue_script( 'nhrrob-secure-profile-script' );
         }
     }
 }
