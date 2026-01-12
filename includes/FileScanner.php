@@ -185,7 +185,18 @@ class FileScanner
              return new \WP_Error('invalid_path', 'Invalid file path.');
         }
         
-        return file_put_contents($full_path, $content) !== false;
+        global $wp_filesystem;
+        
+        if (empty($wp_filesystem)) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+        }
+        
+        if (!$wp_filesystem->put_contents($full_path, $content)) {
+            return new \WP_Error('fs_error', 'Could not write file using WP_Filesystem.');
+        }
+        
+        return true;
     }
     
     /**
@@ -196,10 +207,17 @@ class FileScanner
      */
     public function delete_file($file_path)
     {
-        if (file_exists($file_path) && is_writable($file_path)) {
-            unlink($file_path);
-            return true;
+        global $wp_filesystem;
+        
+        if (empty($wp_filesystem)) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
         }
+        
+        if ($wp_filesystem->exists($file_path)) {
+            return $wp_filesystem->delete($file_path);
+        }
+        
         return false;
     }
 }
