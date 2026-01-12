@@ -155,13 +155,22 @@
         border-color: var(--nhrrob-secure-border);
 }
 
+    .nhrrob-secure-card-header-flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+}
+
     /* Core component overrides for Dark Mode */
     .dark-mode .components-toggle-control__label,
     .dark-mode .components-base-control__label,
     .dark-mode .components-checkbox-control__label,
     .dark-mode .components-radio-control__label,
     .dark-mode .components-placeholder__label,
-    .dark-mode .components-placeholder__instructions {
+    .dark-mode .components-placeholder__instructions,
+    .dark-mode .nhrrob-secure-2fa-method h3,
+    .dark-mode .nhrrob-secure-enforced-roles h3 {
         color: var(--nhrrob-secure-text) !important;
     }
 
@@ -189,6 +198,335 @@
     .nhrrob-secure-settings .components-notice {
         margin: 0px;
         margin-bottom: 1.25rem;
+}
+
+    .nhrrob-secure-settings.dark-mode .components-notice__content {
+        color: #1e1e1e;
+    }
+
+    /* Vulnerability Checker Styles */
+    .nhrrob-secure-vulnerability-card .nhrrob-secure-card-header-flex {
+        margin-bottom: 1rem;
+        border-bottom-width: 1px;
+        padding-bottom: 0.75rem;
+        border-color: var(--nhrrob-secure-border);
+}
+
+    .nhrrob-secure-vulnerability-card .nhrrob-secure-card-title {
+        flex-shrink: 0;
+        border-bottom-width: 0px;
+        padding-bottom: 0px;
+}
+
+    .nhrrob-secure-last-scan {
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: var(--nhrrob-secure-text-muted);
+}
+
+    .nhrrob-secure-status-success {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 0.5rem;
+        --tw-bg-opacity: 1;
+        background-color: rgb(240 253 244 / var(--tw-bg-opacity, 1));
+        padding: 1rem;
+        font-weight: 500;
+        --tw-text-opacity: 1;
+        color: rgb(22 101 52 / var(--tw-text-opacity, 1));
+}
+
+    .dark-mode .nhrrob-secure-status-success {
+        background-color: rgb(20 83 45 / 0.2);
+        --tw-text-opacity: 1;
+        color: rgb(74 222 128 / var(--tw-text-opacity, 1));
+}
+
+    .nhrrob-secure-status-success .dashicons {
+        --tw-text-opacity: 1;
+        color: rgb(22 163 74 / var(--tw-text-opacity, 1));
+}
+
+    .dark-mode .nhrrob-secure-status-success .dashicons {
+        --tw-text-opacity: 1;
+        color: rgb(74 222 128 / var(--tw-text-opacity, 1));
+}
+
+    .vulnerability-section {
+        margin-top: 1.5rem;
+}
+
+    .vulnerability-section h3 {
+        margin-bottom: 0.75rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--nhrrob-secure-text-muted);
+}
+
+    .vulnerability-item {
+        margin-bottom: 1rem;
+        border-radius: 0.5rem;
+        border-width: 1px;
+        padding: 1rem;
+        border-color: var(--nhrrob-secure-border);
+        background-color: var(--nhrrob-secure-bg);
+}
+
+    .vulnerability-item strong {
+        margin-bottom: 0.5rem;
+        display: block;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: var(--nhrrob-secure-text);
+}
+
+    .vulnerability-item ul {
+        margin: 0px;
+        list-style-position: inside;
+        list-style-type: disc;
+}
+
+    .vulnerability-item ul > :not([hidden]) ~ :not([hidden]) {
+        --tw-space-y-reverse: 0;
+        margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+        margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
+}
+
+    .vulnerability-item li {
+        font-size: 0.75rem;
+        line-height: 1rem;
+        line-height: 1.625;
+        color: var(--nhrrob-secure-text-muted);
+}
+
+
+    /* File Scanner Styles */
+    .nhrrob-secure-vulnerability-card.padded-header .nhrrob-secure-card-header-flex {
+        padding: 1.25rem;
+}
+
+    .nhrrob-scan-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+}
+
+    .nhrrob-scan-type-toggle {
+        display: inline-flex;
+        border-radius: 0.375rem;
+        border-width: 1px;
+        --tw-border-opacity: 1;
+        border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
+        --tw-bg-opacity: 1;
+        background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+        padding: 0.25rem;
+}
+
+    .nhrrob-scan-toggle-btn {
+        cursor: pointer;
+        border-radius: 0.25rem;
+        border-width: 0px;
+        background-color: transparent;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        font-weight: 500;
+        --tw-text-opacity: 1;
+        color: rgb(75 85 99 / var(--tw-text-opacity, 1));
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+}
+
+    .nhrrob-scan-toggle-btn:hover {
+        --tw-bg-opacity: 1;
+        background-color: rgb(229 231 235 / var(--tw-bg-opacity, 1));
+        --tw-text-opacity: 1;
+        color: rgb(17 24 39 / var(--tw-text-opacity, 1));
+}
+
+    .nhrrob-scan-toggle-btn.active {
+        --tw-bg-opacity: 1;
+        background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+        font-weight: 600;
+        --tw-text-opacity: 1;
+        color: rgb(37 99 235 / var(--tw-text-opacity, 1));
+        --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+        box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+    .dark-mode .nhrrob-scan-type-toggle {
+        --tw-border-opacity: 1;
+        border-color: rgb(55 65 81 / var(--tw-border-opacity, 1));
+        --tw-bg-opacity: 1;
+        background-color: rgb(31 41 55 / var(--tw-bg-opacity, 1));
+}
+
+    .dark-mode .nhrrob-scan-toggle-btn {
+        --tw-text-opacity: 1;
+        color: rgb(156 163 175 / var(--tw-text-opacity, 1));
+}
+
+    .dark-mode .nhrrob-scan-toggle-btn:hover {
+        --tw-bg-opacity: 1;
+        background-color: rgb(55 65 81 / var(--tw-bg-opacity, 1));
+        --tw-text-opacity: 1;
+        color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+
+    .dark-mode .nhrrob-scan-toggle-btn.active {
+        --tw-bg-opacity: 1;
+        background-color: rgb(55 65 81 / var(--tw-bg-opacity, 1));
+        --tw-text-opacity: 1;
+        color: rgb(96 165 250 / var(--tw-text-opacity, 1));
+        --tw-shadow: 0 0 #0000;
+        --tw-shadow-colored: 0 0 #0000;
+        box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+    .nhrrob-secure-card-subtitle {
+        margin: 0px;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        --tw-text-opacity: 1;
+        color: rgb(107 114 128 / var(--tw-text-opacity, 1));
+        color: var(--nhrrob-secure-text-muted);
+}
+
+    .nhrrob-card-body {
+        padding: 1.25rem;
+}
+
+    .nhrrob-result-group {
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        border-width: 1px;
+        --tw-bg-opacity: 1;
+        background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+        --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+        box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+        border-color: var(--nhrrob-secure-border);
+}
+
+    .dark-mode .nhrrob-result-group {
+        background-color: transparent;
+}
+
+    .nhrrob-result-group-title {
+        margin: 0px;
+        border-bottom-width: 1px;
+        --tw-bg-opacity: 1;
+        background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        --tw-text-opacity: 1;
+        color: rgb(75 85 99 / var(--tw-text-opacity, 1));
+        border-color: var(--nhrrob-secure-border);
+}
+
+    .dark-mode .nhrrob-result-group-title {
+        --tw-bg-opacity: 1;
+        background-color: rgb(31 41 55 / var(--tw-bg-opacity, 1));
+        --tw-text-opacity: 1;
+        color: rgb(156 163 175 / var(--tw-text-opacity, 1));
+}
+
+    .nhrrob-result-list > :not([hidden]) ~ :not([hidden]) {
+        --tw-divide-y-reverse: 0;
+        border-top-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
+        border-bottom-width: calc(1px * var(--tw-divide-y-reverse));
+}
+
+    .nhrrob-result-list>* {
+        border-color: var(--nhrrob-secure-border);
+    }
+
+    .nhrrob-result-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+}
+
+    .nhrrob-result-row:hover {
+        --tw-bg-opacity: 1;
+        background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+}
+
+    .dark-mode .nhrrob-result-row:hover {
+        --tw-bg-opacity: 1;
+        background-color: rgb(31 41 55 / var(--tw-bg-opacity, 1));
+}
+
+    .nhrrob-file-info {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+}
+
+    .nhrrob-file-info strong {
+        margin-bottom: 0.25rem;
+        word-break: break-all;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        --tw-text-opacity: 1;
+        color: rgb(31 41 55 / var(--tw-text-opacity, 1));
+}
+
+    .dark-mode .nhrrob-file-info strong {
+        --tw-text-opacity: 1;
+        color: rgb(229 231 235 / var(--tw-text-opacity, 1));
+}
+
+    .nhrrob-file-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        --tw-text-opacity: 1;
+        color: rgb(107 114 128 / var(--tw-text-opacity, 1));
+}
+
+    .notice.inline-notice {
+        margin: 0px;
+        margin-bottom: 1rem;
+}
+
+    .nhrrob-warning-notice {
+        margin-bottom: 1.25rem;
+}
+
+    .nhrrob-scan-count {
+        margin-top: 1rem;
+        border-top-width: 1px;
+        --tw-border-opacity: 1;
+        border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
+        padding-top: 0.625rem;
+        border-color: var(--nhrrob-secure-border);
 }
 .mb-2 {
         margin-bottom: 0.5rem;
