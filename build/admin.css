@@ -200,6 +200,10 @@
         margin-bottom: 1.25rem;
 }
 
+    .nhrrob-secure-settings.dark-mode .components-notice__content {
+        color: #1e1e1e;
+    }
+
     /* Vulnerability Checker Styles */
     .nhrrob-secure-vulnerability-card .nhrrob-secure-card-header-flex {
         margin-bottom: 1rem;
