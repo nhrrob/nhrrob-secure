@@ -99,6 +99,9 @@ final class NHRRob_Secure
         // Initialize vulnerability checker
         new \NHRRob\Secure\Vulnerability();
 
+        // Initialize file scanner
+        new \NHRRob\Secure\FileScanner();
+
         // Initialize admin menu
         if (is_admin()) {
             new \NHRRob\Secure\Admin();

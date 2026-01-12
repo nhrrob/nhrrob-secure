@@ -110,6 +110,56 @@ class Api
             },
         ]);
 
+        // File Scanner - Core Integrity Check
+        register_rest_route('nhrrob-secure/v1', '/scanner/core', [
+            'methods' => 'POST',
+            'callback' => [$this, 'scan_core_files'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
+
+        // File Scanner - Malware Scan
+        register_rest_route('nhrrob-secure/v1', '/scanner/malware', [
+            'methods' => 'POST',
+            'callback' => [$this, 'scan_malware'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
+
+        // File Scanner - Repair File
+        register_rest_route('nhrrob-secure/v1', '/scanner/repair', [
+            'methods' => 'POST',
+            'callback' => [$this, 'repair_file'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+            'args' => [
+                'file' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+            ],
+        ]);
+
+        // File Scanner - Delete File
+        register_rest_route('nhrrob-secure/v1', '/scanner/delete', [
+            'methods' => 'POST',
+            'callback' => [$this, 'delete_suspicious_file'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+            'args' => [
+                'file' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+            ],
+        ]);
+
     }
 
     /**
@@ -175,6 +225,9 @@ class Api
     /**
      * Update settings
      */
+    /**
+     * Update settings
+     */
     public function update_settings($request)
     {
         $params = $request->get_params();
@@ -186,5 +239,59 @@ class Api
         }
 
         return $this->get_settings();
+    }
+
+    /**
+     * Scan Core Files
+     */
+    public function scan_core_files()
+    {
+        $scanner = new \NHRRob\Secure\FileScanner();
+        return $scanner->scan_core();
+    }
+
+    /**
+     * Scan Malware
+     */
+    public function scan_malware()
+    {
+        $scanner = new \NHRRob\Secure\FileScanner();
+        return $scanner->scan_directory(WP_CONTENT_DIR);
+    }
+
+    /**
+     * Repair File
+     */
+    public function repair_file($request)
+    {
+        $file = $request->get_param('file');
+        $scanner = new \NHRRob\Secure\FileScanner();
+        $result = $scanner->repair_core_file($file);
+        
+        if (is_wp_error($result)) {
+            return $result;
+        }
+        
+        return ['success' => true, 'message' => 'File repaired successfully.'];
+    }
+
+    /**
+     * Delete Suspicious File
+     */
+    public function delete_suspicious_file($request)
+    {
+        $file = $request->get_param('file');
+        $scanner = new \NHRRob\Secure\FileScanner();
+        
+        // Security check: ensure file is inside WP_CONTENT_DIR
+        if (strpos($file, WP_CONTENT_DIR) !== 0) {
+            return new \WP_Error('invalid_path', 'Cannot delete files outside of wp-content.');
+        }
+
+        if ($scanner->delete_file($file)) {
+             return ['success' => true, 'message' => 'File deleted successfully.'];
+        }
+        
+        return new \WP_Error('delete_failed', 'Could not delete file.');
     }
 }
