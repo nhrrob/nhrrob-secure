@@ -155,6 +155,13 @@
         border-color: var(--nhrrob-secure-border);
 }
 
+    .nhrrob-secure-card-header-flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+}
+
     /* Core component overrides for Dark Mode */
     .dark-mode .components-toggle-control__label,
     .dark-mode .components-base-control__label,
@@ -191,6 +198,106 @@
     .nhrrob-secure-settings .components-notice {
         margin: 0px;
         margin-bottom: 1.25rem;
+}
+
+    /* Vulnerability Checker Styles */
+    .nhrrob-secure-vulnerability-card .nhrrob-secure-card-header-flex {
+        margin-bottom: 1rem;
+        border-bottom-width: 1px;
+        padding-bottom: 0.75rem;
+        border-color: var(--nhrrob-secure-border);
+}
+
+    .nhrrob-secure-vulnerability-card .nhrrob-secure-card-title {
+        flex-shrink: 0;
+        border-bottom-width: 0px;
+        padding-bottom: 0px;
+}
+
+    .nhrrob-secure-last-scan {
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: var(--nhrrob-secure-text-muted);
+}
+
+    .nhrrob-secure-status-success {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 0.5rem;
+        --tw-bg-opacity: 1;
+        background-color: rgb(240 253 244 / var(--tw-bg-opacity, 1));
+        padding: 1rem;
+        font-weight: 500;
+        --tw-text-opacity: 1;
+        color: rgb(22 101 52 / var(--tw-text-opacity, 1));
+}
+
+    .dark-mode .nhrrob-secure-status-success {
+        background-color: rgb(20 83 45 / 0.2);
+        --tw-text-opacity: 1;
+        color: rgb(74 222 128 / var(--tw-text-opacity, 1));
+}
+
+    .nhrrob-secure-status-success .dashicons {
+        --tw-text-opacity: 1;
+        color: rgb(22 163 74 / var(--tw-text-opacity, 1));
+}
+
+    .dark-mode .nhrrob-secure-status-success .dashicons {
+        --tw-text-opacity: 1;
+        color: rgb(74 222 128 / var(--tw-text-opacity, 1));
+}
+
+    .vulnerability-section {
+        margin-top: 1.5rem;
+}
+
+    .vulnerability-section h3 {
+        margin-bottom: 0.75rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--nhrrob-secure-text-muted);
+}
+
+    .vulnerability-item {
+        margin-bottom: 1rem;
+        border-radius: 0.5rem;
+        border-width: 1px;
+        padding: 1rem;
+        border-color: var(--nhrrob-secure-border);
+        background-color: var(--nhrrob-secure-bg);
+}
+
+    .vulnerability-item strong {
+        margin-bottom: 0.5rem;
+        display: block;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: var(--nhrrob-secure-text);
+}
+
+    .vulnerability-item ul {
+        margin: 0px;
+        list-style-position: inside;
+        list-style-type: disc;
+}
+
+    .vulnerability-item ul > :not([hidden]) ~ :not([hidden]) {
+        --tw-space-y-reverse: 0;
+        margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+        margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
+}
+
+    .vulnerability-item li {
+        font-size: 0.75rem;
+        line-height: 1rem;
+        line-height: 1.625;
+        color: var(--nhrrob-secure-text-muted);
 }
 .mb-2 {
         margin-bottom: 0.5rem;

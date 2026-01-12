@@ -13,7 +13,8 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  */
 
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+if (!defined('ABSPATH'))
+    exit; // Exit if accessed directly
 
 // Load Composer autoloader
 require_once __DIR__ . '/vendor/autoload.php';
@@ -21,7 +22,8 @@ require_once __DIR__ . '/vendor/autoload.php';
 /**
  * The main plugin class
  */
-final class NHRRob_Secure {
+final class NHRRob_Secure
+{
 
     /**
      * Plugin version
@@ -33,10 +35,14 @@ final class NHRRob_Secure {
     /**
      * Class constructor
      */
-    private function __construct() {
+    private function __construct()
+    {
         $this->define_constants();
 
-        add_action( 'plugins_loaded', [ $this, 'init_plugin' ] );
+        add_action('plugins_loaded', [$this, 'init_plugin']);
+
+        register_activation_hook(NHRROB_SECURE_FILE, [$this, 'activate']);
+        register_deactivation_hook(NHRROB_SECURE_FILE, [$this, 'deactivate']);
     }
 
     /**
@@ -44,10 +50,11 @@ final class NHRRob_Secure {
      *
      * @return \NHRRob_Secure
      */
-    public static function init() {
+    public static function init()
+    {
         static $instance = false;
 
-        if ( ! $instance ) {
+        if (!$instance) {
             $instance = new self();
         }
 
@@ -59,13 +66,14 @@ final class NHRRob_Secure {
      *
      * @return void
      */
-    public function define_constants() {
-        define( 'NHRROB_SECURE_VERSION', self::version );
-        define( 'NHRROB_SECURE_FILE', __FILE__ );
-        define( 'NHRROB_SECURE_PATH', __DIR__ );
-        define( 'NHRROB_SECURE_PLUGIN_DIR', plugin_dir_path( NHRROB_SECURE_FILE ) );
-        define( 'NHRROB_SECURE_URL', plugins_url( '', NHRROB_SECURE_FILE ) );
-        define( 'NHRROB_SECURE_ASSETS', NHRROB_SECURE_URL . '/assets' );
+    public function define_constants()
+    {
+        define('NHRROB_SECURE_VERSION', self::version);
+        define('NHRROB_SECURE_FILE', __FILE__);
+        define('NHRROB_SECURE_PATH', __DIR__);
+        define('NHRROB_SECURE_PLUGIN_DIR', plugin_dir_path(NHRROB_SECURE_FILE));
+        define('NHRROB_SECURE_URL', plugins_url('', NHRROB_SECURE_FILE));
+        define('NHRROB_SECURE_ASSETS', NHRROB_SECURE_URL . '/assets');
     }
 
     /**
@@ -73,8 +81,9 @@ final class NHRRob_Secure {
      *
      * @return void
      */
-    public function init_plugin() {
-        
+    public function init_plugin()
+    {
+
         // Initialize security features
         new \NHRRob\Secure\Security();
 
@@ -87,10 +96,35 @@ final class NHRRob_Secure {
         // Initialize REST API
         new \NHRRob\Secure\Admin\Api();
 
+        // Initialize vulnerability checker
+        new \NHRRob\Secure\Vulnerability();
+
         // Initialize admin menu
-        if ( is_admin() ) {
+        if (is_admin()) {
             new \NHRRob\Secure\Admin();
         }
+    }
+
+    /**
+     * Activate the plugin
+     *
+     * @return void
+     */
+    public function activate()
+    {
+        if (!wp_next_scheduled('nhrrob_secure_vulnerability_scan_cron')) {
+            wp_schedule_event(time(), 'daily', 'nhrrob_secure_vulnerability_scan_cron');
+        }
+    }
+
+    /**
+     * Deactivate the plugin
+     *
+     * @return void
+     */
+    public function deactivate()
+    {
+        wp_clear_scheduled_hook('nhrrob_secure_vulnerability_scan_cron');
     }
 }
 
@@ -100,7 +134,8 @@ final class NHRRob_Secure {
  *
  * @return \NHRRob_Secure
  */
-function nhrrob_secure() {
+function nhrrob_secure()
+{
     return NHRRob_Secure::init();
 }
 
