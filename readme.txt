@@ -103,7 +103,7 @@ Yes. You can enable or disable each feature from the settings page under Tools â
 
 == Changelog ==
 
-= 1.1.0 - 12/01/2026 =
+= 1.1.0 - 13/01/2026 =
 - Added: Vulnerability Checker
 - Added: File Scanner to check file integrity
 - Improved: UI for scan results
