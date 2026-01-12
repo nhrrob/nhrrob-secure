@@ -161,7 +161,9 @@
     .dark-mode .components-checkbox-control__label,
     .dark-mode .components-radio-control__label,
     .dark-mode .components-placeholder__label,
-    .dark-mode .components-placeholder__instructions {
+    .dark-mode .components-placeholder__instructions,
+    .dark-mode .nhrrob-secure-2fa-method h3,
+    .dark-mode .nhrrob-secure-enforced-roles h3 {
         color: var(--nhrrob-secure-text) !important;
     }
 

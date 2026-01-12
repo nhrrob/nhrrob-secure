@@ -27,11 +27,9 @@ class Menu {
      * @return array
      */
     public function plugin_action_links( $links ) {
-        $new_links = [
-            '<a href="' . admin_url( 'tools.php?page=nhrrob-secure-settings' ) . '">' . __( 'Settings', 'nhrrob-secure' ) . '</a>',
-        ];
+        $links[] = '<a href="' . admin_url( 'tools.php?page=nhrrob-secure-settings' ) . '">' . __( 'Settings', 'nhrrob-secure' ) . '</a>';
 
-        return array_merge( $new_links, $links );
+        return $links;
     }
 
     /**
