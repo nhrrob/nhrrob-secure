@@ -113,6 +113,10 @@ class Api
                     'type' => 'string',
                     'sanitize_callback' => 'sanitize_textarea_field',
                 ],
+                'nhrrob_secure_idle_timeout' => [
+                    'type' => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
             ],
         ]);
 
@@ -192,6 +196,40 @@ class Api
                 return current_user_can('manage_options');
             },
         ]);
+
+        // Get sessions
+        register_rest_route('nhrrob-secure/v1', '/sessions', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_sessions_list'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
+
+        // Destroy session
+        register_rest_route('nhrrob-secure/v1', '/sessions/destroy', [
+            'methods' => 'POST',
+            'callback' => [$this, 'destroy_session'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+            'args' => [
+                'verifier' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+            ],
+        ]);
+
+        // Destroy other sessions
+        register_rest_route('nhrrob-secure/v1', '/sessions/destroy-others', [
+            'methods' => 'POST',
+            'callback' => [$this, 'destroy_other_sessions'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
     }
 
     /**
@@ -216,6 +254,7 @@ class Api
             'nhrrob_secure_hide_wp_version' => (bool) get_option('nhrrob_secure_hide_wp_version', false),
             'nhrrob_secure_disable_rest_users' => (bool) get_option('nhrrob_secure_disable_rest_users', false),
             'nhrrob_secure_firewall_blocked_uas' => get_option('nhrrob_secure_firewall_blocked_uas', ''),
+            'nhrrob_secure_idle_timeout' => (int) get_option('nhrrob_secure_idle_timeout', 0),
             'available_roles' => $this->get_available_roles(),
         ];
     }
@@ -343,5 +382,51 @@ class Api
 
         $audit_log = new \NHRRob\Secure\AuditLog();
         return $audit_log->get_logs($limit, $offset);
+    }
+    /**
+     * Get sessions list
+     */
+    public function get_sessions_list()
+    {
+        $manager = new \NHRRob\Secure\SessionManager();
+        $sessions = $manager->get_sessions(get_current_user_id());
+        $current_token = wp_get_session_token();
+
+        $formatted = [];
+        foreach ($sessions as $verifier => $session) {
+            $formatted[] = [
+                'verifier' => $verifier,
+                'ip' => $session['ip'],
+                'ua' => $session['ua'],
+                'login' => $session['login'],
+                'expiration' => $session['expiration'],
+                'is_current' => $verifier === $current_token,
+            ];
+        }
+
+        return $formatted;
+    }
+
+    /**
+     * Destroy session
+     */
+    public function destroy_session($request)
+    {
+        $verifier = $request->get_param('verifier');
+        $manager = new \NHRRob\Secure\SessionManager();
+        $manager->destroy_session(get_current_user_id(), $verifier);
+
+        return ['success' => true];
+    }
+
+    /**
+     * Destroy other sessions
+     */
+    public function destroy_other_sessions()
+    {
+        $manager = new \NHRRob\Secure\SessionManager();
+        $manager->destroy_other_sessions(get_current_user_id());
+
+        return ['success' => true];
     }
 }

@@ -13,6 +13,7 @@ import FileProtection from './components/FileProtection';
 import VulnerabilityChecker from './components/VulnerabilityChecker';
 import FileScanner from './components/FileScanner';
 import Hardening from './components/Hardening';
+import SessionManager from './components/SessionManager';
 import AuditLog from './components/AuditLog';
 import './style.css';
 
@@ -129,6 +130,7 @@ const SettingsApp = () => {
                 <FileProtection settings={settings} updateSetting={updateSetting} />
                 <VulnerabilityChecker />
                 <FileScanner />
+                <SessionManager settings={settings} updateSetting={updateSetting} />
                 <AuditLog settings={settings} updateSetting={updateSetting} />
             </div>
 
