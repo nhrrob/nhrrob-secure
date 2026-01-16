@@ -1,10 +1,10 @@
-=== NHR Secure – Hide Admin, Limit Login & 2FA ===
+=== NHR Secure – Hide Admin, Limit Login, 2FA & Vulnerability Checker ===
 Contributors: nhrrob
 Tags: security, hide admin, login protection, debug log, 2fa
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.6
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,6 +17,7 @@ Keep your WordPress site safe with minimal effort. NHR Secure helps you:
 - Limit login attempts to prevent brute-force attacks.
 - Hide debug logs to prevent sensitive information disclosure.
 - Add 2FA to your WordPress site.
+- Scan core files, plugins, and themes for known vulnerabilities.
 
 ### **Features at a glance:**
 
@@ -48,6 +49,12 @@ Enable two-factor authentication for users.
 - **Recovery Codes** for emergency access
 - QR code setup for Authenticator Apps
 
+### 🛡️ Vulnerability Checker
+Automatically scan your installed plugins, themes, and WordPress core against a known vulnerability database.
+- Daily automatic scans
+- Alerts for critical security issues
+- Check file integrity
+
 ### ⚡ Lightweight & Minimal
 Designed to deliver maximum security with minimal code. No bloat, no complexity.
 - Compatible with most WordPress themes and plugins.
@@ -57,6 +64,12 @@ Designed to deliver maximum security with minimal code. No bloat, no complexity.
 1. Upload the `nhrrob-secure` plugin folder to your `/wp-content/plugins/` directory.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 3. Navigate to **Tools → NHR Secure** to configure settings.
+
+== External Services ==
+
+This plugin utilizes the [WPVulnerability](https://wpvulnerability.com/) API to check for vulnerabilities.
+- **Service:** WPVulnerability
+- **Data:** Only plugin slugs and versions are sent. No personal data is collected.
 
 == Frequently Asked Questions ==
 
@@ -89,6 +102,12 @@ Yes. You can enable or disable each feature from the settings page under Tools �
 
 
 == Changelog ==
+
+= 1.1.0 - 13/01/2026 =
+- Added: Vulnerability Checker
+- Added: File Scanner to check file integrity
+- Improved: UI for scan results
+- Few minor bug fixing & improvements
 
 = 1.0.6 - 11/01/2026 =
 - Fixed: Fatal error due to missing vendor files

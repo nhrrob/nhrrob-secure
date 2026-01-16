@@ -152,6 +152,10 @@
         @apply m-0 mb-5;
     }
 
+    .nhrrob-secure-settings.dark-mode .components-notice__content {
+        color: #1e1e1e;
+    }
+
     /* Vulnerability Checker Styles */
     .nhrrob-secure-vulnerability-card .nhrrob-secure-card-header-flex {
         @apply mb-4 border-b pb-3;
@@ -210,6 +214,132 @@
     .vulnerability-item li {
         @apply text-xs leading-relaxed;
         color: var(--nhrrob-secure-text-muted);
+    }
+
+
+    /* File Scanner Styles */
+    .nhrrob-secure-vulnerability-card.padded-header .nhrrob-secure-card-header-flex {
+        @apply p-5;
+    }
+
+    .nhrrob-scan-controls {
+        @apply flex items-center gap-4;
+    }
+
+    .nhrrob-scan-type-toggle {
+        @apply inline-flex bg-gray-100 rounded-md p-1 border border-gray-200;
+    }
+
+    .nhrrob-scan-toggle-btn {
+        @apply px-3 py-1.5 text-xs font-medium rounded border-0 bg-transparent cursor-pointer transition-all duration-200 text-gray-600;
+    }
+
+    .nhrrob-scan-toggle-btn:hover {
+        @apply text-gray-900 bg-gray-200;
+    }
+
+    .nhrrob-scan-toggle-btn.active {
+        @apply bg-white text-blue-600 shadow-sm font-semibold;
+    }
+
+    .dark-mode .nhrrob-scan-type-toggle {
+        @apply bg-gray-800 border-gray-700;
+    }
+
+    .dark-mode .nhrrob-scan-toggle-btn {
+        @apply text-gray-400;
+    }
+
+    .dark-mode .nhrrob-scan-toggle-btn:hover {
+        @apply text-white bg-gray-700;
+    }
+
+    .dark-mode .nhrrob-scan-toggle-btn.active {
+        @apply bg-gray-700 text-blue-400 shadow-none;
+    }
+
+    .nhrrob-secure-card-subtitle {
+        @apply text-sm text-gray-500 m-0 mt-1;
+        color: var(--nhrrob-secure-text-muted);
+    }
+
+    .nhrrob-scan-results {
+        @apply mt-0;
+    }
+
+    .nhrrob-card-body {
+        @apply p-5;
+    }
+
+    .nhrrob-result-group {
+        @apply mb-6 border rounded-lg overflow-hidden bg-white shadow-sm;
+        border-color: var(--nhrrob-secure-border);
+    }
+
+    .dark-mode .nhrrob-result-group {
+        @apply bg-transparent;
+    }
+
+    .nhrrob-result-group-title {
+        @apply px-4 py-3 m-0 text-sm font-semibold uppercase tracking-wider bg-gray-50 border-b text-gray-600;
+        border-color: var(--nhrrob-secure-border);
+    }
+
+    .dark-mode .nhrrob-result-group-title {
+        @apply bg-gray-800 text-gray-400;
+    }
+
+    .nhrrob-result-list {
+        @apply divide-y;
+    }
+
+    .nhrrob-result-list>* {
+        border-color: var(--nhrrob-secure-border);
+    }
+
+    .nhrrob-result-row {
+        @apply flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-150;
+    }
+
+    .dark-mode .nhrrob-result-row:hover {
+        @apply bg-gray-800;
+    }
+
+    .nhrrob-file-info {
+        @apply flex flex-col text-sm;
+    }
+
+    .nhrrob-file-info strong {
+        @apply mb-1 text-gray-800 break-all text-xs;
+    }
+
+    .dark-mode .nhrrob-file-info strong {
+        @apply text-gray-200;
+    }
+
+    .nhrrob-file-meta {
+        @apply text-xs text-gray-500 flex items-center gap-1;
+    }
+
+    .nhrrob-file-actions {
+        @apply mt-4 sm:mt-0 flex items-center gap-2 shrink-0;
+    }
+
+    .button-link-delete {
+        @apply text-red-600 hover:text-red-700 font-medium !important;
+    }
+
+    .notice.inline-notice {
+        @apply m-0 mb-4;
+    }
+
+    .nhrrob-warning-notice {
+        @apply mb-5;
+    }
+
+    .nhrrob-scan-count {
+        @apply mt-4 pt-2.5 border-t border-gray-200;
+        border-color: var(--nhrrob-secure-border);
     }
 }
 

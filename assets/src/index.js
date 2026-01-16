@@ -11,6 +11,7 @@ import CustomLoginPage from './components/CustomLoginPage';
 import TwoFactorAuth from './components/TwoFactorAuth';
 import FileProtection from './components/FileProtection';
 import VulnerabilityChecker from './components/VulnerabilityChecker';
+import FileScanner from './components/FileScanner';
 import AuditLog from './components/AuditLog';
 import './style.css';
 
@@ -125,6 +126,7 @@ const SettingsApp = () => {
                 <TwoFactorAuth settings={settings} updateSetting={updateSetting} />
                 <FileProtection settings={settings} updateSetting={updateSetting} />
                 <VulnerabilityChecker />
+                <FileScanner />
                 <AuditLog settings={settings} updateSetting={updateSetting} />
             </div>
 
