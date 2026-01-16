@@ -12,6 +12,9 @@ import TwoFactorAuth from './components/TwoFactorAuth';
 import FileProtection from './components/FileProtection';
 import VulnerabilityChecker from './components/VulnerabilityChecker';
 import FileScanner from './components/FileScanner';
+import Hardening from './components/Hardening';
+import SessionManager from './components/SessionManager';
+import AuditLog from './components/AuditLog';
 import './style.css';
 
 const SettingsApp = () => {
@@ -123,9 +126,12 @@ const SettingsApp = () => {
                 <LoginProtection settings={settings} updateSetting={updateSetting} />
                 <CustomLoginPage settings={settings} updateSetting={updateSetting} />
                 <TwoFactorAuth settings={settings} updateSetting={updateSetting} />
+                <Hardening settings={settings} updateSetting={updateSetting} />
                 <FileProtection settings={settings} updateSetting={updateSetting} />
                 <VulnerabilityChecker />
                 <FileScanner />
+                <SessionManager settings={settings} updateSetting={updateSetting} />
+                <AuditLog settings={settings} updateSetting={updateSetting} />
             </div>
 
             <div className="nhrrob-secure-actions">
@@ -147,4 +153,3 @@ const rootElement = document.getElementById('nhrrob-secure-settings-root');
 if (rootElement) {
     render(<SettingsApp />, rootElement);
 }
-

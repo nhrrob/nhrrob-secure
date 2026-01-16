@@ -279,6 +279,10 @@
 
     margin-bottom: 1rem
 }
+.ml-2 {
+
+    margin-left: 0.5rem
+}
 .ml-5 {
 
     margin-left: 1.25rem
@@ -287,9 +291,21 @@
 
     margin-top: 0px
 }
+.mt-1 {
+
+    margin-top: 0.25rem
+}
 .mt-4 {
 
     margin-top: 1rem
+}
+.block {
+
+    display: block
+}
+.flex {
+
+    display: flex
 }
 .table {
 
@@ -303,17 +319,63 @@
 
     display: none
 }
+.w-64 {
+
+    width: 16rem
+}
+.w-full {
+
+    width: 100%
+}
 .grid-cols-2 {
 
     grid-template-columns: repeat(2, minmax(0, 1fr))
+}
+.items-start {
+
+    align-items: flex-start
+}
+.justify-center {
+
+    justify-content: center
+}
+.justify-between {
+
+    justify-content: space-between
 }
 .gap-2 {
 
     gap: 0.5rem
 }
+.truncate {
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap
+}
+.rounded {
+
+    border-radius: 0.25rem
+}
+.rounded-full {
+
+    border-radius: 9999px
+}
+.border {
+
+    border-width: 1px
+}
 .border-t {
 
     border-top-width: 1px
+}
+.border-blue-200 {
+
+    --tw-border-opacity: 1;
+
+    border-color: rgb(191 219 254 / var(--tw-border-opacity, 1))
 }
 .border-gray-100 {
 
@@ -321,9 +383,57 @@
 
     border-color: rgb(243 244 246 / var(--tw-border-opacity, 1))
 }
+.border-gray-200 {
+
+    --tw-border-opacity: 1;
+
+    border-color: rgb(229 231 235 / var(--tw-border-opacity, 1))
+}
+.bg-blue-100 {
+
+    --tw-bg-opacity: 1;
+
+    background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1))
+}
+.bg-blue-50 {
+
+    --tw-bg-opacity: 1;
+
+    background-color: rgb(239 246 255 / var(--tw-bg-opacity, 1))
+}
+.bg-gray-50 {
+
+    --tw-bg-opacity: 1;
+
+    background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1))
+}
+.p-3 {
+
+    padding: 0.75rem
+}
+.px-2 {
+
+    padding-left: 0.5rem;
+
+    padding-right: 0.5rem
+}
+.py-0\.5 {
+
+    padding-top: 0.125rem;
+
+    padding-bottom: 0.125rem
+}
+.pt-3 {
+
+    padding-top: 0.75rem
+}
 .pt-4 {
 
     padding-top: 1rem
+}
+.font-mono {
+
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace
 }
 .text-sm {
 
@@ -337,15 +447,37 @@
 
     line-height: 1rem
 }
+.font-medium {
+
+    font-weight: 500
+}
 .font-semibold {
 
     font-weight: 600
+}
+.text-blue-800 {
+
+    --tw-text-opacity: 1;
+
+    color: rgb(30 64 175 / var(--tw-text-opacity, 1))
+}
+.text-gray-400 {
+
+    --tw-text-opacity: 1;
+
+    color: rgb(156 163 175 / var(--tw-text-opacity, 1))
 }
 .text-gray-500 {
 
     --tw-text-opacity: 1;
 
     color: rgb(107 114 128 / var(--tw-text-opacity, 1))
+}
+.text-gray-700 {
+
+    --tw-text-opacity: 1;
+
+    color: rgb(55 65 81 / var(--tw-text-opacity, 1))
 }
 .filter {
 

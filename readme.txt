@@ -1,10 +1,10 @@
-=== NHR Secure – Hide Admin, Limit Login, 2FA & Vulnerability Checker ===
+=== NHR Secure – Login Security, Firewall, 2FA & Audit Log ===
 Contributors: nhrrob
 Tags: security, hide admin, login protection, debug log, 2fa
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,6 +55,26 @@ Automatically scan your installed plugins, themes, and WordPress core against a 
 - Alerts for critical security issues
 - Check file integrity
 
+### 🖥️ User Session Management
+Monitor and control active user sessions to prevent unauthorized access.
+- **View Active Sessions:** See IP, location, device, and login time for all logged-in users.
+- **Remote Logout:** Instantly log out suspicious sessions or all other devices.
+- **Idle Timeout:** Automatically log out inactive users after a set period.
+
+### 🧱 Hardening & Firewall
+Essential security hardening to lock down your WordPress site.
+- **Disable XML-RPC:** Prevent remote attacks and brute-force attempts.
+- **Disable File Editor:** Stop file modifications from the dashboard.
+- **Hide WP Version:** Obscure your WordPress version from attackers.
+- **Block User-Agents:** Prevent bad bots and scrapers from accessing your site.
+- **Disable User Enumeration:** Stop attackers from harvesting usernames via REST API.
+
+### 📝 Activity Audit Log
+Keep a record of important security events on your site.
+- Tracks logins, failed attempts, file changes, and settings updates.
+- View user, IP, and event details.
+- Configurable log retention policy.
+
 ### ⚡ Lightweight & Minimal
 Designed to deliver maximum security with minimal code. No bloat, no complexity.
 - Compatible with most WordPress themes and plugins.
@@ -102,6 +122,14 @@ Yes. You can enable or disable each feature from the settings page under Tools �
 
 
 == Changelog ==
+
+= 1.2.0 - 17/01/2026 =
+- Added: User Session Management (View active sessions, remote logout, idle timeout)
+- Added: Hardening & Firewall (Disable XML-RPC, File Editor, Version Hiding, User Enumeration)
+- Added: User-Agent Blocking
+- Added: Audit Logs for security events
+- Fixed: Dark mode improvements
+- Improved: UI enhancements
 
 = 1.1.0 - 13/01/2026 =
 - Added: Vulnerability Checker

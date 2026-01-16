@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: NHR Secure – Hide Admin, Limit Login, 2FA & Vulnerability Checker
+ * Plugin Name: NHR Secure – Login Security, Firewall, 2FA & Audit Log
  * Plugin URI: http://wordpress.org/plugins/nhrrob-secure/
  * Description: Lightweight WordPress security plugin that protects your admin area, hides debug logs, limits login attempts, and checks for vulnerabilities. Minimal code, maximum protection.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 1.1.0
+ * Version: 1.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-secure
@@ -30,7 +30,7 @@ final class NHRRob_Secure
      *
      * @var string
      */
-    const version = '1.1.0';
+    const version = '1.2.0';
 
     /**
      * Class constructor
@@ -102,6 +102,15 @@ final class NHRRob_Secure
         // Initialize file scanner
         new \NHRRob\Secure\FileScanner();
 
+        // Initialize hardening and firewall
+        new \NHRRob\Secure\Hardening();
+
+        // Initialize session manager
+        new \NHRRob\Secure\SessionManager();
+
+        // Initialize audit log
+        new \NHRRob\Secure\AuditLog();
+
         // Initialize admin menu
         if (is_admin()) {
             new \NHRRob\Secure\Admin();
@@ -118,6 +127,13 @@ final class NHRRob_Secure
         if (!wp_next_scheduled('nhrrob_secure_vulnerability_scan_cron')) {
             wp_schedule_event(time(), 'daily', 'nhrrob_secure_vulnerability_scan_cron');
         }
+
+        if (!wp_next_scheduled('nhrrob_secure_daily_cleanup')) {
+            wp_schedule_event(time(), 'daily', 'nhrrob_secure_daily_cleanup');
+        }
+
+        // Create audit log table
+        (new \NHRRob\Secure\AuditLog())->maybe_install_schema();
     }
 
     /**
@@ -128,6 +144,7 @@ final class NHRRob_Secure
     public function deactivate()
     {
         wp_clear_scheduled_hook('nhrrob_secure_vulnerability_scan_cron');
+        wp_clear_scheduled_hook('nhrrob_secure_daily_cleanup');
     }
 }
 
