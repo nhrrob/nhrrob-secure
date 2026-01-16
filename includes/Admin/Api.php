@@ -89,6 +89,10 @@ class Api
                     'type' => 'boolean',
                     'sanitize_callback' => 'rest_sanitize_boolean',
                 ],
+                'nhrrob_secure_log_retention_days' => [
+                    'type' => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
             ],
         ]);
 
@@ -105,6 +109,15 @@ class Api
         register_rest_route('nhrrob-secure/v1', '/vulnerability/scan', [
             'methods' => 'POST',
             'callback' => [$this, 'trigger_vulnerability_scan'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
+
+        // Get audit logs
+        register_rest_route('nhrrob-secure/v1', '/logs', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_logs'],
             'permission_callback' => function () {
                 return current_user_can('manage_options');
             },
@@ -128,6 +141,7 @@ class Api
             'nhrrob_secure_2fa_enforced_roles' => (array) get_option('nhrrob_secure_2fa_enforced_roles', []),
             'nhrrob_secure_2fa_type' => get_option('nhrrob_secure_2fa_type', 'app'),
             'nhrrob_secure_dark_mode' => (bool) get_option('nhrrob_secure_dark_mode', false),
+            'nhrrob_secure_log_retention_days' => (int) get_option('nhrrob_secure_log_retention_days', 30),
             'available_roles' => $this->get_available_roles(),
         ];
     }
@@ -186,5 +200,17 @@ class Api
         }
 
         return $this->get_settings();
+    }
+
+    /**
+     * Get audit logs
+     */
+    public function get_logs($request)
+    {
+        $limit = $request->get_param('limit') ? (int) $request->get_param('limit') : 20;
+        $offset = $request->get_param('offset') ? (int) $request->get_param('offset') : 0;
+
+        $audit_log = new \NHRRob\Secure\AuditLog();
+        return $audit_log->get_logs($limit, $offset);
     }
 }

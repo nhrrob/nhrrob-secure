@@ -11,6 +11,7 @@ import CustomLoginPage from './components/CustomLoginPage';
 import TwoFactorAuth from './components/TwoFactorAuth';
 import FileProtection from './components/FileProtection';
 import VulnerabilityChecker from './components/VulnerabilityChecker';
+import AuditLog from './components/AuditLog';
 import './style.css';
 
 const SettingsApp = () => {
@@ -124,6 +125,7 @@ const SettingsApp = () => {
                 <TwoFactorAuth settings={settings} updateSetting={updateSetting} />
                 <FileProtection settings={settings} updateSetting={updateSetting} />
                 <VulnerabilityChecker />
+                <AuditLog settings={settings} updateSetting={updateSetting} />
             </div>
 
             <div className="nhrrob-secure-actions">

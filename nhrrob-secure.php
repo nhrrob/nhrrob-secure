@@ -99,6 +99,9 @@ final class NHRRob_Secure
         // Initialize vulnerability checker
         new \NHRRob\Secure\Vulnerability();
 
+        // Initialize audit log
+        new \NHRRob\Secure\AuditLog();
+
         // Initialize admin menu
         if (is_admin()) {
             new \NHRRob\Secure\Admin();
@@ -115,6 +118,13 @@ final class NHRRob_Secure
         if (!wp_next_scheduled('nhrrob_secure_vulnerability_scan_cron')) {
             wp_schedule_event(time(), 'daily', 'nhrrob_secure_vulnerability_scan_cron');
         }
+
+        if (!wp_next_scheduled('nhrrob_secure_daily_cleanup')) {
+            wp_schedule_event(time(), 'daily', 'nhrrob_secure_daily_cleanup');
+        }
+
+        // Create audit log table
+        (new \NHRRob\Secure\AuditLog())->maybe_install_schema();
     }
 
     /**
@@ -125,6 +135,7 @@ final class NHRRob_Secure
     public function deactivate()
     {
         wp_clear_scheduled_hook('nhrrob_secure_vulnerability_scan_cron');
+        wp_clear_scheduled_hook('nhrrob_secure_daily_cleanup');
     }
 }
 
