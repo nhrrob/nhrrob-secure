@@ -1,4 +1,4 @@
-=== NHR Secure – Hide Admin, Limit Login, 2FA & Vulnerability Checker ===
+=== NHR Secure – Login Security, Firewall, 2FA & Audit Log ===
 Contributors: nhrrob
 Tags: security, hide admin, login protection, debug log, 2fa
 Requires at least: 6.0

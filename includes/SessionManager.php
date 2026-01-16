@@ -66,7 +66,7 @@ class SessionManager
             wp_clear_auth_cookie();
 
             // Redirect to login with a message
-            wp_redirect(wp_login_url() . '?forced_logout=idle');
+            wp_safe_redirect(wp_login_url() . '?forced_logout=idle');
             exit;
         }
 

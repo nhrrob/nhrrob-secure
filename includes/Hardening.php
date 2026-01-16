@@ -86,7 +86,7 @@ class Hardening
             return;
         }
 
-        $current_ua = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+        $current_ua = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
 
         foreach ($blocked_uas as $ua) {
             if (empty($ua))

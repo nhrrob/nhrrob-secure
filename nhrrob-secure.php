@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: NHR Secure – Hide Admin, Limit Login, 2FA & Vulnerability Checker
+ * Plugin Name: NHR Secure – Login Security, Firewall, 2FA & Audit Log
  * Plugin URI: http://wordpress.org/plugins/nhrrob-secure/
  * Description: Lightweight WordPress security plugin that protects your admin area, hides debug logs, limits login attempts, and checks for vulnerabilities. Minimal code, maximum protection.
  * Author: Nazmul Hasan Robin

@@ -116,6 +116,7 @@ class AuditLog
         $user_id = get_current_user_id();
         $ip = $this->get_ip();
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $wpdb->insert(
             $table_name,
             [
@@ -129,7 +130,7 @@ class AuditLog
                 'created_at' => current_time('mysql'),
             ],
             ['%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s']
-        );
+        ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
     }
 
     /**
@@ -264,10 +265,11 @@ class AuditLog
         $table_name = $wpdb->prefix . self::TABLE_NAME;
 
         $days = (int) get_option('nhrrob_secure_log_retention_days', 30);
-        $date_limit = date('Y-m-d H:i:s', strtotime("-$days days"));
+        $date_limit = gmdate('Y-m-d H:i:s', strtotime("-$days days"));
 
-        $wpdb->query($wpdb->prepare("DELETE FROM $table_name WHERE created_at < %s", $date_limit));
+        $wpdb->query($wpdb->prepare("DELETE FROM $table_name WHERE created_at < %s", $date_limit)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
     }
+
 
     /**
      * Get client IP
@@ -297,8 +299,15 @@ class AuditLog
         global $wpdb;
         $table_name = $wpdb->prefix . self::TABLE_NAME;
 
+        // check cache
+        $items = wp_cache_get('nhrrob_secure_audit_logs', 'nhrrob_secure');
+        if ($items) {
+            return $items;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $items = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM $table_name ORDER BY created_at DESC LIMIT %d OFFSET %d",
+            "SELECT * FROM $table_name ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $limit,
             $offset
         ));
@@ -322,11 +331,16 @@ class AuditLog
             ];
         }
 
-        $total = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+        $total = $wpdb->get_var("SELECT COUNT(*) FROM $table_name"); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
 
-        return [
+        $result = [
             'items' => $formatted,
             'total' => (int) $total
         ];
+
+        // cache the result
+        wp_cache_set('nhrrob_secure_audit_logs', $result, 'nhrrob_secure', HOUR_IN_SECONDS);
+
+        return $result;
     }
 }

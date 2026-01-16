@@ -10,8 +10,8 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 
 // Drop the audit log table
 global $wpdb;
-$table_name = $wpdb->prefix . 'nhrrob_audit_log';
-$wpdb->query("DROP TABLE IF EXISTS $table_name");
+$nhrrob_secure_table_name = $wpdb->prefix . 'nhrrob_audit_log';
+$wpdb->query("DROP TABLE IF EXISTS $nhrrob_secure_table_name"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 // Delete options
 delete_option('nhrrob_secure_limit_login_attempts');
@@ -28,5 +28,5 @@ delete_option('nhrrob_secure_audit_log_version');
 delete_option('nhrrob_secure_log_retention_days');
 
 // Delete transients
-$wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_nhrrob_secure_%'");
-$wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_nhrrob_secure_%'");
+$wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_nhrrob_secure_%'"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_nhrrob_secure_%'"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
