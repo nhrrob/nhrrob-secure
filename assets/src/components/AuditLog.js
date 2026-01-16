@@ -53,11 +53,12 @@ const AuditLog = ({ settings, updateSetting }) => {
                             />
                         )}
                         <Button
-                            variant="secondary"
-                            isSmall
+                            variant="primary"
                             onClick={fetchLogs}
                             disabled={loading}
-                            className="nhrrob-secure-btn-outline"
+                            isBusy={loading}
+                            icon="update"
+                            iconPosition="right"
                         >
                             {__('Refresh', 'nhrrob-secure')}
                         </Button>

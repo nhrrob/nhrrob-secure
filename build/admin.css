@@ -552,6 +552,9 @@
 .mt-4 {
         margin-top: 1rem;
 }
+.block {
+        display: block;
+}
 .table {
         display: table;
 }
@@ -641,29 +644,7 @@
         margin-bottom: 0px;
 }
 
-.nhrrob-secure-btn-outline {
-        height: 2rem !important;
-        --tw-border-opacity: 1 !important;
-        border-color: rgb(209 213 219 / var(--tw-border-opacity, 1)) !important;
-        padding-top: 0px !important;
-        padding-bottom: 0px !important;
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
-        font-size: 0.75rem !important;
-        line-height: 1rem !important;
-    border-color: var(--nhrrob-secure-border) !important;
-    color: var(--nhrrob-secure-text) !important;
-    background-color: var(--nhrrob-secure-bg) !important;
-    /* box-shadow: none !important; */
-}
 
-.nhrrob-secure-btn-outline:hover,
-.nhrrob-secure-btn-outline:focus {
-    background-color: var(--nhrrob-secure-card-bg) !important;
-    /* border-color: var(--nhrrob-secure-text-muted) !important; */
-    /* color: var(--nhrrob-secure-text) !important; */
-    /* box-shadow: none !important; */
-}
 
 /* Audit Log Table */
 .nhrrob-secure-audit-table-wrapper {

@@ -102,6 +102,9 @@ final class NHRRob_Secure
         // Initialize file scanner
         new \NHRRob\Secure\FileScanner();
 
+        // Initialize hardening and firewall
+        new \NHRRob\Secure\Hardening();
+
         // Initialize audit log
         new \NHRRob\Secure\AuditLog();
 

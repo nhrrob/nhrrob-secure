@@ -93,6 +93,26 @@ class Api
                     'type' => 'integer',
                     'sanitize_callback' => 'absint',
                 ],
+                'nhrrob_secure_disable_xmlrpc' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
+                'nhrrob_secure_disable_file_editor' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
+                'nhrrob_secure_hide_wp_version' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
+                'nhrrob_secure_disable_rest_users' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
+                'nhrrob_secure_firewall_blocked_uas' => [
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_textarea_field',
+                ],
             ],
         ]);
 
@@ -191,6 +211,11 @@ class Api
             'nhrrob_secure_2fa_type' => get_option('nhrrob_secure_2fa_type', 'app'),
             'nhrrob_secure_dark_mode' => (bool) get_option('nhrrob_secure_dark_mode', false),
             'nhrrob_secure_log_retention_days' => (int) get_option('nhrrob_secure_log_retention_days', 30),
+            'nhrrob_secure_disable_xmlrpc' => (bool) get_option('nhrrob_secure_disable_xmlrpc', false),
+            'nhrrob_secure_disable_file_editor' => (bool) get_option('nhrrob_secure_disable_file_editor', false),
+            'nhrrob_secure_hide_wp_version' => (bool) get_option('nhrrob_secure_hide_wp_version', false),
+            'nhrrob_secure_disable_rest_users' => (bool) get_option('nhrrob_secure_disable_rest_users', false),
+            'nhrrob_secure_firewall_blocked_uas' => get_option('nhrrob_secure_firewall_blocked_uas', ''),
             'available_roles' => $this->get_available_roles(),
         ];
     }
@@ -280,11 +305,11 @@ class Api
         $file = $request->get_param('file');
         $scanner = new \NHRRob\Secure\FileScanner();
         $result = $scanner->repair_core_file($file);
-        
+
         if (is_wp_error($result)) {
             return $result;
         }
-        
+
         return ['success' => true, 'message' => 'File repaired successfully.'];
     }
 
@@ -295,16 +320,16 @@ class Api
     {
         $file = $request->get_param('file');
         $scanner = new \NHRRob\Secure\FileScanner();
-        
+
         // Security check: ensure file is inside WP_CONTENT_DIR
         if (strpos($file, WP_CONTENT_DIR) !== 0) {
             return new \WP_Error('invalid_path', 'Cannot delete files outside of wp-content.');
         }
 
         if ($scanner->delete_file($file)) {
-             return ['success' => true, 'message' => 'File deleted successfully.'];
+            return ['success' => true, 'message' => 'File deleted successfully.'];
         }
-        
+
         return new \WP_Error('delete_failed', 'Could not delete file.');
     }
 

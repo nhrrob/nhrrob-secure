@@ -377,21 +377,7 @@
     @apply mb-0;
 }
 
-.nhrrob-secure-btn-outline {
-    @apply h-8 py-0 px-3 text-xs border-gray-300 !important;
-    border-color: var(--nhrrob-secure-border) !important;
-    color: var(--nhrrob-secure-text) !important;
-    background-color: var(--nhrrob-secure-bg) !important;
-    /* box-shadow: none !important; */
-}
 
-.nhrrob-secure-btn-outline:hover,
-.nhrrob-secure-btn-outline:focus {
-    background-color: var(--nhrrob-secure-card-bg) !important;
-    /* border-color: var(--nhrrob-secure-text-muted) !important; */
-    /* color: var(--nhrrob-secure-text) !important; */
-    /* box-shadow: none !important; */
-}
 
 /* Audit Log Table */
 .nhrrob-secure-audit-table-wrapper {
