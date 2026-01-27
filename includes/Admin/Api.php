@@ -230,6 +230,24 @@ class Api
                 return current_user_can('manage_options');
             },
         ]);
+
+        // Health check stats
+        register_rest_route('nhrrob-secure/v1', '/health-stats', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_health_stats'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
+
+        // One-click secure
+        register_rest_route('nhrrob-secure/v1', '/one-click-secure', [
+            'methods' => 'POST',
+            'callback' => [$this, 'apply_one_click_secure'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
     }
 
     /**
@@ -428,5 +446,29 @@ class Api
         $manager->destroy_other_sessions(get_current_user_id());
 
         return ['success' => true];
+    }
+
+    /**
+     * Get health stats
+     */
+    public function get_health_stats()
+    {
+        $health = new \NHRRob\Secure\HealthCheck();
+        return $health->get_stats();
+    }
+
+    /**
+     * Apply one-click secure
+     */
+    public function apply_one_click_secure()
+    {
+        $health = new \NHRRob\Secure\HealthCheck();
+        $health->apply_one_click_secure();
+
+        return [
+            'success' => true,
+            'settings' => $this->get_settings(),
+            'stats' => $health->get_stats(),
+        ];
     }
 }

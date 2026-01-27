@@ -82,7 +82,7 @@
     }
 
     .nhrrob-secure-cards {
-        @apply grid gap-5 mb-6;
+        @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6;
     }
 
     .nhrrob-secure-card {
@@ -264,7 +264,15 @@
     }
 
     .nhrrob-scan-controls {
-        @apply flex items-center gap-4;
+        @apply flex items-center gap-4 shrink-0;
+    }
+
+    .nhrrob-scan-controls .components-button {
+        @apply flex items-center justify-center gap-2 px-4 py-2 h-auto !important;
+    }
+
+    .nhrrob-scan-controls .components-button .dashicon {
+        @apply static m-0 !important;
     }
 
     .nhrrob-scan-type-toggle {
@@ -331,7 +339,7 @@
     }
 
     .nhrrob-result-list {
-        @apply divide-y;
+        @apply divide-y overflow-y-auto max-h-[400px];
     }
 
     .nhrrob-result-list>* {

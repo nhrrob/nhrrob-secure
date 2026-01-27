@@ -132,7 +132,7 @@ const SessionManager = ({ settings, updateSetting }) => {
                             variant="secondary"
                             isDestructive
                             onClick={destroyOtherSessions}
-                            className="w-full justify-center"
+                            className="justify-center h-auto py-2 text-xs"
                         >
                             {__('Log Out All Other Devices', 'nhrrob-secure')}
                         </Button>
