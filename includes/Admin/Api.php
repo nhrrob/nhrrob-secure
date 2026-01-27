@@ -117,6 +117,10 @@ class Api
                     'type' => 'integer',
                     'sanitize_callback' => 'absint',
                 ],
+                'nhrrob_secure_enable_advanced_firewall' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
             ],
         ]);
 
@@ -273,6 +277,7 @@ class Api
             'nhrrob_secure_disable_rest_users' => (bool) get_option('nhrrob_secure_disable_rest_users', false),
             'nhrrob_secure_firewall_blocked_uas' => get_option('nhrrob_secure_firewall_blocked_uas', ''),
             'nhrrob_secure_idle_timeout' => (int) get_option('nhrrob_secure_idle_timeout', 0),
+            'nhrrob_secure_enable_advanced_firewall' => (bool) get_option('nhrrob_secure_enable_advanced_firewall', false),
             'available_roles' => $this->get_available_roles(),
         ];
     }

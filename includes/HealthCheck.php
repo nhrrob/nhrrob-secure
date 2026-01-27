@@ -133,6 +133,15 @@ class HealthCheck
             'weight' => 10,
         ];
 
+        // 10. Advanced Firewall
+        $checks[] = [
+            'id' => 'advanced_firewall',
+            'label' => __('Advanced Firewall (IPS)', 'nhrrob-secure'),
+            'description' => __('Proactively blocks SQL Injection, XSS, and LFI attacks.', 'nhrrob-secure'),
+            'passed' => (bool) get_option('nhrrob_secure_enable_advanced_firewall', 0),
+            'weight' => 15,
+        ];
+
         return $checks;
     }
 
@@ -149,6 +158,7 @@ class HealthCheck
         update_option('nhrrob_secure_hide_wp_version', 1);
         update_option('nhrrob_secure_disable_rest_users', 1);
         update_option('nhrrob_secure_protect_debug_log', 1);
+        update_option('nhrrob_secure_enable_advanced_firewall', 1);
         
         // We don't force 2FA as it requires user setup, but we provide progress.
         
