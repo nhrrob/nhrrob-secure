@@ -15,6 +15,8 @@ import FileScanner from './components/FileScanner';
 import Hardening from './components/Hardening';
 import SessionManager from './components/SessionManager';
 import AuditLog from './components/AuditLog';
+import HealthCheck from './components/HealthCheck';
+import IPManager from './components/IPManager';
 import './style.css';
 
 const SettingsApp = () => {
@@ -123,15 +125,39 @@ const SettingsApp = () => {
             )}
 
             <div className="nhrrob-secure-cards">
-                <LoginProtection settings={settings} updateSetting={updateSetting} />
-                <CustomLoginPage settings={settings} updateSetting={updateSetting} />
-                <TwoFactorAuth settings={settings} updateSetting={updateSetting} />
-                <Hardening settings={settings} updateSetting={updateSetting} />
-                <FileProtection settings={settings} updateSetting={updateSetting} />
-                <VulnerabilityChecker />
-                <FileScanner />
-                <SessionManager settings={settings} updateSetting={updateSetting} />
-                <AuditLog settings={settings} updateSetting={updateSetting} />
+                <div className="md:col-span-2 lg:col-span-3">
+                    <HealthCheck onApplyOneClick={(newSettings) => setSettings(newSettings)} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <LoginProtection settings={settings} updateSetting={updateSetting} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <CustomLoginPage settings={settings} updateSetting={updateSetting} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <TwoFactorAuth settings={settings} updateSetting={updateSetting} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <Hardening settings={settings} updateSetting={updateSetting} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <FileProtection settings={settings} updateSetting={updateSetting} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <VulnerabilityChecker />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <IPManager settings={settings} updateSetting={updateSetting} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <FileScanner />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <SessionManager settings={settings} updateSetting={updateSetting} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <AuditLog settings={settings} updateSetting={updateSetting} />
+                </div>
             </div>
 
             <div className="nhrrob-secure-actions">
