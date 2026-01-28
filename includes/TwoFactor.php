@@ -25,7 +25,7 @@ class TwoFactor extends App {
     public function __construct() {
         $this->tfa = new \RobThree\Auth\TwoFactorAuth(
             new \RobThree\Auth\Providers\Qr\QRServerProvider(),
-            'NHR Secure'
+            get_bloginfo('name') . ' - NHR Secure'
         );
 
         if ( ! get_option( 'nhrrob_secure_enable_2fa', 0 ) ) {
@@ -77,7 +77,7 @@ class TwoFactor extends App {
 
         // Generate QR Code URL
         $label = $user->user_email;
-        $issuer = 'NHR Secure';
+        $issuer = get_bloginfo('name') . ' - NHR Secure';
         $otpauth_url = sprintf( 'otpauth://totp/%s:%s?secret=%s&issuer=%s', urlencode( $issuer ), urlencode( $label ), $secret, urlencode( $issuer ) );
         $qrCodeUrl = sprintf( 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s', urlencode( $otpauth_url ) );
 
