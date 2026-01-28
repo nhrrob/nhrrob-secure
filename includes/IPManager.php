@@ -244,14 +244,16 @@ class IPManager
         $audit_log->log(
             'ip_manager',
             'block',
-            sprintf(__('Blocked request from IP: %s (%s)', 'nhrrob-secure'), $ip, $reason),
+            /* translators: 1: IP Address, 2: Reason */
+            sprintf(__('Blocked request from IP: %1$s (%2$s)', 'nhrrob-secure'), $ip, $reason),
+            /* translators: %s: Reason */
             sprintf(__('Reason: %s', 'nhrrob-secure'), $reason),
             2 // Medium severity
         );
 
         wp_die(
-            __('Access Denied: Your IP or country has been blocked by the security settings.', 'nhrrob-secure'),
-            __('Security Block', 'nhrrob-secure'),
+            esc_html__('Access Denied: Your IP or country has been blocked by the security settings.', 'nhrrob-secure'),
+            esc_html__('Security Block', 'nhrrob-secure'),
             ['response' => 403]
         );
     }

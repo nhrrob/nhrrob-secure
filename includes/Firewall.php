@@ -77,8 +77,10 @@ class Firewall
             return;
         }
 
-        $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
-        $query_string = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Inspecting raw URI for attacks.
+        $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Inspecting raw query string for attacks.
+        $query_string = isset($_SERVER['QUERY_STRING']) ? wp_unslash($_SERVER['QUERY_STRING']) : '';
         
         // Data to check
         $target_data = [
@@ -87,7 +89,9 @@ class Firewall
         ];
 
         // Add POST if not empty
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Firewall needs to inspect all incoming POST data regardless of nonce.
         if (!empty($_POST)) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Firewall inspection.
             $target_data['POST'] = wp_json_encode($_POST);
         }
 
@@ -132,26 +136,39 @@ class Firewall
     private function block_request($type, $source, $value)
     {
         $ip = $this->get_ip();
-        $ua = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field($_SERVER['HTTP_USER_AGENT']) : 'Unknown';
+        $ua = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : 'Unknown';
 
         // Log the event
         $audit_log = new AuditLog();
+        /* translators: %s: Attack type (e.g. SQLi, XSS) */
+        $log_message = sprintf(__('Blocked %s attempt', 'nhrrob-secure'), strtoupper($type));
+        
+        $log_details = sprintf(
+            /* translators: 1: Source (e.g. URI, POST), 2: Attack type, 3: Malicious value snippet, 4: User Agent */
+            __('Source: %1$s | Type: %2$s | Value: %3$s | UA: %4$s', 'nhrrob-secure'), 
+            $source, 
+            $type, 
+            sanitize_text_field(mb_strimwidth($value, 0, 100, '...')), 
+            mb_strimwidth($ua, 0, 50, '...')
+        );
+
         $audit_log->log(
             'firewall',
             'block',
-            sprintf(__('Blocked %s attempt', 'nhrrob-secure'), strtoupper($type)),
-            sprintf(__('Source: %s | Type: %s | Value: %s', 'nhrrob-secure'), $source, $type, mb_strimwidth($value, 0, 100, '...')),
+            $log_message,
+            $log_details,
             3 // High severity
         );
 
         // Terminate
         $message = sprintf(
-            __('Access Denied: Your request was blocked by the security firewall. Protection Type: %s. Your IP: %s', 'nhrrob-secure'),
+            /* translators: 1: Attack type, 2: IP address */
+            __('Access Denied: Your request was blocked by the security firewall. Protection Type: %1$s. Your IP: %2$s', 'nhrrob-secure'),
             strtoupper($type),
             $ip
         );
 
-        wp_die($message, __('Security Block', 'nhrrob-secure'), ['response' => 403]);
+        wp_die(esc_html($message), esc_html__('Security Block', 'nhrrob-secure'), ['response' => 403]);
     }
 
     /**
@@ -162,9 +179,9 @@ class Firewall
     private function get_ip()
     {
         if (get_option('nhrrob_secure_enable_proxy_ip') && isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-            return sanitize_text_field(trim($ips[0]));
+            $ips = explode(',', sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])));
+            return trim($ips[0]);
         }
-        return isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : '0.0.0.0';
+        return isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '0.0.0.0';
     }
 }
