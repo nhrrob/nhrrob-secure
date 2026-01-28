@@ -16,6 +16,7 @@ import Hardening from './components/Hardening';
 import SessionManager from './components/SessionManager';
 import AuditLog from './components/AuditLog';
 import HealthCheck from './components/HealthCheck';
+import IPManager from './components/IPManager';
 import './style.css';
 
 const SettingsApp = () => {
@@ -144,6 +145,9 @@ const SettingsApp = () => {
                 </div>
                 <div className="md:col-span-2 lg:col-span-3">
                     <VulnerabilityChecker />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                    <IPManager settings={settings} updateSetting={updateSetting} />
                 </div>
                 <div className="md:col-span-2 lg:col-span-3">
                     <FileScanner />

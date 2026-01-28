@@ -108,6 +108,9 @@ final class NHRRob_Secure
         // Initialize advanced firewall (IPS)
         new \NHRRob\Secure\Firewall();
 
+        // Initialize IP & Country manager
+        new \NHRRob\Secure\IPManager();
+
         // Initialize session manager
         new \NHRRob\Secure\SessionManager();
 

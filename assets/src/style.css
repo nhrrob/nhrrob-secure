@@ -123,10 +123,14 @@
     .dark-mode .components-placeholder__label,
     .dark-mode .components-placeholder__instructions,
     .dark-mode .nhrrob-secure-2fa-method h3,
-    .dark-mode .nhrrob-secure-enforced-roles h3 {
+    .dark-mode .nhrrob-secure-enforced-roles h3,
+    .dark-mode .nhrrob-secure-ip-card h3,
+    .dark-mode .nhrrob-secure-ip-card .components-base-control__label,
+    .dark-mode .nhrrob-secure-country-select label {
         color: var(--nhrrob-secure-text) !important;
     }
 
+    .
     .dark-mode .components-placeholder {
         background-color: var(--nhrrob-secure-vuln-bg) !important;
         border-color: var(--nhrrob-secure-vuln-border) !important;
@@ -134,7 +138,15 @@
     }
 
     .dark-mode .components-text-control__input,
-    .dark-mode .components-textarea-control__input {
+    .dark-mode .components-textarea-control__input,
+    .dark-mode .components-select-control__input {
+        background-color: #2c3338 !important;
+        border-color: #43494e !important;
+        color: #f0f0f1 !important;
+    }
+
+    /* IP Manager SelectControl specific styling */
+    .dark-mode .nhrrob-secure-ip-card .components-select-control__input {
         background-color: #2c3338 !important;
         border-color: #43494e !important;
         color: #f0f0f1 !important;

@@ -121,6 +121,23 @@ class Api
                     'type' => 'boolean',
                     'sanitize_callback' => 'rest_sanitize_boolean',
                 ],
+                'nhrrob_secure_ip_whitelist' => [
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_textarea_field',
+                ],
+                'nhrrob_secure_ip_blacklist' => [
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_textarea_field',
+                ],
+                'nhrrob_secure_blocked_countries' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string',
+                    ],
+                    'sanitize_callback' => function ($countries) {
+                        return is_array($countries) ? array_map('sanitize_text_field', $countries) : [];
+                    },
+                ],
             ],
         ]);
 
@@ -278,6 +295,9 @@ class Api
             'nhrrob_secure_firewall_blocked_uas' => get_option('nhrrob_secure_firewall_blocked_uas', ''),
             'nhrrob_secure_idle_timeout' => (int) get_option('nhrrob_secure_idle_timeout', 0),
             'nhrrob_secure_enable_advanced_firewall' => (bool) get_option('nhrrob_secure_enable_advanced_firewall', false),
+            'nhrrob_secure_ip_whitelist' => get_option('nhrrob_secure_ip_whitelist', ''),
+            'nhrrob_secure_ip_blacklist' => get_option('nhrrob_secure_ip_blacklist', ''),
+            'nhrrob_secure_blocked_countries' => (array) get_option('nhrrob_secure_blocked_countries', []),
             'available_roles' => $this->get_available_roles(),
         ];
     }

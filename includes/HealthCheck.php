@@ -142,6 +142,16 @@ class HealthCheck
             'weight' => 15,
         ];
 
+        // 11. IP Management
+        $has_ip_protection = !empty(get_option('nhrrob_secure_ip_blacklist')) || !empty(get_option('nhrrob_secure_blocked_countries'));
+        $checks[] = [
+            'id' => 'ip_management',
+            'label' => __('IP & Country Restrictions', 'nhrrob-secure'),
+            'description' => __('Manual blacklists and country blocking help reduce the attack surface.', 'nhrrob-secure'),
+            'passed' => $has_ip_protection,
+            'weight' => 10,
+        ];
+
         return $checks;
     }
 
