@@ -42,6 +42,13 @@ const Hardening = ({ settings, updateSetting }) => {
                 <div className="nhrrob-secure-setting-group border-t border-gray-100 pt-4 mt-4">
                     <h3 className="nhrrob-secure-setting-subtitle">{__('Firewall Rules', 'nhrrob-secure')}</h3>
 
+                    <ToggleControl
+                        label={__('Advanced Firewall (IPS) Protection', 'nhrrob-secure')}
+                        help={__('Proactively block common attacks like SQL Injection, XSS, and LFI by scanning request data.', 'nhrrob-secure')}
+                        checked={settings?.nhrrob_secure_enable_advanced_firewall || false}
+                        onChange={(value) => updateSetting('nhrrob_secure_enable_advanced_firewall', value)}
+                    />
+
                     <TextareaControl
                         label={__('Block User Agents', 'nhrrob-secure')}
                         help={__('Enter one User-Agent per line to block. Case-insensitive partial match. Example: "HTTrack", "curl".', 'nhrrob-secure')}

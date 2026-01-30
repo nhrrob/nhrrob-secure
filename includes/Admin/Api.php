@@ -117,6 +117,27 @@ class Api
                     'type' => 'integer',
                     'sanitize_callback' => 'absint',
                 ],
+                'nhrrob_secure_enable_advanced_firewall' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
+                'nhrrob_secure_ip_whitelist' => [
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_textarea_field',
+                ],
+                'nhrrob_secure_ip_blacklist' => [
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_textarea_field',
+                ],
+                'nhrrob_secure_blocked_countries' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string',
+                    ],
+                    'sanitize_callback' => function ($countries) {
+                        return is_array($countries) ? array_map('sanitize_text_field', $countries) : [];
+                    },
+                ],
             ],
         ]);
 
@@ -230,6 +251,24 @@ class Api
                 return current_user_can('manage_options');
             },
         ]);
+
+        // Health check stats
+        register_rest_route('nhrrob-secure/v1', '/health-stats', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_health_stats'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
+
+        // One-click secure
+        register_rest_route('nhrrob-secure/v1', '/one-click-secure', [
+            'methods' => 'POST',
+            'callback' => [$this, 'apply_one_click_secure'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
     }
 
     /**
@@ -255,6 +294,10 @@ class Api
             'nhrrob_secure_disable_rest_users' => (bool) get_option('nhrrob_secure_disable_rest_users', false),
             'nhrrob_secure_firewall_blocked_uas' => get_option('nhrrob_secure_firewall_blocked_uas', ''),
             'nhrrob_secure_idle_timeout' => (int) get_option('nhrrob_secure_idle_timeout', 0),
+            'nhrrob_secure_enable_advanced_firewall' => (bool) get_option('nhrrob_secure_enable_advanced_firewall', false),
+            'nhrrob_secure_ip_whitelist' => get_option('nhrrob_secure_ip_whitelist', ''),
+            'nhrrob_secure_ip_blacklist' => get_option('nhrrob_secure_ip_blacklist', ''),
+            'nhrrob_secure_blocked_countries' => (array) get_option('nhrrob_secure_blocked_countries', []),
             'available_roles' => $this->get_available_roles(),
         ];
     }
@@ -428,5 +471,29 @@ class Api
         $manager->destroy_other_sessions(get_current_user_id());
 
         return ['success' => true];
+    }
+
+    /**
+     * Get health stats
+     */
+    public function get_health_stats()
+    {
+        $health = new \NHRRob\Secure\HealthCheck();
+        return $health->get_stats();
+    }
+
+    /**
+     * Apply one-click secure
+     */
+    public function apply_one_click_secure()
+    {
+        $health = new \NHRRob\Secure\HealthCheck();
+        $health->apply_one_click_secure();
+
+        return [
+            'success' => true,
+            'settings' => $this->get_settings(),
+            'stats' => $health->get_stats(),
+        ];
     }
 }

@@ -82,7 +82,7 @@
     }
 
     .nhrrob-secure-cards {
-        @apply grid gap-5 mb-6;
+        @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6;
     }
 
     .nhrrob-secure-card {
@@ -123,10 +123,14 @@
     .dark-mode .components-placeholder__label,
     .dark-mode .components-placeholder__instructions,
     .dark-mode .nhrrob-secure-2fa-method h3,
-    .dark-mode .nhrrob-secure-enforced-roles h3 {
+    .dark-mode .nhrrob-secure-enforced-roles h3,
+    .dark-mode .nhrrob-secure-ip-card h3,
+    .dark-mode .nhrrob-secure-ip-card .components-base-control__label,
+    .dark-mode .nhrrob-secure-country-select label {
         color: var(--nhrrob-secure-text) !important;
     }
 
+    .
     .dark-mode .components-placeholder {
         background-color: var(--nhrrob-secure-vuln-bg) !important;
         border-color: var(--nhrrob-secure-vuln-border) !important;
@@ -134,7 +138,15 @@
     }
 
     .dark-mode .components-text-control__input,
-    .dark-mode .components-textarea-control__input {
+    .dark-mode .components-textarea-control__input,
+    .dark-mode .components-select-control__input {
+        background-color: #2c3338 !important;
+        border-color: #43494e !important;
+        color: #f0f0f1 !important;
+    }
+
+    /* IP Manager SelectControl specific styling */
+    .dark-mode .nhrrob-secure-ip-card .components-select-control__input {
         background-color: #2c3338 !important;
         border-color: #43494e !important;
         color: #f0f0f1 !important;
@@ -264,7 +276,15 @@
     }
 
     .nhrrob-scan-controls {
-        @apply flex items-center gap-4;
+        @apply flex items-center gap-4 shrink-0;
+    }
+
+    .nhrrob-scan-controls .components-button {
+        @apply flex items-center justify-center gap-2 px-4 py-2 h-auto !important;
+    }
+
+    .nhrrob-scan-controls .components-button .dashicon {
+        @apply static m-0 !important;
     }
 
     .nhrrob-scan-type-toggle {
@@ -331,7 +351,7 @@
     }
 
     .nhrrob-result-list {
-        @apply divide-y;
+        @apply divide-y overflow-y-auto max-h-[400px];
     }
 
     .nhrrob-result-list>* {

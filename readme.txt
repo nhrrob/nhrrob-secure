@@ -4,7 +4,7 @@ Tags: security, hide admin, login protection, debug log, 2fa
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,9 @@ Keep your WordPress site safe with minimal effort. NHR Secure helps you:
 - Hide debug logs to prevent sensitive information disclosure.
 - Add 2FA to your WordPress site.
 - Scan core files, plugins, and themes for known vulnerabilities.
+- Monitor site health with one-click security recommendations.
+- Protect against SQL injection, XSS, and LFI attacks.
+- Block malicious IPs and entire countries.
 
 ### **Features at a glance:**
 
@@ -75,6 +78,30 @@ Keep a record of important security events on your site.
 - View user, IP, and event details.
 - Configurable log retention policy.
 
+### 🏥 Security Health Check & One-Click Secure
+Get an instant overview of your site's security posture.
+- **Security Score:** View your overall protection percentage and grade (A+ to F).
+- **Health Dashboard:** See which security features are active and which need attention.
+- **One-Click Secure:** Apply recommended security settings instantly.
+- **11 Security Checks:** Comprehensive analysis of your security status.
+
+### 🛡️ Advanced Firewall (IPS)
+Proactive intrusion prevention system that blocks malicious requests in real-time.
+- **SQL Injection Protection:** Detect and block SQLi attacks automatically.
+- **XSS Prevention:** Stop cross-site scripting attempts.
+- **LFI Protection:** Prevent local file inclusion attacks.
+- **Pattern Matching:** Advanced regex-based detection for common attack vectors.
+- **Automatic Blocking:** Suspicious requests are blocked before they reach WordPress.
+
+### 🌍 IP & Country Management
+Control access to your site with granular IP and geographic filtering.
+- **IP Whitelist:** Allow trusted IPs to bypass all security filters.
+- **IP Blacklist:** Block malicious IPs permanently from your site.
+- **CIDR Support:** Use CIDR notation for blocking entire IP ranges (e.g., 192.168.1.0/24).
+- **Country Blocking:** Block access from 90+ countries using GeoIP lookup.
+- **Smart Caching:** GeoIP lookups are cached for 24 hours for optimal performance.
+- **Private IP Detection:** Automatically skip local/private IPs.
+
 ### ⚡ Lightweight & Minimal
 Designed to deliver maximum security with minimal code. No bloat, no complexity.
 - Compatible with most WordPress themes and plugins.
@@ -122,6 +149,15 @@ Yes. You can enable or disable each feature from the settings page under Tools �
 
 
 == Changelog ==
+
+= 1.3.0 - 28/01/2026 =
+- Added: Security Health Check with scoring system (A+ to F grade)
+- Added: One-Click Secure feature to apply recommended settings instantly
+- Added: Advanced Firewall (IPS) with real-time protection against SQL Injection, XSS, and LFI attacks
+- Added: IP Management with Whitelist and Blacklist (CIDR support)
+- Added: Country Blocking for 90+ countries using GeoIP lookup with caching
+- Improved: Dark mode styling for all components
+- Improved: Overall security dashboard UI/UX
 
 = 1.2.0 - 17/01/2026 =
 - Added: User Session Management (View active sessions, remote logout, idle timeout)
