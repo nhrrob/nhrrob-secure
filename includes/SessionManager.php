@@ -13,6 +13,7 @@ class SessionManager
     {
         // Hook for idle timeout
         add_action('admin_init', [$this, 'check_idle_timeout']);
+        add_action('wp_login', [$this, 'reset_last_activity'], 10, 2);
     }
 
     /**
@@ -72,5 +73,13 @@ class SessionManager
 
         // Update last activity
         update_user_meta($user_id, 'nhrrob_secure_last_activity', $current_time);
+    }
+
+    /**
+     * Reset last activity on login
+     */
+    public function reset_last_activity($user_login, $user)
+    {
+        update_user_meta($user->ID, 'nhrrob_secure_last_activity', time());
     }
 }
