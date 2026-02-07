@@ -258,6 +258,7 @@ class TwoFactor extends App {
             wp_set_auth_cookie( $user_id, true );
 
             $user = get_userdata( $user_id );
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
             do_action( 'wp_login', $user->user_login, $user );
 
             wp_safe_redirect( $redirect_to );
