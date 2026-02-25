@@ -114,7 +114,7 @@ const IPManager = ({ settings, updateSetting }) => {
         <Card className="nhrrob-secure-card nhrrob-secure-ip-card">
             <CardBody>
                 <h2 className="nhrrob-secure-card-title">{__('IP & Country Management', 'nhrrob-secure')}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                <p className="text-sm nhrrob-text-muted mb-6">
                     {__('Control access to your site by whitelisting safe IPs or blocking malicious ones and entire countries.', 'nhrrob-secure')}
                 </p>
 
@@ -149,7 +149,7 @@ const IPManager = ({ settings, updateSetting }) => {
                 </div>
 
                 <div className="mt-8 border-t border-gray-100 dark:border-gray-700">
-                    <h3 className="text-sm font-semibold mb-4 text-gray-900 dark:text-gray-100">{__('Country Blocking', 'nhrrob-secure')}</h3>
+                    <h3 className="text-sm font-semibold mb-4 nhrrob-text-primary">{__('Country Blocking', 'nhrrob-secure')}</h3>
                     <div className="flex flex-wrap gap-4 items-end">
                         <div className="flex-1 max-w-xs nhrrob-secure-country-select">
                             <SelectControl
@@ -179,7 +179,7 @@ const IPManager = ({ settings, updateSetting }) => {
                         </div>
                     )}
 
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 italic">
+                    <p className="text-xs nhrrob-text-muted mt-4 italic">
                         {__('Note: Country blocking uses a free GeoIP lookup service with caching for performance.', 'nhrrob-secure')}
                     </p>
                 </div>

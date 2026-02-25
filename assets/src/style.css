@@ -130,7 +130,7 @@
         color: var(--nhrrob-secure-text) !important;
     }
 
-    .
+
     .dark-mode .components-placeholder {
         background-color: var(--nhrrob-secure-vuln-bg) !important;
         border-color: var(--nhrrob-secure-vuln-border) !important;
@@ -190,6 +190,80 @@
 
     .dark-mode .nhrrob-secure-setting-subtitle {
         color: #a7aaad;
+    }
+
+    /* ============================================================
+     * DARK MODE UTILITY CLASSES
+     * Use these classes anywhere to get automatic dark mode support.
+     * They use CSS vars so they work in both light & dark automatically.
+     * ============================================================ */
+
+    /* Text color utilities */
+    .nhrrob-text-primary {
+        color: var(--nhrrob-secure-text);
+    }
+
+    .nhrrob-text-muted {
+        color: var(--nhrrob-secure-text-muted);
+    }
+
+    .nhrrob-text-success {
+        color: #16a34a;
+    }
+    .dark-mode .nhrrob-text-success {
+        color: #4ade80;
+    }
+
+    .nhrrob-text-danger {
+        color: #dc2626;
+    }
+    .dark-mode .nhrrob-text-danger {
+        color: #f87171;
+    }
+
+    /* Background utilities */
+    .nhrrob-bg-card {
+        background-color: var(--nhrrob-secure-card-bg);
+    }
+
+    /* Grade badge classes (A/B/C) — dark mode aware */
+    .nhrrob-badge-grade-a {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+    .dark-mode .nhrrob-badge-grade-a {
+        background-color: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+    }
+
+    .nhrrob-badge-grade-b {
+        background-color: #fef9c3;
+        color: #a16207;
+    }
+    .dark-mode .nhrrob-badge-grade-b {
+        background-color: rgba(234, 179, 8, 0.15);
+        color: #facc15;
+    }
+
+    .nhrrob-badge-grade-c {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    .dark-mode .nhrrob-badge-grade-c {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+    }
+
+    /* Card inner h3 headings (e.g. Active Sessions title) */
+    .dark-mode .nhrrob-secure-card h3,
+    .dark-mode .nhrrob-secure-sessions-list h3 {
+        color: var(--nhrrob-secure-text) !important;
+    }
+
+    /* Card subtitle / description paragraphs */
+    .nhrrob-secure-card-subtitle,
+    .nhrrob-card-subtitle-text {
+        color: var(--nhrrob-secure-text-muted);
     }
 
     .nhrrob-secure-card .components-toggle-control {

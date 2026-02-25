@@ -61,9 +61,9 @@ const HealthCheck = ({ onApplyOneClick }) => {
     };
 
     const getGradeColor = (g) => {
-        if (g.startsWith('A')) return 'bg-green-100 text-green-700';
-        if (g === 'B') return 'bg-yellow-100 text-yellow-700';
-        return 'bg-red-100 text-red-700';
+        if (g.startsWith('A')) return 'nhrrob-badge-grade-a';
+        if (g === 'B') return 'nhrrob-badge-grade-b';
+        return 'nhrrob-badge-grade-c';
     };
 
     return (
@@ -73,7 +73,7 @@ const HealthCheck = ({ onApplyOneClick }) => {
                     <h2 className="nhrrob-secure-card-title border-0 pb-0">
                         {__('Security Health Check', 'nhrrob-secure')}
                     </h2>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs nhrrob-text-muted mt-1">
                         {__('Overall protection status of your WordPress site', 'nhrrob-secure')}
                     </p>
                 </div>
@@ -122,7 +122,7 @@ const HealthCheck = ({ onApplyOneClick }) => {
                                     <Icon icon={check.passed ? 'yes' : 'no-alt'} size={16} />
                                 </div>
                                 <div>
-                                    <span className={`text-xs font-medium ${check.passed ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400'}`}>
+                                    <span className={`text-xs font-medium ${check.passed ? 'nhrrob-text-primary' : 'nhrrob-text-muted'}`}>
                                         {check.label}
                                     </span>
                                 </div>
