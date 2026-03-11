@@ -295,7 +295,8 @@ class Security {
         $blocked_files = [ 'readme.txt', 'readme.html', 'readme.md', 'license.txt', 'changelog.txt' ];
 
         foreach ( $blocked_files as $filename ) {
-            if ( substr( $path, -strlen( $filename ) ) === $filename ) {
+            if ( strpos( $path, '/' . $filename ) !== false || 
+                 ( strpos( $path, $filename ) !== false && strpos( $path, 'wp-content' ) !== false ) ) {
                 if ( function_exists( 'status_header' ) ) {
                     status_header( 403 );
                 } else {
