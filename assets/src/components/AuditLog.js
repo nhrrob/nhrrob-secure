@@ -58,7 +58,6 @@ const AuditLog = ({ settings, updateSetting }) => {
                             disabled={loading}
                             isBusy={loading}
                             icon="update"
-                            iconPosition="right"
                         >
                             {__('Refresh', 'nhrrob-secure')}
                         </Button>

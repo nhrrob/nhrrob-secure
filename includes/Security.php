@@ -19,6 +19,7 @@ class Security {
         $this->init_limit_login_attempts();
         $this->init_custom_login_page();
         $this->init_protect_debug_log();
+        $this->init_protect_readme_files();
     }
 
     /**
@@ -264,5 +265,48 @@ class Security {
      */
     public function check_debug_log_access_template() {
         $this->check_debug_log_access();
+    }
+
+    /**
+     * Initialize readme files protection
+     */
+    private function init_protect_readme_files() {
+        if ( ! get_option( 'nhrrob_secure_protect_readme_files', false ) ) {
+            return;
+        }
+
+        add_action( 'plugins_loaded', [ $this, 'check_readme_file_access' ], 1 );
+        add_action( 'template_redirect', [ $this, 'check_readme_file_access' ], 1 );
+    }
+
+    /**
+     * Block direct HTTP access to readme/license files inside wp-content
+     */
+    public function check_readme_file_access() {
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+        $parsed_url  = wp_parse_url( $request_uri );
+        $path        = isset( $parsed_url['path'] ) ? strtolower( $parsed_url['path'] ) : '';
+
+        // Only block within wp-content (plugin & theme readmes)
+        if ( strpos( $path, '/wp-content/' ) === false ) {
+            return;
+        }
+
+        $blocked_files = [ 'readme.txt', 'readme.html', 'readme.md', 'license.txt', 'changelog.txt' ];
+
+        foreach ( $blocked_files as $filename ) {
+            if ( substr( $path, -strlen( $filename ) ) === $filename ) {
+                if ( function_exists( 'status_header' ) ) {
+                    status_header( 403 );
+                } else {
+                    http_response_code( 403 );
+                }
+                if ( function_exists( 'nocache_headers' ) ) {
+                    nocache_headers();
+                }
+                header( 'Content-Type: text/html; charset=utf-8' );
+                die( '403 Forbidden' );
+            }
+        }
     }
 }

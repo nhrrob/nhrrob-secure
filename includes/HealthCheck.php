@@ -109,13 +109,15 @@ class HealthCheck
             'weight' => 5,
         ];
 
-        // 8. Protect Debug Log
+        // 8. File Protection
+        $protect_debug = (bool) get_option('nhrrob_secure_protect_debug_log', 1);
+        $protect_readme = (bool) get_option('nhrrob_secure_protect_readme_files', 0);
         $checks[] = [
-            'id' => 'protect_debug_log',
-            'label' => __('Protect Debug Log', 'nhrrob-secure'),
-            'description' => __('Ensures your debug.log file is not publicly accessible.', 'nhrrob-secure'),
-            'passed' => (bool) get_option('nhrrob_secure_protect_debug_log', 1),
-            'weight' => 10,
+            'id' => 'file_protection',
+            'label' => __('File Protection', 'nhrrob-secure'),
+            'description' => __('Ensures sensitive files like debug.log and readme.txt are not publicly accessible.', 'nhrrob-secure'),
+            'passed' => $protect_debug || $protect_readme,
+            'weight' => 15,
         ];
 
         // 9. Recent Vulnerability Scan
@@ -168,6 +170,7 @@ class HealthCheck
         update_option('nhrrob_secure_hide_wp_version', 1);
         update_option('nhrrob_secure_disable_rest_users', 1);
         update_option('nhrrob_secure_protect_debug_log', 1);
+        update_option('nhrrob_secure_protect_readme_files', 1);
         update_option('nhrrob_secure_enable_advanced_firewall', 1);
         
         // We don't force 2FA as it requires user setup, but we provide progress.

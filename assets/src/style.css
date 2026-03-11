@@ -62,13 +62,100 @@
         color: var(--nhrrob-secure-text);
     }
 
-    .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle {
-        @apply text-white hover:text-white;
+    .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle,
+    .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle:focus,
+    .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle:hover {
+        color: #ffffff !important;
+        background: transparent;
+        box-shadow: none;
     }
 
-    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle,
+    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle {
+        @apply transition-transform duration-200;
+        color: var(--nhrrob-secure-text);
+        background: transparent;
+        border: none;
+        padding: 8px;
+        border-radius: 50%;
+    }
+
+    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:hover {
+        @apply scale-110;
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--nhrrob-secure-text);
+    }
+
+    .dark-mode .nhrrob-secure-dark-mode-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
     .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:focus {
-        @apply text-black hover:text-black outline-none;
+        @apply outline-none;
+        box-shadow: none;
+    }
+
+    /* Modern Buttons */
+    .nhrrob-secure-settings .components-button {
+        @apply font-medium transition-all duration-200 h-9 px-5 rounded-lg border-0 shadow-sm flex items-center justify-center gap-2;
+    }
+
+    .nhrrob-secure-actions {
+        @apply mt-10 pt-5 border-t border-gray-100 dark:border-gray-800;
+    }
+
+    .nhrrob-secure-actions .components-button {
+        @apply px-10 h-10;
+        /* Keep Save button slightly larger as it is the main action */
+    }
+
+    .nhrrob-secure-settings .components-button.is-primary {
+        background: linear-gradient(135deg, #2271b1 0%, #135e96 100%);
+        color: #fff;
+    }
+
+    .nhrrob-secure-settings .components-button.is-primary:hover {
+        background: linear-gradient(135deg, #135e96 0%, #0c4a7a 100%);
+        box-shadow: 0 4px 12px rgba(34, 113, 177, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .nhrrob-secure-settings.dark-mode .components-button.is-primary {
+        background: linear-gradient(135deg, #72aee6 0%, #4f94d4 100%);
+        color: #101113;
+    }
+
+    .nhrrob-secure-settings.dark-mode .components-button.is-primary:hover {
+        background: linear-gradient(135deg, #4f94d4 0%, #3577b1 100%);
+        box-shadow: 0 4px 12px rgba(114, 174, 230, 0.2);
+    }
+
+    .nhrrob-secure-settings .components-button.is-secondary {
+        @apply bg-white border border-[#dcdcde] text-[#2c3338];
+    }
+
+    .nhrrob-secure-settings .components-button.is-secondary:hover {
+        @apply bg-gray-50 border-[#c3c4c7];
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .nhrrob-secure-settings.dark-mode .components-button.is-secondary {
+        @apply bg-[#2c3338] border-[#43494e] text-white;
+    }
+
+    .nhrrob-secure-settings.dark-mode .components-button.is-secondary:hover {
+        @apply bg-[#3c434a] border-[#50575e];
+    }
+
+    .nhrrob-secure-settings .components-button.is-link.is-destructive {
+        @apply bg-transparent text-red-600 border-0 shadow-none px-2 h-auto hover:text-red-700;
+    }
+
+    .nhrrob-secure-settings .components-button:active {
+        @apply transform-none scale-95;
+    }
+
+    .nhrrob-secure-settings .components-button:disabled {
+        @apply opacity-50 cursor-not-allowed transform-none;
         box-shadow: none;
     }
 
@@ -210,6 +297,7 @@
     .nhrrob-text-success {
         color: #16a34a;
     }
+
     .dark-mode .nhrrob-text-success {
         color: #4ade80;
     }
@@ -217,6 +305,7 @@
     .nhrrob-text-danger {
         color: #dc2626;
     }
+
     .dark-mode .nhrrob-text-danger {
         color: #f87171;
     }
@@ -231,6 +320,7 @@
         background-color: #dcfce7;
         color: #15803d;
     }
+
     .dark-mode .nhrrob-badge-grade-a {
         background-color: rgba(34, 197, 94, 0.15);
         color: #4ade80;
@@ -240,6 +330,7 @@
         background-color: #fef9c3;
         color: #a16207;
     }
+
     .dark-mode .nhrrob-badge-grade-b {
         background-color: rgba(234, 179, 8, 0.15);
         color: #facc15;
@@ -249,6 +340,7 @@
         background-color: #fee2e2;
         color: #b91c1c;
     }
+
     .dark-mode .nhrrob-badge-grade-c {
         background-color: rgba(239, 68, 68, 0.15);
         color: #f87171;
@@ -281,6 +373,17 @@
 
     .nhrrob-secure-settings.dark-mode .components-notice__content {
         color: #1e1e1e;
+    }
+
+    /* WP native .notice elements inside dark mode — ensure text is always readable */
+    .dark-mode .notice,
+    .dark-mode .notice p,
+    .dark-mode .notice.notice-warning p,
+    .dark-mode .notice.notice-error p,
+    .dark-mode .notice.notice-success p,
+    .dark-mode .inline-notice p,
+    .dark-mode .nhrrob-warning-notice p {
+        color: #1e1e1e !important;
     }
 
     /* Vulnerability Checker Styles */
@@ -351,10 +454,6 @@
 
     .nhrrob-scan-controls {
         @apply flex items-center gap-4 shrink-0;
-    }
-
-    .nhrrob-scan-controls .components-button {
-        @apply flex items-center justify-center gap-2 px-4 py-2 h-auto !important;
     }
 
     .nhrrob-scan-controls .components-button .dashicon {

@@ -131,8 +131,8 @@ const HealthCheck = ({ onApplyOneClick }) => {
                     </div>
 
                     <Button
-                        variant="secondary"
-                        className="justify-center text-xs py-2 h-auto hover:bg-blue-600 hover:text-white transition-colors"
+                        variant="primary"
+                        className="justify-center px-6"
                         onClick={handleOneClick}
                         isBusy={applying}
                         disabled={applying}
