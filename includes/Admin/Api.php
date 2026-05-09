@@ -138,6 +138,10 @@ class Api
                         return is_array($countries) ? array_map('sanitize_text_field', $countries) : [];
                     },
                 ],
+                'nhrrob_secure_protect_readme_files' => [
+                    'type' => 'boolean',
+                    'sanitize_callback' => 'rest_sanitize_boolean',
+                ],
             ],
         ]);
 
@@ -298,6 +302,7 @@ class Api
             'nhrrob_secure_ip_whitelist' => get_option('nhrrob_secure_ip_whitelist', ''),
             'nhrrob_secure_ip_blacklist' => get_option('nhrrob_secure_ip_blacklist', ''),
             'nhrrob_secure_blocked_countries' => (array) get_option('nhrrob_secure_blocked_countries', []),
+            'nhrrob_secure_protect_readme_files' => (bool) get_option('nhrrob_secure_protect_readme_files', false),
             'available_roles' => $this->get_available_roles(),
         ];
     }

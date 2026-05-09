@@ -89,7 +89,7 @@ const SessionManager = ({ settings, updateSetting }) => {
                 )}
 
                 <div className="nhrrob-secure-sessions-list mt-4">
-                    <h3 className="text-sm font-semibold mb-3">{__('Active Sessions', 'nhrrob-secure')}</h3>
+                    <h3 className="text-sm font-semibold mb-3 nhrrob-text-primary">{__('Active Sessions', 'nhrrob-secure')}</h3>
 
                     {sessions.length === 0 && !loading ? (
                         <p>{__('No active sessions found.', 'nhrrob-secure')}</p>
@@ -99,11 +99,11 @@ const SessionManager = ({ settings, updateSetting }) => {
                                 <div key={index} className={`session-item p-3 border rounded mb-2 ${session.is_current ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
                                     <div className="flex justify-between items-start">
                                         <div className="session-info">
-                                            <div className="font-medium text-gray-700">
+                                            <div className="font-medium nhrrob-text-primary">
                                                 {session.ip}
                                                 {session.is_current && <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">{__('Current Session', 'nhrrob-secure')}</span>}
                                             </div>
-                                            <div className="text-xs text-gray-500 mt-1">
+                                            <div className="text-xs nhrrob-text-muted mt-1">
                                                 <div>{__('Login:', 'nhrrob-secure')} {new Date(session.login * 1000).toLocaleString()}</div>
                                                 <div>{__('Expires:', 'nhrrob-secure')} {new Date(session.expiration * 1000).toLocaleString()}</div>
                                                 <div className="mt-1 font-mono text-gray-400 truncate w-64" title={session.ua}>{session.ua}</div>

@@ -15,9 +15,17 @@ const FileProtection = ({ settings, updateSetting }) => {
                     checked={settings.nhrrob_secure_protect_debug_log}
                     onChange={(value) => updateSetting('nhrrob_secure_protect_debug_log', value)}
                 />
+
+                <ToggleControl
+                    label={__('Protect Readme Files', 'nhrrob-secure')}
+                    help={__('Block direct HTTP access to readme.txt, readme.html, license.txt inside plugin/theme directories.', 'nhrrob-secure')}
+                    checked={settings.nhrrob_secure_protect_readme_files}
+                    onChange={(value) => updateSetting('nhrrob_secure_protect_readme_files', value)}
+                />
             </CardBody>
         </Card>
     );
 };
 
 export default FileProtection;
+

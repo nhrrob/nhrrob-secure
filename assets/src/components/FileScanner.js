@@ -89,9 +89,8 @@ const FileScanner = () => {
                         isBusy={scanning} 
                         disabled={scanning}
                         icon="update"
-                        iconPosition="right"
                     >
-                        {scanning ? __('Scanning...', 'nhrrob-secure') : __('Start Scan', 'nhrrob-secure')}
+                        {scanning ? __('Scanning...', 'nhrrob-secure') : __('Scan Now', 'nhrrob-secure')}
                     </Button>
                 </div>
             </div>

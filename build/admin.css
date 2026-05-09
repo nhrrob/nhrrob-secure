@@ -69,34 +69,177 @@
         color: var(--nhrrob-secure-text);
 }
 
-    .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle {
-        --tw-text-opacity: 1;
-        color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-}
-
+    .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle,
+    .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle:focus,
     .nhrrob-secure-settings.dark-mode .nhrrob-secure-dark-mode-toggle:hover {
-        --tw-text-opacity: 1;
-        color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-}
-
-    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle,
-    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:focus {
-        --tw-text-opacity: 1;
-        color: rgb(0 0 0 / var(--tw-text-opacity, 1));
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-}
-
-    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:hover,
-    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:focus:hover {
-        --tw-text-opacity: 1;
-        color: rgb(0 0 0 / var(--tw-text-opacity, 1));
-}
-
-    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle,
-    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:focus {
+        color: #ffffff !important;
+        background: transparent;
         box-shadow: none;
     }
+
+    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle {
+        transition-property: transform;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+        color: var(--nhrrob-secure-text);
+        background: transparent;
+        border: none;
+        padding: 8px;
+        border-radius: 50%;
+}
+
+    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:hover {
+        --tw-scale-x: 1.1;
+        --tw-scale-y: 1.1;
+        transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--nhrrob-secure-text);
+}
+
+    .dark-mode .nhrrob-secure-dark-mode-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nhrrob-secure-settings .nhrrob-secure-dark-mode-toggle:focus {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        box-shadow: none;
+}
+
+    /* Modern Buttons */
+    .nhrrob-secure-settings .components-button {
+        display: flex;
+        height: 2.25rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.5rem;
+        border-width: 0px;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        font-weight: 500;
+        --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+        box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+}
+
+    .nhrrob-secure-actions {
+        margin-top: 2.5rem;
+        border-top-width: 1px;
+        --tw-border-opacity: 1;
+        border-color: rgb(243 244 246 / var(--tw-border-opacity, 1));
+        padding-top: 1.25rem;
+}
+
+    @media (prefers-color-scheme: dark) {
+
+        .nhrrob-secure-actions {
+                --tw-border-opacity: 1;
+                border-color: rgb(31 41 55 / var(--tw-border-opacity, 1));
+        }
+}
+
+    .nhrrob-secure-actions .components-button {
+        height: 2.5rem;
+        padding-left: 2.5rem;
+        padding-right: 2.5rem;
+        /* Keep Save button slightly larger as it is the main action */
+}
+
+    .nhrrob-secure-settings .components-button.is-primary {
+        background: linear-gradient(135deg, #2271b1 0%, #135e96 100%);
+        color: #fff;
+    }
+
+    .nhrrob-secure-settings .components-button.is-primary:hover {
+        background: linear-gradient(135deg, #135e96 0%, #0c4a7a 100%);
+        box-shadow: 0 4px 12px rgba(34, 113, 177, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .nhrrob-secure-settings.dark-mode .components-button.is-primary {
+        background: linear-gradient(135deg, #72aee6 0%, #4f94d4 100%);
+        color: #101113;
+    }
+
+    .nhrrob-secure-settings.dark-mode .components-button.is-primary:hover {
+        background: linear-gradient(135deg, #4f94d4 0%, #3577b1 100%);
+        box-shadow: 0 4px 12px rgba(114, 174, 230, 0.2);
+    }
+
+    .nhrrob-secure-settings .components-button.is-secondary {
+        border-width: 1px;
+        --tw-border-opacity: 1;
+        border-color: rgb(220 220 222 / var(--tw-border-opacity, 1));
+        --tw-bg-opacity: 1;
+        background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+        --tw-text-opacity: 1;
+        color: rgb(44 51 56 / var(--tw-text-opacity, 1));
+}
+
+    .dark-mode .session-item.nhrrob-secure-settings .components-button.is-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.03);
+        border-color: var(--nhrrob-secure-border);
+    }
+
+    .nhrrob-secure-settings .components-button.is-secondary:hover {
+        --tw-border-opacity: 1;
+        border-color: rgb(195 196 199 / var(--tw-border-opacity, 1));
+        --tw-bg-opacity: 1;
+        background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+    .nhrrob-secure-settings.dark-mode .components-button.is-secondary {
+        --tw-border-opacity: 1;
+        border-color: rgb(67 73 78 / var(--tw-border-opacity, 1));
+        --tw-bg-opacity: 1;
+        background-color: rgb(44 51 56 / var(--tw-bg-opacity, 1));
+        --tw-text-opacity: 1;
+        color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+
+    .nhrrob-secure-settings.dark-mode .components-button.is-secondary:hover {
+        --tw-border-opacity: 1;
+        border-color: rgb(80 87 94 / var(--tw-border-opacity, 1));
+        --tw-bg-opacity: 1;
+        background-color: rgb(60 67 74 / var(--tw-bg-opacity, 1));
+}
+
+    .nhrrob-secure-settings .components-button.is-link.is-destructive {
+        height: auto;
+        border-width: 0px;
+        background-color: transparent;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        --tw-text-opacity: 1;
+        color: rgb(220 38 38 / var(--tw-text-opacity, 1));
+        --tw-shadow: 0 0 #0000;
+        --tw-shadow-colored: 0 0 #0000;
+        box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+    .nhrrob-secure-settings .components-button.is-link.is-destructive:hover {
+        --tw-text-opacity: 1;
+        color: rgb(185 28 28 / var(--tw-text-opacity, 1));
+}
+
+    .nhrrob-secure-settings .components-button:active {
+        --tw-scale-x: .95;
+        --tw-scale-y: .95;
+        transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+        transform: none;
+}
+
+    .nhrrob-secure-settings .components-button:disabled {
+        transform: none;
+        cursor: not-allowed;
+        opacity: 0.5;
+        box-shadow: none;
+}
 
     .nhrrob-secure-subtitle {
         margin: 0px;
@@ -198,7 +341,7 @@
         color: var(--nhrrob-secure-text) !important;
     }
 
-    .
+
     .dark-mode .components-placeholder {
         background-color: var(--nhrrob-secure-vuln-bg) !important;
         border-color: var(--nhrrob-secure-vuln-border) !important;
@@ -271,6 +414,74 @@
         color: #a7aaad;
     }
 
+    /* ============================================================
+     * DARK MODE UTILITY CLASSES
+     * Use these classes anywhere to get automatic dark mode support.
+     * They use CSS vars so they work in both light & dark automatically.
+     * ============================================================ */
+
+    /* Text color utilities */
+    .nhrrob-text-primary {
+        color: var(--nhrrob-secure-text);
+    }
+
+    .nhrrob-text-muted {
+        color: var(--nhrrob-secure-text-muted);
+    }
+
+    .dark-mode .nhrrob-text-success {
+        color: #4ade80;
+    }
+
+    .dark-mode .nhrrob-text-danger {
+        color: #f87171;
+    }
+
+    /* Background utilities */
+
+    /* Grade badge classes (A/B/C) — dark mode aware */
+    .nhrrob-badge-grade-a {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+
+    .dark-mode .nhrrob-badge-grade-a {
+        background-color: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+    }
+
+    .nhrrob-badge-grade-b {
+        background-color: #fef9c3;
+        color: #a16207;
+    }
+
+    .dark-mode .nhrrob-badge-grade-b {
+        background-color: rgba(234, 179, 8, 0.15);
+        color: #facc15;
+    }
+
+    .nhrrob-badge-grade-c {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .dark-mode .nhrrob-badge-grade-c {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+    }
+
+    /* Card inner h3 headings (e.g. Active Sessions title) */
+    .dark-mode .nhrrob-secure-card h3,
+    .dark-mode .nhrrob-secure-sessions-list h3 {
+        color: var(--nhrrob-secure-text) !important;
+    }
+
+    /* Card subtitle / description paragraphs */
+    .nhrrob-secure-card-subtitle,
+    .nhrrob-card-subtitle-text {
+        color: var(--nhrrob-secure-text-muted);
+    }
+
     .nhrrob-secure-card .components-toggle-control {
         align-items: flex-start;
 }
@@ -287,6 +498,17 @@
 
     .nhrrob-secure-settings.dark-mode .components-notice__content {
         color: #1e1e1e;
+    }
+
+    /* WP native .notice elements inside dark mode — ensure text is always readable */
+    .dark-mode .notice,
+    .dark-mode .notice p,
+    .dark-mode .notice.notice-warning p,
+    .dark-mode .notice.notice-error p,
+    .dark-mode .notice.notice-success p,
+    .dark-mode .inline-notice p,
+    .dark-mode .nhrrob-warning-notice p {
+        color: #1e1e1e !important;
     }
 
     /* Vulnerability Checker Styles */
@@ -400,18 +622,6 @@
         flex-shrink: 0;
         align-items: center;
         gap: 1rem;
-}
-
-    .nhrrob-scan-controls .components-button {
-        display: flex !important;
-        height: auto !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 0.5rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        padding-top: 0.5rem !important;
-        padding-bottom: 0.5rem !important;
 }
 
     .nhrrob-scan-controls .components-button .dashicon {
@@ -663,9 +873,6 @@
 .relative {
         position: relative;
 }
-.-mr-0\.5 {
-        margin-right: -0.125rem;
-}
 .mb-2 {
         margin-bottom: 0.5rem;
 }
@@ -692,6 +899,9 @@
 }
 .mt-1 {
         margin-top: 0.25rem;
+}
+.mt-3 {
+        margin-top: 0.75rem;
 }
 .mt-4 {
         margin-top: 1rem;
@@ -732,9 +942,6 @@
 .w-full {
         width: 100%;
 }
-.max-w-xs {
-        max-width: 20rem;
-}
 .flex-1 {
         flex: 1 1 0%;
 }
@@ -745,9 +952,6 @@
 .transform {
         transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
-.cursor-pointer {
-        cursor: pointer;
-}
 .grid-cols-1 {
         grid-template-columns: repeat(1, minmax(0, 1fr));
 }
@@ -757,14 +961,8 @@
 .flex-col {
         flex-direction: column;
 }
-.flex-wrap {
-        flex-wrap: wrap;
-}
 .items-start {
         align-items: flex-start;
-}
-.items-end {
-        align-items: flex-end;
 }
 .items-center {
         align-items: center;
@@ -775,17 +973,11 @@
 .justify-between {
         justify-content: space-between;
 }
-.gap-1 {
-        gap: 0.25rem;
-}
 .gap-2 {
         gap: 0.5rem;
 }
 .gap-3 {
         gap: 0.75rem;
-}
-.gap-4 {
-        gap: 1rem;
 }
 .gap-6 {
         gap: 1.5rem;
@@ -819,9 +1011,6 @@
 .border-t {
         border-top-width: 1px;
 }
-.border-none {
-        border-style: none;
-}
 .border-blue-200 {
         --tw-border-opacity: 1;
         border-color: rgb(191 219 254 / var(--tw-border-opacity, 1));
@@ -834,10 +1023,6 @@
         --tw-border-opacity: 1;
         border-color: rgb(229 231 235 / var(--tw-border-opacity, 1));
 }
-.border-red-200 {
-        --tw-border-opacity: 1;
-        border-color: rgb(254 202 202 / var(--tw-border-opacity, 1));
-}
 .bg-blue-100 {
         --tw-bg-opacity: 1;
         background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1));
@@ -849,22 +1034,6 @@
 .bg-gray-50 {
         --tw-bg-opacity: 1;
         background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
-}
-.bg-green-100 {
-        --tw-bg-opacity: 1;
-        background-color: rgb(220 252 231 / var(--tw-bg-opacity, 1));
-}
-.bg-red-100 {
-        --tw-bg-opacity: 1;
-        background-color: rgb(254 226 226 / var(--tw-bg-opacity, 1));
-}
-.bg-red-50 {
-        --tw-bg-opacity: 1;
-        background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
-}
-.bg-yellow-100 {
-        --tw-bg-opacity: 1;
-        background-color: rgb(254 249 195 / var(--tw-bg-opacity, 1));
 }
 .p-0\.5 {
         padding: 0.125rem;
@@ -886,6 +1055,10 @@
         padding-left: 0.75rem;
         padding-right: 0.75rem;
 }
+.px-6 {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+}
 .py-0\.5 {
         padding-top: 0.125rem;
         padding-bottom: 0.125rem;
@@ -893,10 +1066,6 @@
 .py-1 {
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
-}
-.py-1\.5 {
-        padding-top: 0.375rem;
-        padding-bottom: 0.375rem;
 }
 .py-2 {
         padding-top: 0.5rem;
@@ -948,8 +1117,8 @@
 .italic {
         font-style: italic;
 }
-.leading-none {
-        line-height: 1;
+.tracking-wide {
+        letter-spacing: 0.025em;
 }
 .tracking-wider {
         letter-spacing: 0.05em;
@@ -970,14 +1139,6 @@
         --tw-text-opacity: 1;
         color: rgb(107 114 128 / var(--tw-text-opacity, 1));
 }
-.text-gray-700 {
-        --tw-text-opacity: 1;
-        color: rgb(55 65 81 / var(--tw-text-opacity, 1));
-}
-.text-gray-900 {
-        --tw-text-opacity: 1;
-        color: rgb(17 24 39 / var(--tw-text-opacity, 1));
-}
 .text-green-500 {
         --tw-text-opacity: 1;
         color: rgb(34 197 94 / var(--tw-text-opacity, 1));
@@ -985,10 +1146,6 @@
 .text-green-600 {
         --tw-text-opacity: 1;
         color: rgb(22 163 74 / var(--tw-text-opacity, 1));
-}
-.text-green-700 {
-        --tw-text-opacity: 1;
-        color: rgb(21 128 61 / var(--tw-text-opacity, 1));
 }
 .text-red-400 {
         --tw-text-opacity: 1;
@@ -1002,17 +1159,9 @@
         --tw-text-opacity: 1;
         color: rgb(220 38 38 / var(--tw-text-opacity, 1));
 }
-.text-red-700 {
-        --tw-text-opacity: 1;
-        color: rgb(185 28 28 / var(--tw-text-opacity, 1));
-}
 .text-yellow-500 {
         --tw-text-opacity: 1;
         color: rgb(234 179 8 / var(--tw-text-opacity, 1));
-}
-.text-yellow-700 {
-        --tw-text-opacity: 1;
-        color: rgb(161 98 7 / var(--tw-text-opacity, 1));
 }
 .opacity-60 {
         opacity: 0.6;
@@ -1022,11 +1171,6 @@
 }
 .transition-all {
         transition-property: all;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 150ms;
-}
-.transition-colors {
-        transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
 }
@@ -1201,28 +1345,6 @@
         border-left-color: rgb(220 38 38 / var(--tw-border-opacity, 1));
 }
 
-@media (prefers-color-scheme: dark) {
-
-    .dark-mode .session-item .dark\:text-gray-500 {
-        color: var(--nhrrob-secure-text-muted) !important;
-    }
-}
-
-.hover\:bg-blue-600:hover {
-        --tw-bg-opacity: 1;
-        background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));
-}
-
-.hover\:text-white:hover {
-        --tw-text-opacity: 1;
-        color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-}
-
-.focus\:outline-none:focus {
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-}
-
 @media (min-width: 640px) {
 
         .sm\:grid-cols-2 {
@@ -1262,34 +1384,6 @@
         .dark\:border-gray-800 {
                 --tw-border-opacity: 1;
                 border-color: rgb(31 41 55 / var(--tw-border-opacity, 1));
-        }
-
-        .dark\:border-red-800\/50 {
-                border-color: rgb(153 27 27 / 0.5);
-        }
-
-        .dark\:bg-red-900\/20 {
-                background-color: rgb(127 29 29 / 0.2);
-        }
-
-        .dark\:text-gray-100 {
-                --tw-text-opacity: 1;
-                color: rgb(243 244 246 / var(--tw-text-opacity, 1));
-        }
-
-        .dark\:text-gray-300 {
-                --tw-text-opacity: 1;
-                color: rgb(209 213 219 / var(--tw-text-opacity, 1));
-        }
-
-        .dark\:text-gray-400 {
-                --tw-text-opacity: 1;
-                color: rgb(156 163 175 / var(--tw-text-opacity, 1));
-        }
-
-        .dark\:text-gray-500 {
-                --tw-text-opacity: 1;
-                color: rgb(107 114 128 / var(--tw-text-opacity, 1));
         }
 
         .dark\:text-gray-800 {

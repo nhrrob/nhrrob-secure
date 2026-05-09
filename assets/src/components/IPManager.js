@@ -1,10 +1,9 @@
-import { Card, CardBody, TextareaControl, SelectControl, Button, Notice } from '@wordpress/components';
+import { Card, CardBody, TextareaControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { useState } from '@wordpress/element';
+import Select from 'react-select';
 
 const IPManager = ({ settings, updateSetting }) => {
-    const countries = [
-        { label: __('Select Countries to Block...', 'nhrrob-secure'), value: '' },
+    const countryOptions = [
         { label: 'Afghanistan', value: 'AF' },
         { label: 'Albania', value: 'AL' },
         { label: 'Algeria', value: 'DZ' },
@@ -98,23 +97,98 @@ const IPManager = ({ settings, updateSetting }) => {
 
     const selectedCountries = settings.nhrrob_secure_blocked_countries || [];
 
-    const toggleCountry = (countryCode) => {
-        if (!countryCode) return;
-        
-        let newSelection;
-        if (selectedCountries.includes(countryCode)) {
-            newSelection = selectedCountries.filter(c => c !== countryCode);
-        } else {
-            newSelection = [...selectedCountries, countryCode];
-        }
-        updateSetting('nhrrob_secure_blocked_countries', newSelection);
+    // Build react-select value array from stored country codes
+    const selectedOptions = countryOptions.filter(opt => selectedCountries.includes(opt.value));
+
+    const handleCountryChange = (chosen) => {
+        const codes = chosen ? chosen.map(opt => opt.value) : [];
+        updateSetting('nhrrob_secure_blocked_countries', codes);
+    };
+
+    // react-select custom styles that respect the plugin's dark mode CSS variables
+    const selectStyles = {
+        control: (base, state) => ({
+            ...base,
+            backgroundColor: 'var(--nhrrob-secure-card-bg)',
+            borderColor: state.isFocused ? 'var(--nhrrob-secure-primary)' : 'var(--nhrrob-secure-border)',
+            boxShadow: state.isFocused ? '0 0 0 1px var(--nhrrob-secure-primary)' : base.boxShadow,
+            '&:hover': { borderColor: 'var(--nhrrob-secure-primary)' },
+            minHeight: '38px',
+        }),
+        menu: (base) => ({
+            ...base,
+            backgroundColor: 'var(--nhrrob-secure-card-bg)',
+            border: '1px solid var(--nhrrob-secure-border)',
+            boxShadow: 'var(--nhrrob-secure-shadow)',
+            zIndex: 9999,
+        }),
+        option: (base, state) => ({
+            ...base,
+            backgroundColor: state.isSelected
+                ? 'var(--nhrrob-secure-primary)'
+                : state.isFocused
+                ? 'rgba(114, 174, 230, 0.15)'
+                : 'transparent',
+            color: state.isSelected ? '#fff' : 'var(--nhrrob-secure-text)',
+            cursor: 'pointer',
+        }),
+        multiValue: (base) => ({
+            ...base,
+            backgroundColor: 'var(--nhrrob-secure-bg)',
+            border: '1px solid var(--nhrrob-secure-border)',
+            borderRadius: '4px',
+        }),
+        multiValueLabel: (base) => ({
+            ...base,
+            color: 'var(--nhrrob-secure-text)',
+            fontWeight: '500',
+            fontSize: '12px',
+            paddingLeft: '8px',
+        }),
+        multiValueRemove: (base) => ({
+            ...base,
+            color: 'var(--nhrrob-secure-text-muted)',
+            borderRadius: '0 4px 4px 0',
+            '&:hover': { backgroundColor: 'var(--nhrrob-secure-border)', color: 'var(--nhrrob-secure-text)' },
+        }),
+        input: (base) => ({
+            ...base,
+            color: 'var(--nhrrob-secure-text)',
+            minWidth: '120px',
+        }),
+        placeholder: (base) => ({
+            ...base,
+            color: 'var(--nhrrob-secure-text-muted)',
+        }),
+        singleValue: (base) => ({
+            ...base,
+            color: 'var(--nhrrob-secure-text)',
+        }),
+        indicatorSeparator: (base) => ({
+            ...base,
+            backgroundColor: 'var(--nhrrob-secure-border)',
+        }),
+        dropdownIndicator: (base) => ({
+            ...base,
+            color: 'var(--nhrrob-secure-text-muted)',
+            '&:hover': { color: 'var(--nhrrob-secure-text)' },
+        }),
+        clearIndicator: (base) => ({
+            ...base,
+            color: 'var(--nhrrob-secure-text-muted)',
+            '&:hover': { color: 'var(--nhrrob-secure-text)' },
+        }),
+        noOptionsMessage: (base) => ({
+            ...base,
+            color: 'var(--nhrrob-secure-text-muted)',
+        }),
     };
 
     return (
         <Card className="nhrrob-secure-card nhrrob-secure-ip-card">
             <CardBody>
                 <h2 className="nhrrob-secure-card-title">{__('IP & Country Management', 'nhrrob-secure')}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                <p className="text-sm nhrrob-text-muted mb-6">
                     {__('Control access to your site by whitelisting safe IPs or blocking malicious ones and entire countries.', 'nhrrob-secure')}
                 </p>
 
@@ -149,37 +223,21 @@ const IPManager = ({ settings, updateSetting }) => {
                 </div>
 
                 <div className="mt-8 border-t border-gray-100 dark:border-gray-700">
-                    <h3 className="text-sm font-semibold mb-4 text-gray-900 dark:text-gray-100">{__('Country Blocking', 'nhrrob-secure')}</h3>
-                    <div className="flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 max-w-xs nhrrob-secure-country-select">
-                            <SelectControl
-                                label={__('Add Country to Block', 'nhrrob-secure')}
-                                options={countries}
-                                onChange={toggleCountry}
-                                className="dark-mode-select"
-                            />
-                        </div>
-                    </div>
-
-                    {selectedCountries.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {selectedCountries.map(code => (
-                                <div key={code} className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 border border-red-200 dark:border-red-800/50">
-                                    {countries.find(c => c.value === code)?.label || code}
-                                    <button 
-                                        onClick={() => toggleCountry(code)}
-                                        className="focus:outline-none transition-colors text-sm leading-none -mr-0.5 bg-red-50 dark:bg-red-900/20 border-none cursor-pointer"
-                                        title={__('Remove', 'nhrrob-secure')}
-                                        aria-label={__('Remove', 'nhrrob-secure')}
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 italic">
+                    <h3 className="text-sm font-semibold mb-2 nhrrob-text-primary">{__('Country Blocking', 'nhrrob-secure')}</h3>
+                    <label className="block text-xs nhrrob-text-muted mb-2 uppercase tracking-wide font-medium">
+                        {__('Select Countries to Block', 'nhrrob-secure')}
+                    </label>
+                    <Select
+                        isMulti
+                        options={countryOptions}
+                        value={selectedOptions}
+                        onChange={handleCountryChange}
+                        placeholder={__('Search and select countries...', 'nhrrob-secure')}
+                        classNamePrefix="nhrrob-country-select"
+                        styles={selectStyles}
+                        noOptionsMessage={() => __('No countries found', 'nhrrob-secure')}
+                    />
+                    <p className="text-xs nhrrob-text-muted mt-3 italic">
                         {__('Note: Country blocking uses a free GeoIP lookup service with caching for performance.', 'nhrrob-secure')}
                     </p>
                 </div>
