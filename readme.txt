@@ -2,9 +2,9 @@
 Contributors: nhrrob
 Tags: security, hide admin, login protection, debug log, 2fa
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -149,6 +149,9 @@ Yes. You can enable or disable each feature from the settings page under Tools â
 
 
 == Changelog ==
+
+= 1.3.3 - 25/09/2026 =
+- WordPress tested up to version is updated to 7.1
 
 = 1.3.2 - 09/05/2026 =
 - WordPress tested up to version is updated to 7.0
