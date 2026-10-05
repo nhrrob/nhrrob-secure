@@ -1,0 +1,619 @@
+<title>Secure 2.0 Mockup</title>
+
+<style>
+/* Layout: wp-admin style app shell — gradient app bar, collapsible left nav, one screen per section.
+   Sibling of the Database Cleaner design system: same token structure, teal accent instead of violet. */
+:root {
+  --ns-primary:       #0b8a8f;
+  --ns-primary-600:   #08747a;
+  --ns-grad-a:        #0a7c86;
+  --ns-grad-b:        #12a594;
+  --ns-gradient:      linear-gradient(135deg, var(--ns-grad-a) 0%, var(--ns-grad-b) 100%);
+  --ns-soft:          #e6f5f4;
+  --ns-glow:          rgba(11,138,143,.28);
+  --ns-on-primary:    #ffffff;
+  --ns-on-primary-dim: rgba(255,255,255,.18);
+
+  --ns-success:       #12a15c;
+  --ns-warning:       #d97706;
+  --ns-danger:        #dc3b2f;
+  --ns-info:          #2a7fd6;
+  --ns-success-bg:    #e8f7ef;
+  --ns-warning-bg:    #fdf1e0;
+  --ns-danger-bg:     #fdecea;
+  --ns-info-bg:       #e8f1fc;
+
+  --ns-surface:       #ffffff;
+  --ns-bg:            #f4f8f8;
+  --ns-sunken:        #eef3f3;
+  --ns-border:        #e1eaea;
+  --ns-border-strong: #cfdcdc;
+  --ns-text:          #0f1f24;
+  --ns-muted:         #5a6e74;
+  --ns-shadow:        0 1px 3px rgba(15,31,36,.07), 0 1px 2px rgba(15,31,36,.05);
+  --ns-shadow-lg:     0 12px 32px rgba(15,31,36,.13);
+  --ns-radius:        12px;
+
+  --ns-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ns-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ns-primary: #2cc0b8; --ns-primary-600: #57d3cc; --ns-grad-a: #0a6f78; --ns-grad-b: #0f9384;
+    --ns-soft: #17373a; --ns-glow: rgba(18,165,148,.3);
+    --ns-success: #3ccf8a; --ns-warning: #f5a742; --ns-danger: #f2685c; --ns-info: #6aaef2;
+    --ns-success-bg: rgba(60,207,138,.14); --ns-warning-bg: rgba(245,167,66,.14); --ns-danger-bg: rgba(242,104,92,.15); --ns-info-bg: rgba(106,174,242,.14);
+    --ns-surface: #162326; --ns-bg: #0f181a; --ns-sunken: #111c1f; --ns-border: #24363a; --ns-border-strong: #33494e;
+    --ns-text: #e3eeee; --ns-muted: #93a8ad;
+    --ns-shadow: 0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4); --ns-shadow-lg: 0 14px 38px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ns-primary: #2cc0b8; --ns-primary-600: #57d3cc; --ns-grad-a: #0a6f78; --ns-grad-b: #0f9384;
+  --ns-soft: #17373a; --ns-glow: rgba(18,165,148,.3);
+  --ns-success: #3ccf8a; --ns-warning: #f5a742; --ns-danger: #f2685c; --ns-info: #6aaef2;
+  --ns-success-bg: rgba(60,207,138,.14); --ns-warning-bg: rgba(245,167,66,.14); --ns-danger-bg: rgba(242,104,92,.15); --ns-info-bg: rgba(106,174,242,.14);
+  --ns-surface: #162326; --ns-bg: #0f181a; --ns-sunken: #111c1f; --ns-border: #24363a; --ns-border-strong: #33494e;
+  --ns-text: #e3eeee; --ns-muted: #93a8ad;
+  --ns-shadow: 0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4); --ns-shadow-lg: 0 14px 38px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--ns-sans); font-size: 14px; line-height: 1.5; color: var(--ns-text); background: var(--ns-bg); -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ns-primary); outline-offset: 2px; }
+code, .mono { font-family: var(--ns-mono); font-size: 12.5px; }
+
+.frame { max-width: 1240px; margin: 0 auto; padding-block: 24px 56px; padding-inline: 16px; }
+.caption { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; margin: 0 4px 14px; color: var(--ns-muted); font-size: 12.5px; }
+.caption strong { color: var(--ns-text); font-size: 13.5px; }
+
+.app { border: 1px solid var(--ns-border); border-radius: var(--ns-radius); overflow: hidden; box-shadow: var(--ns-shadow-lg); background: var(--ns-bg); }
+.bar { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: var(--ns-gradient); color: var(--ns-on-primary); }
+.bar__mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--ns-on-primary-dim); }
+.bar__title { font-size: 17px; font-weight: 600; }
+.bar__sp { flex: 1; }
+.bar__btn { display: inline-grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px; cursor: pointer; background: var(--ns-on-primary-dim); color: var(--ns-on-primary); }
+.bar__btn:hover { filter: brightness(1.15); }
+.ico { width: 18px; height: 18px; flex: 0 0 auto; }
+
+.body { display: flex; min-height: 640px; }
+.nav { flex: 0 0 216px; display: flex; flex-direction: column; gap: 3px; padding: 14px 12px; background: var(--ns-surface); border-right: 1px solid var(--ns-border); }
+.nav__item { display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--ns-muted); font-weight: 500; cursor: pointer; text-align: left; white-space: nowrap; }
+.nav__item:hover { background: var(--ns-soft); color: var(--ns-primary-600); }
+.nav__item.is-active { background: var(--ns-gradient); color: var(--ns-on-primary); box-shadow: 0 4px 12px var(--ns-glow); }
+.nav__badge { margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--ns-danger); color: var(--ns-on-primary); font-size: 11px; font-weight: 700; text-align: center; }
+.nav__sep { height: 1px; margin: 8px; background: var(--ns-border); }
+.app.is-collapsed .nav { flex-basis: 60px; }
+.app.is-collapsed .nav__label, .app.is-collapsed .nav__badge { display: none; }
+.app.is-collapsed .nav__item { justify-content: center; padding-inline: 0; }
+.content { flex: 1; min-width: 0; padding: 24px; }
+
+.screen { display: none; }
+.screen.is-active { display: block; }
+.screen__title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.2px; text-wrap: balance; }
+.screen__lede { margin: 4px 0 20px; color: var(--ns-muted); font-size: 13.5px; max-width: 70ch; }
+
+.panel { background: var(--ns-surface); border: 1px solid var(--ns-border); border-radius: var(--ns-radius); box-shadow: var(--ns-shadow); margin-bottom: 18px; }
+.panel__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 14px 20px; border-bottom: 1px solid var(--ns-border); }
+.panel__title { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+.panel__title .ico { color: var(--ns-primary); }
+.panel__meta { font-size: 12.5px; color: var(--ns-muted); }
+.panel__body { padding: 18px 20px; }
+.panel__body--flush { padding: 0; }
+
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 1px solid transparent; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn--primary { background: var(--ns-gradient); color: var(--ns-on-primary); }
+.btn--primary:hover { box-shadow: 0 6px 16px var(--ns-glow); }
+.btn--soft { background: var(--ns-soft); color: var(--ns-primary-600); }
+.btn--ghost { background: transparent; border-color: var(--ns-border-strong); color: var(--ns-text); }
+.btn--ghost:hover { border-color: var(--ns-primary); color: var(--ns-primary-600); }
+.btn--danger { background: transparent; border-color: var(--ns-danger); color: var(--ns-danger); }
+.btn--sm { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill--ok { background: var(--ns-success-bg); color: var(--ns-success); }
+.pill--warn { background: var(--ns-warning-bg); color: var(--ns-warning); }
+.pill--bad { background: var(--ns-danger-bg); color: var(--ns-danger); }
+.pill--info { background: var(--ns-info-bg); color: var(--ns-info); }
+.pill--off { background: var(--ns-sunken); color: var(--ns-muted); }
+
+/* Setting rows */
+.row { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--ns-border); }
+.row:first-child { padding-top: 0; }
+.row:last-child { border-bottom: 0; padding-bottom: 0; }
+.row__main { flex: 1; min-width: 0; }
+.row__label { font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.row__help { color: var(--ns-muted); font-size: 13px; margin-top: 2px; }
+.row__risk { font-size: 12.5px; margin-top: 4px; color: var(--ns-warning); }
+.row__sub { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; }
+.switch { position: relative; flex: 0 0 auto; width: 40px; height: 22px; border: 0; border-radius: 22px; background: var(--ns-border-strong); cursor: pointer; margin-top: 2px; transition: background 150ms; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--ns-surface); box-shadow: var(--ns-shadow); transition: transform 150ms; }
+.switch[aria-checked="true"] { background: var(--ns-primary); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ns-muted); font-weight: 600; }
+.input, .select { height: 36px; padding: 0 11px; border: 1px solid var(--ns-border-strong); border-radius: 9px; background: var(--ns-surface); color: var(--ns-text); font-size: 13.5px; font-weight: 400; max-width: 100%; }
+.input--sm { width: 84px; }
+.affix { display: flex; align-items: center; border: 1px solid var(--ns-border-strong); border-radius: 9px; overflow: hidden; background: var(--ns-surface); max-width: 100%; }
+.affix span { padding: 0 10px; height: 36px; display: flex; align-items: center; background: var(--ns-sunken); color: var(--ns-muted); font-family: var(--ns-mono); font-size: 12.5px; font-weight: 400; white-space: nowrap; }
+.affix input { border: 0; height: 36px; padding: 0 10px; background: transparent; min-width: 0; width: 150px; font-family: var(--ns-mono); font-size: 12.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 4px 11px; border-radius: 20px; border: 1px solid var(--ns-border-strong); background: var(--ns-surface); font-size: 12.5px; cursor: pointer; }
+.chip.is-on { background: var(--ns-soft); border-color: var(--ns-primary); color: var(--ns-primary-600); font-weight: 600; }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--ns-sunken); border: 1px solid var(--ns-border); }
+.seg button { border: 0; background: transparent; padding: 5px 13px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: var(--ns-muted); cursor: pointer; }
+.seg button.is-on { background: var(--ns-surface); color: var(--ns-primary-600); box-shadow: var(--ns-shadow); }
+.note { display: flex; gap: 10px; padding: 11px 14px; border-radius: 10px; background: var(--ns-info-bg); font-size: 13px; margin-top: 14px; }
+.note .ico { color: var(--ns-info); margin-top: 1px; }
+.note--warn { background: var(--ns-warning-bg); }
+.note--warn .ico { color: var(--ns-warning); }
+pre.code { margin: 10px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--ns-sunken); border: 1px solid var(--ns-border); font-family: var(--ns-mono); font-size: 12px; overflow-x: auto; }
+
+/* Tables */
+.scroll { overflow-x: auto; }
+table.grid { width: 100%; border-collapse: collapse; font-size: 13px; }
+.grid th { text-align: left; padding: 10px 16px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--ns-muted); font-weight: 600; background: var(--ns-sunken); border-bottom: 1px solid var(--ns-border); white-space: nowrap; }
+.grid td { padding: 11px 16px; border-bottom: 1px solid var(--ns-border); vertical-align: middle; white-space: nowrap; }
+.grid tr:last-child td { border-bottom: 0; }
+.grid td.wrap { white-space: normal; min-width: 220px; }
+.grid .num { font-variant-numeric: tabular-nums; }
+.grid .act { text-align: right; }
+.who { display: flex; align-items: center; gap: 9px; }
+.avatar { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--ns-soft); color: var(--ns-primary-600); font-size: 11px; font-weight: 700; }
+.sub { color: var(--ns-muted); font-size: 12px; }
+
+/* Dashboard */
+.health { display: flex; flex-wrap: wrap; align-items: center; gap: 26px; }
+.gauge { position: relative; width: 132px; height: 132px; flex: 0 0 auto; }
+.gauge__v { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.gauge__n { font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+.gauge__d { font-size: 12px; color: var(--ns-muted); }
+.gauge__track { stroke: var(--ns-sunken); }
+.gauge__arc { stroke: var(--ns-primary); }
+.health__copy { flex: 1; min-width: 240px; }
+.health__copy h3 { margin: 0 0 4px; font-size: 17px; }
+.health__copy p { margin: 0; color: var(--ns-muted); max-width: 62ch; }
+.stats { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.card { display: flex; flex-direction: column; gap: 2px; padding: 16px; border-radius: var(--ns-radius); background: var(--ns-surface); border: 1px solid var(--ns-border); box-shadow: var(--ns-shadow); }
+.card__label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--ns-muted); display: flex; align-items: center; gap: 7px; }
+.card__metric { font-size: 23px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.card__sub { font-size: 12.5px; color: var(--ns-muted); margin-bottom: 10px; }
+.card .btn { margin-top: auto; align-self: flex-start; }
+.issues { list-style: none; margin: 0; padding: 0; }
+.issue { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 13px 20px; border-bottom: 1px solid var(--ns-border); }
+.issue:last-child { border-bottom: 0; }
+.issue__sev { width: 4px; align-self: stretch; border-radius: 4px; background: var(--ns-warning); }
+.issue__sev--bad { background: var(--ns-danger); }
+.issue__sev--ok { background: var(--ns-success); }
+.issue__main { flex: 1; min-width: 220px; }
+.issue__main b { font-weight: 600; }
+.feed { list-style: none; margin: 0; padding: 0; }
+.feed li { display: flex; gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--ns-border); font-size: 13px; }
+.feed li:last-child { border-bottom: 0; }
+.feed time { color: var(--ns-muted); flex: 0 0 74px; font-variant-numeric: tabular-nums; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.two > .panel { margin-bottom: 0; }
+.two { margin-bottom: 18px; }
+.progress { height: 8px; border-radius: 8px; background: var(--ns-sunken); overflow: hidden; margin: 10px 0 6px; }
+.progress i { display: block; height: 100%; width: 62%; background: var(--ns-gradient); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--ns-border); }
+.toolbar .input { flex: 1; min-width: 160px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); padding: 9px 16px; border-radius: 10px; background: var(--ns-text); color: var(--ns-bg); font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 160ms, transform 160ms; }
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 760px) {
+  .body { flex-direction: column; }
+  .nav, .app.is-collapsed .nav { flex: 0 0 auto; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--ns-border); padding: 10px; }
+  .nav__item { width: auto; }
+  .nav__sep { display: none; }
+  .content { padding: 16px; }
+  .panel__body { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="frame">
+  <p class="caption"><strong>Secure 2.0 — design mockup</strong><span>Example data. Click the sections, flip switches, try the theme and collapse buttons. Tools → Secure in wp-admin.</span></p>
+
+  <div class="app" id="app">
+    <header class="bar">
+      <button class="bar__btn" id="collapse" type="button" aria-label="Collapse menu"><svg class="ico" data-i="menu"></svg></button>
+      <span class="bar__mark"><svg class="ico" data-i="shield"></svg></span>
+      <span class="bar__title">Secure</span>
+      <span class="bar__sp"></span>
+      <button class="bar__btn" id="theme" type="button" aria-label="Switch theme"><svg class="ico" data-i="moon"></svg></button>
+    </header>
+
+    <div class="body">
+      <nav class="nav" aria-label="Sections">
+        <button class="nav__item is-active" data-s="dashboard" type="button"><svg class="ico" data-i="gauge"></svg><span class="nav__label">Dashboard</span><span class="nav__badge">4</span></button>
+        <button class="nav__item" data-s="login" type="button"><svg class="ico" data-i="key"></svg><span class="nav__label">Login</span></button>
+        <button class="nav__item" data-s="users" type="button"><svg class="ico" data-i="users"></svg><span class="nav__label">Users &amp; Sessions</span></button>
+        <button class="nav__item" data-s="firewall" type="button"><svg class="ico" data-i="wall"></svg><span class="nav__label">Firewall</span></button>
+        <button class="nav__item" data-s="hardening" type="button"><svg class="ico" data-i="lock"></svg><span class="nav__label">Hardening</span></button>
+        <button class="nav__item" data-s="scanner" type="button"><svg class="ico" data-i="scan"></svg><span class="nav__label">Scanner</span></button>
+        <button class="nav__item" data-s="activity" type="button"><svg class="ico" data-i="list"></svg><span class="nav__label">Activity</span></button>
+        <div class="nav__sep"></div>
+        <button class="nav__item" data-s="settings" type="button"><svg class="ico" data-i="cog"></svg><span class="nav__label">Settings</span></button>
+      </nav>
+
+      <main class="content">
+
+        <!-- DASHBOARD -->
+        <section class="screen is-active" id="s-dashboard">
+          <h1 class="screen__title">Dashboard</h1>
+          <p class="screen__lede">How your site stands right now, and what to fix first.</p>
+
+          <div class="panel"><div class="panel__body">
+            <div class="health">
+              <div class="gauge">
+                <svg viewBox="0 0 132 132" width="132" height="132" aria-hidden="true">
+                  <circle class="gauge__track" cx="66" cy="66" r="56" fill="none" stroke-width="12"></circle>
+                  <circle class="gauge__arc" cx="66" cy="66" r="56" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="253.3 351.9" transform="rotate(-90 66 66)"></circle>
+                </svg>
+                <div class="gauge__v"><span class="gauge__n">72</span><span class="gauge__d">out of 100</span></div>
+              </div>
+              <div class="health__copy">
+                <h3>Good, with 4 things to fix</h3>
+                <p>The score comes from 15 checks of your site as it is today. Start by updating Contact Form X and adding two-factor for the remaining administrator.</p>
+                <div class="stats"><span><b>11</b> checks passed</span><span><b>3</b> lockouts in 24 h</span><span><b>2 of 3</b> admins use two-factor</span><span>Last scan <b>2 h ago</b></span></div>
+              </div>
+            </div>
+          </div></div>
+
+          <div class="cards">
+            <div class="card"><span class="card__label"><svg class="ico" data-i="key"></svg>Login protection</span><span class="card__metric">3</span><span class="card__sub">addresses locked out today</span><button class="btn btn--soft btn--sm" data-go="login" type="button">View lockouts</button></div>
+            <div class="card"><span class="card__label"><svg class="ico" data-i="users"></svg>Two-factor</span><span class="card__metric">2 of 3</span><span class="card__sub">administrators enrolled</span><button class="btn btn--soft btn--sm" data-go="users" type="button">See who</button></div>
+            <div class="card"><span class="card__label"><svg class="ico" data-i="scan"></svg>Vulnerabilities</span><span class="card__metric">1</span><span class="card__sub">in 24 plugins and 3 themes</span><button class="btn btn--soft btn--sm" data-go="scanner" type="button">Review</button></div>
+            <div class="card"><span class="card__label"><svg class="ico" data-i="wall"></svg>Blocked requests</span><span class="card__metric">128</span><span class="card__sub">in the last 7 days</span><button class="btn btn--soft btn--sm" data-go="firewall" type="button">Open firewall</button></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="alert"></svg>To fix</h2><span class="panel__meta">4 items</span></div>
+            <ul class="issues">
+              <li class="issue"><span class="issue__sev issue__sev--bad"></span><div class="issue__main"><b>Contact Form X 5.8.1 has a known vulnerability.</b><div class="sub">Stored cross-site scripting. Fixed in 5.8.3.</div></div><span class="pill pill--bad">Critical</span><button class="btn btn--primary btn--sm" data-go="scanner" type="button">Update plugin</button></li>
+              <li class="issue"><span class="issue__sev"></span><div class="issue__main"><b>1 administrator has no two-factor.</b><div class="sub">farhana signs in with a password only.</div></div><span class="pill pill--warn">High</span><button class="btn btn--soft btn--sm" data-go="users" type="button">Review users</button></li>
+              <li class="issue"><span class="issue__sev"></span><div class="issue__main"><b>debug.log can be read by anyone.</b><div class="sub">We requested /wp-content/debug.log and got the file back.</div></div><span class="pill pill--warn">High</span><button class="btn btn--soft btn--sm" data-go="hardening" type="button">Protect files</button></li>
+              <li class="issue"><span class="issue__sev"></span><div class="issue__main"><b>XML-RPC is reachable.</b><div class="sub">Nothing on this site uses it.</div></div><span class="pill pill--info">Medium</span><button class="btn btn--soft btn--sm" data-go="hardening" type="button">Turn off</button></li>
+              <li class="issue"><span class="issue__sev issue__sev--ok"></span><div class="issue__main"><b>11 checks passed.</b><div class="sub">WordPress up to date · HTTPS forced in admin · no "admin" username · file editor off · PHP 8.3 supported …</div></div><button class="btn btn--ghost btn--sm" type="button">Show all</button></li>
+            </ul>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="list"></svg>Recent activity</h2><button class="btn btn--ghost btn--sm" data-go="activity" type="button">View all</button></div>
+            <ul class="feed">
+              <li><time>10:42</time><span><b>robin</b> signed in from 103.92.84.10</span></li>
+              <li><time>09:17</time><span>47 failed sign-ins from <span class="mono">203.0.113.9</span> — locked out for 1 hour</span></li>
+              <li><time>08:03</time><span>Vulnerability check found 1 new issue</span></li>
+              <li><time>Yesterday</time><span><b>robin</b> activated the plugin WP Mail Log</span></li>
+              <li><time>Yesterday</time><span><b>mitu</b> changed their password</span></li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- LOGIN -->
+        <section class="screen" id="s-login">
+          <h1 class="screen__title">Login</h1>
+          <p class="screen__lede">Everything that stands between a stranger and your sign-in form. Changes save as you make them.</p>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="key"></svg>Limit login attempts</h2><span class="pill pill--ok">On</span></div>
+            <div class="panel__body">
+              <div class="row"><div class="row__main"><div class="row__label">Lock out after repeated failures</div><div class="row__help">Counts by address, and by address plus username. Addresses on your allow list are never locked.</div>
+                <div class="row__sub">
+                  <label class="field" for="attempts">Failed attempts<input class="input input--sm" id="attempts" type="number" value="5"></label>
+                  <label class="field" for="lockfor">First lockout<select class="select" id="lockfor"><option>20 minutes</option><option>1 hour</option><option>24 hours</option></select></label>
+                  <label class="field" for="repeat">Repeat offenders<select class="select" id="repeat"><option>Double each time, up to 24 h</option><option>Same duration</option></select></label>
+                </div></div><button class="switch" role="switch" aria-checked="true" aria-label="Limit login attempts" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Email me when an address is locked out</div><div class="row__help">One email per burst, not one per attempt.</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Email on lockout" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Don't reveal which part was wrong</div><div class="row__help">Shows "Incorrect username or password" for every failure.</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Generic errors" type="button"></button></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="alert"></svg>Locked out now</h2><span class="panel__meta">3 addresses</span></div>
+            <div class="panel__body panel__body--flush scroll">
+              <table class="grid"><thead><tr><th>Address</th><th>Tried as</th><th>Attempts</th><th>Unlocks in</th><th></th></tr></thead><tbody>
+                <tr><td class="mono">203.0.113.9</td><td>admin, administrator, test +6</td><td class="num">47</td><td class="num">42 min</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Unlocked 203.0.113.9">Unlock</button></td></tr>
+                <tr><td class="mono">198.51.100.24</td><td>robin</td><td class="num">5</td><td class="num">11 min</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Unlocked 198.51.100.24">Unlock</button></td></tr>
+                <tr><td class="mono">2001:db8::7a1c</td><td>editor</td><td class="num">8</td><td class="num">1 h 54 min</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Unlocked 2001:db8::7a1c">Unlock</button></td></tr>
+              </tbody></table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="link"></svg>Login address</h2><span class="pill pill--off">Off</span></div>
+            <div class="panel__body">
+              <div class="row"><div class="row__main"><div class="row__label">Move the sign-in page</div><div class="row__help">wp-login.php and /wp-admin answer "Not found" to anyone who is not signed in.</div>
+                <div class="row__sub"><label class="field" for="slug">New address<span class="affix"><span>example.com/</span><input id="slug" type="text" value="team-door"></span></label><button class="btn btn--ghost" type="button" data-toast="Test passed: the new address shows the sign-in form">Test address</button></div>
+                <div class="note"><svg class="ico" data-i="info"></svg><span>Before this turns on we email the new address to robin@example.com and ask you to open it once. Locked out later? Add <code>define( 'NHRROB_SECURE_SAFE_MODE', true );</code> to wp-config.php.</span></div>
+              </div><button class="switch" role="switch" aria-checked="false" aria-label="Move the sign-in page" type="button"></button></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="phone"></svg>Two-factor</h2><span class="pill pill--ok">On</span></div>
+            <div class="panel__body">
+              <div class="row"><div class="row__main"><div class="row__label">Let users add a second step</div><div class="row__help">Each user sets it up on their profile and must enter a working code before it switches on.</div>
+                <div class="row__sub"><div class="field">Methods users can choose<div class="chips"><button class="chip is-on" type="button">Authenticator app</button><button class="chip is-on" type="button">Email code</button><button class="chip" type="button">Passkey (later)</button></div></div></div></div>
+                <button class="switch" role="switch" aria-checked="true" aria-label="Two-factor" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Required for</div><div class="row__help">These roles must set it up. Others can choose.</div>
+                <div class="row__sub"><div class="chips"><button class="chip is-on" type="button">Administrator</button><button class="chip is-on" type="button">Editor</button><button class="chip" type="button">Author</button><button class="chip" type="button">Shop manager</button><button class="chip" type="button">Subscriber</button></div>
+                <label class="field" for="grace">Time to set up<select class="select" id="grace"><option>7 days</option><option>3 days</option><option>Next sign-in</option></select></label></div></div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="bot"></svg>Bot check</h2><span class="pill pill--off">Off</span></div>
+            <div class="panel__body">
+              <div class="row"><div class="row__main"><div class="row__label">Cloudflare Turnstile on sign-in, register and lost password</div><div class="row__help">Needs your own free Turnstile keys. The visitor's browser talks to Cloudflare when this is on.</div>
+                <div class="row__sub"><label class="field" for="tkey">Site key<input class="input" id="tkey" type="text" placeholder="0x4AAAA…"></label><label class="field" for="tsec">Secret key<input class="input" id="tsec" type="password" placeholder="••••••••"></label></div></div>
+                <button class="switch" role="switch" aria-checked="false" aria-label="Bot check" type="button"></button></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- USERS -->
+        <section class="screen" id="s-users">
+          <h1 class="screen__title">Users &amp; Sessions</h1>
+          <p class="screen__lede">Who can sign in, how well each account is protected, and where they are signed in right now.</p>
+          <div class="panel">
+            <div class="toolbar"><input class="input" id="usearch" type="search" placeholder="Search users"><select class="select" id="urole" aria-label="Role"><option>All roles</option><option>Administrator</option><option>Editor</option></select><button class="btn btn--danger" type="button" data-toast="Everyone else has been signed out">Sign out everyone else</button></div>
+            <div class="panel__body panel__body--flush scroll">
+              <table class="grid"><thead><tr><th>User</th><th>Role</th><th>Two-factor</th><th>Last sign-in</th><th>Sessions</th><th></th></tr></thead><tbody>
+                <tr><td><div class="who"><span class="avatar">R</span><div>robin <span class="sub">(you)</span><div class="sub">robin@example.com</div></div></div></td><td>Administrator</td><td><span class="pill pill--ok">App</span></td><td>Today 10:42</td><td class="wrap">2 · Chrome on macOS, Safari on iPhone</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Your other session was signed out">Sign out others</button></td></tr>
+                <tr><td><div class="who"><span class="avatar">F</span><div>farhana<div class="sub">farhana@example.com</div></div></div></td><td>Administrator</td><td><span class="pill pill--bad">Not set · 5 days left</span></td><td>Yesterday 18:20</td><td class="wrap">1 · Firefox on Windows</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="farhana was signed out">Sign out</button></td></tr>
+                <tr><td><div class="who"><span class="avatar">T</span><div>tanvir<div class="sub">tanvir@example.com</div></div></div></td><td>Administrator</td><td><span class="pill pill--ok">App</span></td><td>3 Oct</td><td>None</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Two-factor reset for tanvir">Reset two-factor</button></td></tr>
+                <tr><td><div class="who"><span class="avatar">M</span><div>mitu<div class="sub">mitu@example.com</div></div></div></td><td>Editor</td><td><span class="pill pill--info">Email code</span></td><td>Yesterday 09:05</td><td class="wrap">1 · Chrome on Android</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="mitu was signed out">Sign out</button></td></tr>
+                <tr><td><div class="who"><span class="avatar">S</span><div>shuvo<div class="sub">shuvo@example.com</div></div></div></td><td>Author</td><td><span class="pill pill--off">Off</span></td><td>21 Sep</td><td>None</td><td class="act"></td></tr>
+              </tbody></table>
+            </div>
+          </div>
+          <div class="panel"><div class="panel__body">
+            <div class="row"><div class="row__main"><div class="row__label">Sign out idle users</div><div class="row__help">Based on real clicks and page loads. A tab left open in the background does not count as activity.</div>
+              <div class="row__sub"><label class="field" for="idle">After<select class="select" id="idle"><option>30 minutes</option><option>1 hour</option><option>4 hours</option></select></label></div></div>
+              <button class="switch" role="switch" aria-checked="true" aria-label="Sign out idle users" type="button"></button></div>
+          </div></div>
+        </section>
+
+        <!-- FIREWALL -->
+        <section class="screen" id="s-firewall">
+          <h1 class="screen__title">Firewall</h1>
+          <p class="screen__lede">Rules that decide who may reach the site at all. Allowed addresses skip every rule on this page and are never locked out.</p>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="wall"></svg>Address rules</h2><button class="btn btn--primary btn--sm" type="button" data-toast="Rule form opens here">Add rule</button></div>
+            <div class="panel__body panel__body--flush scroll">
+              <table class="grid"><thead><tr><th>Address or range</th><th>Rule</th><th>Note</th><th>Added</th><th></th></tr></thead><tbody>
+                <tr><td class="mono">103.92.84.10</td><td><span class="pill pill--ok">Allow</span></td><td>Office</td><td>2 Oct</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Rule removed">Remove</button></td></tr>
+                <tr><td class="mono">203.0.113.0/24</td><td><span class="pill pill--bad">Block</span></td><td>Repeated sign-in attacks</td><td>Today</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Rule removed">Remove</button></td></tr>
+                <tr><td class="mono">2001:db8:42::/48</td><td><span class="pill pill--bad">Block</span></td><td>Scraper</td><td>28 Sep</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Rule removed">Remove</button></td></tr>
+              </tbody></table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="filter"></svg>Request filter</h2><div class="seg" role="group" aria-label="Request filter mode"><button type="button">Off</button><button class="is-on" type="button">Log only</button><button type="button">Block</button></div></div>
+            <div class="panel__body">
+              <p style="margin:0;color:var(--ns-muted);max-width:70ch">Stops requests that look like probing: scanner fingerprints, path traversal, known-bad parameters. Applies to visitors who are not signed in. It is a filter inside WordPress, not a network firewall.</p>
+              <div class="note"><svg class="ico" data-i="info"></svg><span><b>Log only, day 4 of 7.</b> 14 requests would have been blocked. Check the list below, allow anything that is yours, then switch to Block.</span></div>
+            </div>
+            <div class="scroll">
+              <table class="grid"><thead><tr><th>When</th><th>Request</th><th>Matched</th><th>From</th><th></th></tr></thead><tbody>
+                <tr><td>09:58</td><td class="mono">/wp-content/plugins/x/?file=../../wp-config.php</td><td>Path traversal</td><td class="mono">198.51.100.77</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Allowed: this pattern will not be blocked">Allow this</button></td></tr>
+                <tr><td>07:31</td><td class="mono">/.env</td><td>Config file probe</td><td class="mono">192.0.2.61</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Allowed: this pattern will not be blocked">Allow this</button></td></tr>
+                <tr><td>Yesterday</td><td class="mono">/?s=1%27+UNION+SELECT+user_pass…</td><td>SQL in query string</td><td class="mono">203.0.113.40</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="Allowed: this pattern will not be blocked">Allow this</button></td></tr>
+              </tbody></table>
+            </div>
+          </div>
+
+          <div class="two">
+            <div class="panel"><div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="globe"></svg>Countries, sign-in page only</h2></div><div class="panel__body">
+              <div class="row"><div class="row__main"><div class="row__label">Only allow sign-in from</div><div class="row__help">Visitors everywhere still see your site. Uses Cloudflare's country header; detected on this site.</div><div class="row__sub"><div class="chips"><button class="chip is-on" type="button">Bangladesh</button><button class="chip is-on" type="button">United States</button><button class="chip" type="button">+ Add country</button></div></div></div><button class="switch" role="switch" aria-checked="false" aria-label="Country rule" type="button"></button></div>
+            </div></div>
+            <div class="panel"><div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="bot"></svg>Blocked user agents</h2></div><div class="panel__body">
+              <div class="chips"><button class="chip is-on" type="button">sqlmap</button><button class="chip is-on" type="button">nikto</button><button class="chip is-on" type="button">masscan</button><button class="chip" type="button">+ Add</button></div>
+              <p class="sub" style="margin:10px 0 0">Matches any part of the browser's user-agent text. 9 requests stopped this week.</p>
+            </div></div>
+          </div>
+        </section>
+
+        <!-- HARDENING -->
+        <section class="screen" id="s-hardening">
+          <h1 class="screen__title">Hardening</h1>
+          <p class="screen__lede">Switch off what you don't use. Each line says what could stop working, so you can decide.</p>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="lock"></svg>WordPress features</h2><span class="panel__meta">4 of 7 on</span></div>
+            <div class="panel__body">
+              <div class="row"><div class="row__main"><div class="row__label">Turn off XML-RPC <span class="pill pill--warn">Recommended</span></div><div class="row__help">Closes the old remote API, including pingbacks.</div><div class="row__risk">Could break: the Jetpack connection and very old mobile apps.</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Turn off XML-RPC" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Turn off the theme and plugin file editor</div><div class="row__help">Nobody can edit PHP files from wp-admin.</div></div><button class="switch" role="switch" aria-checked="true" aria-label="File editor" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Hide usernames from visitors</div><div class="row__help">Covers the REST users list, <code>/?author=1</code> and the users sitemap.</div><div class="row__risk">Could break: author archive pages for visitors who are not signed in.</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Hide usernames" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Turn off application passwords</div><div class="row__help">Removes password-based API access.</div><div class="row__risk">Could break: apps and services that connect with an application password.</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Application passwords" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Hide the WordPress version</div><div class="row__help">Removes the version from page source and feeds.</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Hide version" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Require strong passwords</div><div class="row__help">For Administrator and Editor. Also refuses passwords found in known breaches.</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Strong passwords" type="button"></button></div>
+              <div class="row"><div class="row__main"><div class="row__label">Send security headers</div><div class="row__help">HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy.</div><div class="row__risk">Could break: pages of yours that other sites embed in a frame.</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Security headers" type="button"></button></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="file"></svg>File protection</h2><span class="panel__meta">Server: nginx · checked 2 min ago</span></div>
+            <div class="panel__body panel__body--flush scroll">
+              <table class="grid"><thead><tr><th>What</th><th>We requested</th><th>Result</th></tr></thead><tbody>
+                <tr><td>Debug log</td><td class="mono">/wp-content/debug.log</td><td><span class="pill pill--bad">Readable</span></td></tr>
+                <tr><td>Plugin and theme readme files</td><td class="mono">/wp-content/plugins/akismet/readme.txt</td><td><span class="pill pill--bad">Readable</span></td></tr>
+                <tr><td>PHP files in uploads</td><td class="mono">/wp-content/uploads/probe.php</td><td><span class="pill pill--ok">Protected</span></td></tr>
+                <tr><td>Folder listings</td><td class="mono">/wp-content/uploads/2026/</td><td><span class="pill pill--ok">Protected</span></td></tr>
+              </tbody></table>
+            </div>
+            <div class="panel__body">
+              <div class="note note--warn"><svg class="ico" data-i="alert"></svg><span>Your server is nginx, which ignores .htaccess, so a plugin cannot switch this on for you. Add the lines below to your site's server block, reload nginx, then check again. On Apache and LiteSpeed this is one switch.</span></div>
+<pre class="code">location ~* /wp-content/debug\.log$ { deny all; }
+location ~* /wp-content/.*/(readme|license|changelog)\.(txt|md|html)$ { deny all; }</pre>
+              <div class="row__sub"><button class="btn btn--soft" type="button" data-toast="Copied">Copy lines</button><button class="btn btn--ghost" type="button" data-toast="Checked: 2 of 4 protected">Check again</button></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SCANNER -->
+        <section class="screen" id="s-scanner">
+          <h1 class="screen__title">Scanner</h1>
+          <p class="screen__lede">Checks your software against known problems and your files against the originals. It finds things to review; it is not a malware cleaner.</p>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="alert"></svg>Known vulnerabilities</h2><span class="panel__meta">Checked 2 h ago · 24 plugins, 3 themes, WordPress 7.1.2 <button class="btn btn--ghost btn--sm" type="button" data-toast="Check started in the background">Check now</button></span></div>
+            <div class="panel__body panel__body--flush scroll">
+              <table class="grid"><thead><tr><th>Software</th><th>Installed</th><th>Problem</th><th>Severity</th><th>Fixed in</th><th></th></tr></thead><tbody>
+                <tr><td>Contact Form X</td><td class="num">5.8.1</td><td class="wrap">Stored cross-site scripting through the form title</td><td><span class="pill pill--bad">Critical 8.8</span></td><td class="num">5.8.3</td><td class="act"><button class="btn btn--primary btn--sm" type="button" data-toast="Contact Form X updated to 5.8.3">Update</button></td></tr>
+              </tbody></table>
+            </div>
+          </div>
+
+          <div class="two">
+            <div class="panel"><div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="file"></svg>WordPress files</h2><span class="pill pill--ok">All match</span></div><div class="panel__body">
+              <p style="margin:0">1,842 core files compared with the official WordPress 7.1.2 release. Nothing changed, nothing missing.</p><p class="sub" style="margin:6px 0 12px">Your themes, plugins and uploads are not part of this check.</p><button class="btn btn--ghost btn--sm" type="button" data-toast="Comparing 1,842 files…">Compare again</button>
+            </div></div>
+            <div class="panel"><div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="file"></svg>Plugin and theme files</h2><span class="pill pill--warn">1 changed</span></div><div class="panel__body">
+              <p style="margin:0">22 plugins match their WordPress.org originals. <b>1 file differs</b> in Simple Gallery: <span class="mono">includes/loader.php</span>.</p><p class="sub" style="margin:6px 0 12px">2 plugins are not from WordPress.org and cannot be compared.</p><button class="btn btn--soft btn--sm" type="button" data-toast="Diff view opens here">See the difference</button>
+            </div></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="scan"></svg>Suspicious code</h2><span class="panel__meta">Scanning · you can leave this page</span></div>
+            <div class="panel__body">
+              <div class="progress"><i></i></div>
+              <div class="sub">114,820 of 185,206 files · 1 to review so far</div>
+            </div>
+            <div class="scroll">
+              <table class="grid"><thead><tr><th>File</th><th>Why it stands out</th><th>Official copy?</th><th></th></tr></thead><tbody>
+                <tr><td class="mono">wp-content/uploads/2026/09/cache.php</td><td class="wrap">Decodes hidden text and runs it as code. PHP files do not belong in uploads.</td><td>No original exists</td><td class="act"><button class="btn btn--ghost btn--sm" type="button" data-toast="File preview opens here">View</button> <button class="btn btn--danger btn--sm" type="button" data-toast="Quarantined. Restore it from this list any time.">Quarantine</button></td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACTIVITY -->
+        <section class="screen" id="s-activity">
+          <h1 class="screen__title">Activity</h1>
+          <p class="screen__lede">What happened on your site and who did it. The newest 1,000 events are kept.</p>
+          <div class="panel">
+            <div class="toolbar"><input class="input" id="asearch" type="search" placeholder="Search user, address or event"><select class="select" id="atype" aria-label="Type"><option>All types</option><option>Sign-in</option><option>Users</option><option>Plugins &amp; themes</option><option>Settings</option><option>Firewall</option></select><select class="select" id="asev" aria-label="Importance"><option>Any importance</option><option>Critical</option><option>Warning</option><option>Info</option></select><button class="btn btn--ghost" type="button" data-toast="CSV export ready">Export CSV</button></div>
+            <div class="panel__body panel__body--flush scroll">
+              <table class="grid"><thead><tr><th>When</th><th>Who</th><th>What happened</th><th>From</th><th>Importance</th></tr></thead><tbody>
+                <tr><td>Today 10:42</td><td>robin</td><td class="wrap">Signed in with two-factor</td><td class="mono">103.92.84.10</td><td><span class="pill pill--off">Info</span></td></tr>
+                <tr><td>Today 09:17</td><td>Visitor</td><td class="wrap">47 failed sign-ins in 6 minutes; address locked out for 1 hour</td><td class="mono">203.0.113.9</td><td><span class="pill pill--warn">Warning</span></td></tr>
+                <tr><td>Today 08:03</td><td>System</td><td class="wrap">Vulnerability check: Contact Form X 5.8.1 is affected</td><td>—</td><td><span class="pill pill--bad">Critical</span></td></tr>
+                <tr><td>Yesterday 18:31</td><td>robin</td><td class="wrap">Changed tanvir's role from Editor to Administrator</td><td class="mono">103.92.84.10</td><td><span class="pill pill--bad">Critical</span></td></tr>
+                <tr><td>Yesterday 18:20</td><td>farhana</td><td class="wrap">Signed in without two-factor (setup due in 5 days)</td><td class="mono">198.51.100.3</td><td><span class="pill pill--warn">Warning</span></td></tr>
+                <tr><td>Yesterday 14:02</td><td>robin</td><td class="wrap">Activated the plugin WP Mail Log</td><td class="mono">103.92.84.10</td><td><span class="pill pill--off">Info</span></td></tr>
+                <tr><td>Yesterday 09:07</td><td>mitu</td><td class="wrap">Changed their password</td><td class="mono">198.51.100.118</td><td><span class="pill pill--off">Info</span></td></tr>
+                <tr><td>3 Oct 16:44</td><td>robin</td><td class="wrap">Secure: turned on "Hide usernames from visitors"</td><td class="mono">103.92.84.10</td><td><span class="pill pill--off">Info</span></td></tr>
+              </tbody></table>
+            </div>
+            <div class="toolbar" style="border-bottom:0;border-top:1px solid var(--ns-border);align-items:center"><span class="sub" style="flex:1">1–8 of 412 events</span><button class="btn btn--ghost btn--sm" type="button">Previous</button><button class="btn btn--ghost btn--sm" type="button">Next</button></div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="screen" id="s-settings">
+          <h1 class="screen__title">Settings</h1>
+          <p class="screen__lede">How the plugin itself behaves.</p>
+
+          <div class="panel"><div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="globe"></svg>Visitor address</h2></div><div class="panel__body">
+            <div class="row"><div class="row__main"><div class="row__label">How visitors reach this site</div><div class="row__help">Getting this right is what makes lockouts and address rules hit the right person. We detected Cloudflare.</div>
+              <div class="row__sub"><div class="seg" role="group" aria-label="Connection type"><button type="button">Directly</button><button class="is-on" type="button">Through Cloudflare</button><button type="button">Another proxy</button></div></div>
+              <div class="sub" style="margin-top:10px">You appear as <span class="mono">103.92.84.10</span>. If that is not your address, this setting is wrong.</div></div></div>
+          </div></div>
+
+          <div class="panel"><div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="mail"></svg>Email alerts</h2></div><div class="panel__body">
+            <div class="row"><div class="row__main"><div class="row__label">Send alerts to</div><div class="row__sub"><input class="input" id="alertto" type="email" value="robin@example.com" aria-label="Alert email" style="width:260px"></div></div></div>
+            <div class="row"><div class="row__main"><div class="row__label">A new administrator is created, or a role is raised to administrator</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Alert on new administrator" type="button"></button></div>
+            <div class="row"><div class="row__main"><div class="row__label">A new vulnerability is found</div><div class="row__help">Once per finding, not every day.</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Alert on vulnerability" type="button"></button></div>
+            <div class="row"><div class="row__main"><div class="row__label">A burst of lockouts</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Alert on lockouts" type="button"></button></div>
+          </div></div>
+
+          <div class="panel"><div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="cog"></svg>Data</h2></div><div class="panel__body">
+            <div class="row"><div class="row__main"><div class="row__label">Keep activity for</div><div class="row__sub"><select class="select" id="keep" aria-label="Retention"><option>30 days</option><option>90 days</option><option>7 days</option></select><span class="sub">Currently 412 events, 38 KB. No database tables are created.</span></div></div></div>
+            <div class="row"><div class="row__main"><div class="row__label">Move settings between sites</div><div class="row__sub"><button class="btn btn--ghost" type="button" data-toast="Settings file ready">Export settings</button><button class="btn btn--ghost" type="button" data-toast="Choose a settings file">Import settings</button></div></div></div>
+            <div class="row"><div class="row__main"><div class="row__label">Delete everything when the plugin is deleted</div><div class="row__help">Settings, activity, lockouts and every user's two-factor setup.</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Delete data on uninstall" type="button"></button></div>
+          </div></div>
+
+          <div class="panel"><div class="panel__head"><h2 class="panel__title"><svg class="ico" data-i="key"></svg>If you get locked out</h2><span class="pill pill--off">Safe mode off</span></div><div class="panel__body">
+            <p style="margin:0;max-width:70ch">Safe mode switches off the moved login address, the request filter, address and country rules and the two-factor requirement, and leaves everything else alone. Keep these two lines somewhere you can find them.</p>
+<pre class="code">// wp-config.php
+define( 'NHRROB_SECURE_SAFE_MODE', true );
+
+# or from the command line
+wp nhrrob-secure safe-mode on
+wp nhrrob-secure unlock 103.92.84.10</pre>
+          </div></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var P = {
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    shield: '<path d="M12 3l8 3v6c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    moon: '<path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/>',
+    gauge: '<path d="M4 16a8 8 0 1116 0"/><path d="M12 16l4-5"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0M16 4.6a3.5 3.5 0 010 6.8M18 14.5a6.5 6.5 0 013.5 5.5"/>',
+    wall: '<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9.3h18M3 14.7h18M9 4v5.3M15 9.3v5.4M9 14.7V20"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+    scan: '<path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M4 12h16"/>',
+    list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+    cog: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+    alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+    link: '<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/>',
+    phone: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
+    bot: '<rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 8V4M9 13h.01M15 13h.01M9.5 16h5"/>',
+    filter: '<path d="M4 5h16l-6 7v6l-4 2v-8z"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
+    file: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'
+  };
+  document.querySelectorAll('svg[data-i]').forEach(function (s) {
+    s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor');
+    s.setAttribute('stroke-width', '1.8'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round');
+    s.setAttribute('aria-hidden', 'true'); s.innerHTML = P[s.dataset.i] || '';
+  });
+
+  var app = document.getElementById('app'), toast = document.getElementById('toast'), timer;
+  function say(msg) { toast.textContent = msg; toast.classList.add('is-on'); clearTimeout(timer); timer = setTimeout(function () { toast.classList.remove('is-on'); }, 1800); }
+  function go(name) {
+    if (!document.getElementById('s-' + name)) { return; }
+    document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('is-active', s.id === 's-' + name); });
+    document.querySelectorAll('.nav__item').forEach(function (n) { n.classList.toggle('is-active', n.dataset.s === name); });
+    try { history.replaceState(null, '', '#' + name); } catch (e) {}
+    app.scrollIntoView({ block: 'start' });
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) { return; }
+    if (t.dataset.s) { go(t.dataset.s); }
+    else if (t.dataset.go) { go(t.dataset.go); }
+    else if (t.classList.contains('switch')) { var on = t.getAttribute('aria-checked') !== 'true'; t.setAttribute('aria-checked', on); say('Saved'); }
+    else if (t.classList.contains('chip')) { t.classList.toggle('is-on'); say('Saved'); }
+    else if (t.parentNode.classList.contains('seg')) { t.parentNode.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-on', b === t); }); say('Saved'); }
+    else if (t.dataset.toast) { say(t.dataset.toast); }
+  });
+  document.getElementById('collapse').addEventListener('click', function () { app.classList.toggle('is-collapsed'); });
+  document.getElementById('theme').addEventListener('click', function () {
+    var r = document.documentElement, cur = r.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    r.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  });
+  var h = location.hash.slice(1); if (h) { go(h); }
+})();
+</script>
