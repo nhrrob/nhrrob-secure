@@ -6,6 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'RobThree\\Auth\\' => array($vendorDir . '/robthree/twofactorauth/lib'),
     'NHRRob\\Secure\\' => array($baseDir . '/includes'),
 );

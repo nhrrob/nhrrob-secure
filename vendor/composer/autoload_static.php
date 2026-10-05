@@ -4,13 +4,9 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitae440129d44192be012cf961f91127ee
+class ComposerStaticInit99c3f534879d520741c81b364d2617f6
 {
     public static $prefixLengthsPsr4 = array (
-        'R' =>
-        array (
-            'RobThree\\Auth\\' => 14,
-        ),
         'N' =>
         array (
             'NHRRob\\Secure\\' => 14,
@@ -18,10 +14,6 @@ class ComposerStaticInitae440129d44192be012cf961f91127ee
     );
 
     public static $prefixDirsPsr4 = array (
-        'RobThree\\Auth\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/robthree/twofactorauth/lib',
-        ),
         'NHRRob\\Secure\\' =>
         array (
             0 => __DIR__ . '/../..' . '/includes',
@@ -35,9 +27,9 @@ class ComposerStaticInitae440129d44192be012cf961f91127ee
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitae440129d44192be012cf961f91127ee::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitae440129d44192be012cf961f91127ee::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitae440129d44192be012cf961f91127ee::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit99c3f534879d520741c81b364d2617f6::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit99c3f534879d520741c81b364d2617f6::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit99c3f534879d520741c81b364d2617f6::$classMap;
 
         }, null, ClassLoader::class);
     }

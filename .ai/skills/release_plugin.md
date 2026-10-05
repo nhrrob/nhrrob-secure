@@ -9,6 +9,16 @@ This skill outlines the standard operating procedure for releasing a new version
 ## Prerequisites
 - Ensure all tests pass.
 
+## Step 0.5: Release gate
+Run every item of the "Release gate" in `CLAUDE.md` on the final code and fix what it finds before bumping the version. At minimum:
+```bash
+npm run lint && npm run build
+composer run phpcs && composer run test:unit
+# Production copy, then on a throwaway site: Plugin Check, the endpoint probe
+# (python3 .github/security/probe.py … --self-service /2fa), Semgrep and PHPStan.
+```
+Compare the zip size with the previous release and note it in the PR.
+
 ## Step 0: Sync Local Branches
 Ensure all local branches are up to date with the remote before starting.
 ```bash
@@ -26,7 +36,7 @@ git merge staging
 ```
 
 ## Step 2: Version Bumping
-1. **Main Plugin File**: Update the `Version:` header and constant in `nhrrob-secure.php`.
+1. **Main Plugin File**: Update the `Version:` header and the `version` constant in `nhrrob-secure.php`, and `version` in `package.json`. Bump `DB_VERSION` only when a stored shape changed (and add the migration to `Core\Upgrade`).
 2. **Readme File**: 
    - Update `Tested up to:` and `Stable tag:` in `readme.txt`.
    - Add a new entry under `== Changelog ==` following the existing format:
@@ -38,7 +48,7 @@ git merge staging
 ## Step 3: Commit and PR
 1. Commit the version bump:
    ```bash
-   git add nhrrob-secure.php readme.txt
+   git add nhrrob-secure.php readme.txt package.json
    git commit -m "Chore: Bump version to X.Y.Z"
    ```
 2. Push and create a Pull Request to `main`:
