@@ -52,6 +52,8 @@ class Settings {
 			'captcha_provider'      => 'turnstile',
 			'turnstile_site_key'    => '',
 			'turnstile_secret'      => '',
+			'captcha_comments'      => false,
+			'honeypot'              => false,
 			'twofa_enabled'         => false,
 			'twofa_methods'         => [ 'app', 'email' ],
 			'twofa_roles'           => [],
@@ -59,8 +61,10 @@ class Settings {
 			'twofa_trust_days'      => 0,
 			'password_expiry_days'  => 0,
 			'password_force'        => [],
+			'login_notify'          => false,
 			// Users.
 			'idle_timeout'          => 0,
+			'max_sessions'          => 0,
 			// Firewall.
 			'ip_rules'              => [],
 			'request_filter'        => 'off',
@@ -73,6 +77,8 @@ class Settings {
 			'country_mode'          => 'block',
 			'country_list'          => [],
 			'country_scope'         => 'login',
+			'rate_limit'            => false,
+			'rate_limit_max'        => 120,
 			// Hardening.
 			'disable_xmlrpc'        => false,
 			'disable_file_editor'   => false,
@@ -85,10 +91,13 @@ class Settings {
 			'rest_signed_in_only'   => false,
 			'rest_public'           => [ 'oembed/', 'contact-form-7/', 'wc/store/', 'wp/v2/block-renderer' ],
 			'protect_files'         => false,
+			'disable_feeds'         => false,
+			'trim_head'             => false,
 			// Plugin.
 			'ip_source'             => 'direct',
 			'trusted_proxies'       => [],
 			'alert_email'           => '',
+			'alert_webhook'         => '',
 			'alert_new_admin'       => true,
 			'alert_vulnerability'   => true,
 			'alert_lockouts'        => false,
@@ -96,6 +105,7 @@ class Settings {
 			'weekly_summary'        => false,
 			'scan_schedule'         => 'weekly',
 			'retention_days'        => 30,
+			'log_content'           => false,
 			'delete_on_uninstall'   => true,
 			'upgrade_notice'        => '',
 		];
@@ -180,6 +190,10 @@ class Settings {
 		if ( $next['turnstile_enabled'] && ( '' === $next['turnstile_site_key'] || '' === $next['turnstile_secret'] ) ) {
 			return new \WP_Error( 'nhrrob_secure_turnstile', __( 'Add both keys before turning the bot check on.', 'nhrrob-secure' ), [ 'status' => 400 ] );
 		}
+		// Counting requests in an option would cost a write per request; without a persistent object cache there is nowhere to count.
+		if ( $next['rate_limit'] && ! $current['rate_limit'] && ! wp_using_ext_object_cache() ) {
+			return new \WP_Error( 'nhrrob_secure_rate_limit', __( 'Rate limiting needs a persistent object cache (Redis or Memcached), and this site has none.', 'nhrrob-secure' ), [ 'status' => 400 ] );
+		}
 		if ( 'off' !== $next['request_filter'] && 'off' === $current['request_filter'] ) {
 			$next['request_filter_since'] = time();
 		}
@@ -239,7 +253,7 @@ class Settings {
 			'country_mode'     => [ 'block', 'allow' ],
 			'ip_source'        => [ 'direct', 'cloudflare', 'proxy' ],
 			'scan_schedule'    => [ 'off', 'daily', 'weekly' ],
-			'captcha_provider' => [ 'turnstile', 'recaptcha', 'hcaptcha' ],
+			'captcha_provider' => [ 'turnstile', 'recaptcha', 'recaptcha3', 'hcaptcha' ],
 			'country_scope'    => [ 'login', 'site' ],
 		];
 		$ints  = [
@@ -250,6 +264,8 @@ class Settings {
 			'retention_days'       => [ 1, 365 ],
 			'twofa_trust_days'     => [ 0, 90 ],
 			'password_expiry_days' => [ 0, 365 ],
+			'max_sessions'         => [ 0, 20 ],
+			'rate_limit_max'       => [ 20, 600 ],
 		];
 
 		if ( isset( $enums[ $key ] ) ) {
@@ -274,6 +290,10 @@ class Settings {
 			case 'alert_email':
 				$value = sanitize_email( (string) $value );
 				return is_email( $value ) ? $value : '';
+
+			case 'alert_webhook':
+				$value = esc_url_raw( trim( (string) $value ), [ 'https' ] );
+				return strlen( $value ) <= 300 ? $value : '';
 
 			case 'twofa_methods':
 				$value = array_values( array_intersect( [ 'app', 'email', 'passkey' ], (array) $value ) );

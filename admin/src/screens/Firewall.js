@@ -45,6 +45,7 @@ export default function Firewall( { boot, settings, meta, save } ) {
 	const [ type, setType ] = useState( 'block' );
 	const [ note, setNote ] = useState( '' );
 	const [ country, setCountry ] = useState( '' );
+	const [ pasted, setPasted ] = useState( null );
 
 	const [ failed, setFailed ] = useState( null );
 
@@ -81,6 +82,51 @@ export default function Firewall( { boot, settings, meta, save } ) {
 		) {
 			setRange( '' );
 			setNote( '' );
+		}
+	};
+
+	const importList = async () => {
+		const res = await call(
+			'/firewall/rules/import',
+			'POST',
+			{ list: pasted, type },
+			''
+		);
+		if ( res ) {
+			toast(
+				sprintf(
+					/* translators: 1: rules added, 2: lines skipped. */
+					__(
+						'%1$d added, %2$d skipped (not an address, or your own)',
+						'nhrrob-secure'
+					),
+					res.added,
+					res.skipped
+				)
+			);
+			setPasted( null );
+		}
+	};
+
+	const copyRules = async () => {
+		try {
+			await window.navigator.clipboard.writeText(
+				data.rules
+					.map(
+						( rule ) =>
+							rule.range +
+							' # ' +
+							rule.type +
+							( rule.note ? ' ' + rule.note : '' )
+					)
+					.join( '\n' )
+			);
+			toast( __( 'Copied', 'nhrrob-secure' ) );
+		} catch ( e ) {
+			toast(
+				__( 'Your browser did not allow copying.', 'nhrrob-secure' ),
+				'error'
+			);
 		}
 	};
 
@@ -153,7 +199,46 @@ export default function Firewall( { boot, settings, meta, save } ) {
 					>
 						{ __( 'Add rule', 'nhrrob-secure' ) }
 					</Button>
+					<Button
+						onClick={ () =>
+							setPasted( pasted === null ? '' : null )
+						}
+					>
+						{ __( 'Paste a list', 'nhrrob-secure' ) }
+					</Button>
+					{ data.rules.length > 0 && (
+						<Button onClick={ copyRules }>
+							{ __( 'Copy list', 'nhrrob-secure' ) }
+						</Button>
+					) }
 				</div>
+				{ pasted !== null && (
+					<div className="nhrrob-secure-pad">
+						<textarea
+							className="nhrrob-secure-input nhrrob-secure-textarea"
+							rows="6"
+							aria-label={ __(
+								'Addresses and ranges, one per line',
+								'nhrrob-secure'
+							) }
+							placeholder={ __(
+								'One address or range per line. Text after # is kept as the note.',
+								'nhrrob-secure'
+							) }
+							value={ pasted }
+							onChange={ ( e ) => setPasted( e.target.value ) }
+						/>
+						<Button
+							variant="primary"
+							disabled={ ! pasted.trim() }
+							onClick={ importList }
+						>
+							{ type === 'allow'
+								? __( 'Add all as Allow', 'nhrrob-secure' )
+								: __( 'Add all as Block', 'nhrrob-secure' ) }
+						</Button>
+					</div>
+				) }
 				{ data.rules.length ? (
 					<div className="nhrrob-secure-scroll">
 						<table className="nhrrob-secure-grid">
@@ -331,6 +416,33 @@ export default function Firewall( { boot, settings, meta, save } ) {
 										</td>
 										<td className="is-mono">{ m.ip }</td>
 										<td className="is-actions">
+											{ ! data.rules.some(
+												( rule ) => rule.range === m.ip
+											) && (
+												<Button
+													small
+													onClick={ () =>
+														call(
+															'/firewall/rules',
+															'POST',
+															{
+																range: m.ip,
+																type: 'block',
+																note: m.label,
+															},
+															__(
+																'Address blocked',
+																'nhrrob-secure'
+															)
+														)
+													}
+												>
+													{ __(
+														'Block address',
+														'nhrrob-secure'
+													) }
+												</Button>
+											) }
 											<Button
 												small
 												onClick={ () =>
@@ -418,6 +530,82 @@ export default function Firewall( { boot, settings, meta, save } ) {
 						}
 					/>
 				</div>
+			</Panel>
+
+			<Panel
+				title={ __( 'Rate limiting', 'nhrrob-secure' ) }
+				icon="firewall"
+				actions={
+					<Pill tone={ settings.rate_limit ? 'ok' : 'off' }>
+						{ settings.rate_limit
+							? __( 'On', 'nhrrob-secure' )
+							: __( 'Off', 'nhrrob-secure' ) }
+					</Pill>
+				}
+			>
+				<Row
+					label={ __(
+						'Limit requests per address',
+						'nhrrob-secure'
+					) }
+					help={ __(
+						'Counts what one address asks of the sign-in page, XML-RPC, the REST API, search and the comment form in a minute, for visitors who are not signed in. Over the limit it is told to wait. Ordinary page views are not counted.',
+						'nhrrob-secure'
+					) }
+					control={
+						<Switch
+							checked={ settings.rate_limit }
+							disabled={
+								! meta.object_cache && ! settings.rate_limit
+							}
+							label={ __( 'Rate limiting', 'nhrrob-secure' ) }
+							onChange={ ( v ) => save( { rate_limit: v } ) }
+						/>
+					}
+				>
+					{ settings.rate_limit && (
+						<select
+							className="nhrrob-secure-select"
+							aria-label={ __(
+								'Requests per minute',
+								'nhrrob-secure'
+							) }
+							value={ settings.rate_limit_max }
+							onChange={ ( e ) =>
+								save( { rate_limit_max: e.target.value } )
+							}
+						>
+							{ [ 30, 60, 120, 240, 600 ]
+								.concat(
+									[ 30, 60, 120, 240, 600 ].includes(
+										settings.rate_limit_max
+									)
+										? []
+										: [ settings.rate_limit_max ]
+								)
+								.map( ( count ) => (
+									<option key={ count } value={ count }>
+										{ sprintf(
+											/* translators: %d: number of requests. */
+											__(
+												'%d requests a minute',
+												'nhrrob-secure'
+											),
+											count
+										) }
+									</option>
+								) ) }
+						</select>
+					) }
+				</Row>
+				{ ! meta.object_cache && (
+					<Note tone="warn">
+						{ __(
+							'This needs a persistent object cache (Redis or Memcached), and this site has none. Without one, every request would have to be counted in the database, which is the load a rate limit is meant to take away.',
+							'nhrrob-secure'
+						) }
+					</Note>
+				) }
 			</Panel>
 
 			<Panel title={ __( 'Countries', 'nhrrob-secure' ) } icon="globe">

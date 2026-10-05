@@ -107,6 +107,37 @@ export default function Users( { settings, meta, save } ) {
 		}
 	};
 
+	const setExpiry = async ( user, days ) => {
+		try {
+			await api( '/users/' + user.id + '/expiry', 'POST', { days } );
+			toast(
+				days
+					? sprintf(
+							/* translators: 1: username, 2: number of days. */
+							_n(
+								'Access of %1$s ends in %2$d day',
+								'Access of %1$s ends in %2$d days',
+								days,
+								'nhrrob-secure'
+							),
+							user.login,
+							days
+					  )
+					: sprintf(
+							/* translators: %s: username. */
+							__(
+								'%s has no end date any more',
+								'nhrrob-secure'
+							),
+							user.login
+					  )
+			);
+			load();
+		} catch ( e ) {
+			toast( e.message, 'error' );
+		}
+	};
+
 	const signOutAll = async () => {
 		if (
 			await confirm( __( 'Sign out everyone else?', 'nhrrob-secure' ), {
@@ -276,7 +307,39 @@ export default function Users( { settings, meta, save } ) {
 												</div>
 											</div>
 										</td>
-										<td>{ user.roles.join( ', ' ) }</td>
+										<td>
+											{ user.roles.join( ', ' ) }
+											{ user.expires > 0 && (
+												<div>
+													<Pill
+														tone={
+															user.expires *
+																1000 <
+															Date.now()
+																? 'bad'
+																: 'warn'
+														}
+													>
+														{ user.expires * 1000 <
+														Date.now()
+															? __(
+																	'Access ended',
+																	'nhrrob-secure'
+															  )
+															: sprintf(
+																	/* translators: %s: date. */
+																	__(
+																		'Access ends %s',
+																		'nhrrob-secure'
+																	),
+																	when(
+																		user.expires
+																	)
+															  ) }
+													</Pill>
+												</div>
+											) }
+										</td>
 										<td>
 											{ twofa(
 												user,
@@ -388,6 +451,70 @@ export default function Users( { settings, meta, save } ) {
 															'nhrrob-secure'
 														) }
 													</Button>
+												) }
+											{ user.can_edit &&
+												! user.is_you && (
+													<select
+														className="nhrrob-secure-select is-small"
+														aria-label={ sprintf(
+															/* translators: %s: username. */
+															__(
+																'Temporary access for %s',
+																'nhrrob-secure'
+															),
+															user.login
+														) }
+														value=""
+														onChange={ ( e ) =>
+															setExpiry(
+																user,
+																parseInt(
+																	e.target
+																		.value,
+																	10
+																)
+															)
+														}
+													>
+														<option
+															value=""
+															disabled
+														>
+															{ __(
+																'Temporary access…',
+																'nhrrob-secure'
+															) }
+														</option>
+														{ [ 1, 7, 30, 90 ].map(
+															( days ) => (
+																<option
+																	key={ days }
+																	value={
+																		days
+																	}
+																>
+																	{ sprintf(
+																		/* translators: %d: number of days. */
+																		_n(
+																			'Ends in %d day',
+																			'Ends in %d days',
+																			days,
+																			'nhrrob-secure'
+																		),
+																		days
+																	) }
+																</option>
+															)
+														) }
+														{ user.expires > 0 && (
+															<option value="0">
+																{ __(
+																	'No end date',
+																	'nhrrob-secure'
+																) }
+															</option>
+														) }
+													</select>
 												) }
 											{ user.can_edit &&
 												! user.is_you &&
@@ -574,6 +701,51 @@ export default function Users( { settings, meta, save } ) {
 							</select>
 						</Field>
 					) }
+				</Row>
+				<Row
+					label={ __( 'Limit sessions per user', 'nhrrob-secure' ) }
+					help={ __(
+						'When a user signs in on one device too many, their oldest session is ended. The new sign-in is never the one refused, so a lost phone cannot keep its owner out.',
+						'nhrrob-secure'
+					) }
+				>
+					<select
+						className="nhrrob-secure-select"
+						aria-label={ __(
+							'Sessions per user',
+							'nhrrob-secure'
+						) }
+						value={ settings.max_sessions }
+						onChange={ ( e ) =>
+							save( { max_sessions: e.target.value } )
+						}
+					>
+						<option value="0">
+							{ __( 'No limit', 'nhrrob-secure' ) }
+						</option>
+						{ [ 1, 2, 3, 5, 10 ]
+							.concat(
+								[ 0, 1, 2, 3, 5, 10 ].includes(
+									settings.max_sessions
+								)
+									? []
+									: [ settings.max_sessions ]
+							)
+							.map( ( count ) => (
+								<option key={ count } value={ count }>
+									{ sprintf(
+										/* translators: %d: number of sessions. */
+										_n(
+											'%d session',
+											'%d sessions',
+											count,
+											'nhrrob-secure'
+										),
+										count
+									) }
+								</option>
+							) ) }
+					</select>
 				</Row>
 			</Panel>
 		</>

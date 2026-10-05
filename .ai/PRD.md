@@ -1,6 +1,6 @@
 # PRD — Secure (Free) — slug `nhrrob-secure`
 
-Status: **1.3.3 live on WP.org (fewer than 10 active installs)** · **2.0.0 built and verified 2026-10-05; PR #14 (dev → main) open; independent review done and fixed the same day (§4.6)** (Robin reviews, merges and tags; one gate item open: zip size, §4.3) · Owner: Nazmul Hasan Robin (nhrrob)
+Status: **2.0.0 live on WP.org** · **2.1.0 (parity work, §4.5) built on `dev`, uncommitted, gate partly run** · earlier: **1.3.3 live on WP.org (fewer than 10 active installs)** · **2.0.0 built and verified 2026-10-05; PR #14 (dev → main) open; independent review done and fixed the same day (§4.6)** (Robin reviews, merges and tags; one gate item open: zip size, §4.3) · Owner: Nazmul Hasan Robin (nhrrob)
 Last revised: 2026-10-05
 
 > Dev-only document. Excluded from distribution (`.distignore` + `.gitattributes export-ignore`).
@@ -171,9 +171,9 @@ Robin: "we are a security plugin" — the first build was pitched as login secur
 
 **Considered and left out, with the reason:**
 - **Firewall rule feed, malware signature database, live blocklist of bad addresses** — need a research team and a service.
-- **Rate limiting of all requests** — needs a write per request without an object cache; the probe lockout (4) covers the abusive case.
+- **Rate limiting of all requests** — needs a write per request without an object cache; the probe lockout (4) covers the abusive case. *(Revisited in §4.5-5: built for sites with a persistent object cache.)*
 - **Country lookup without Cloudflare** — a GeoIP database is tens of megabytes and needs a licence key.
-- **Salt rotation, database prefix change** — rewriting `wp-config.php` or renaming tables from a plugin is how sites get broken; the checks report them instead.
+- **Salt rotation, database prefix change** — rewriting `wp-config.php` or renaming tables from a plugin is how sites get broken; the checks report them instead. *(Revisited in §4.5: key rotation is built with a parse check, a loopback test and an automatic restore, item 14; the prefix change stays out, item 15.)*
 - **Automatic malware removal** — a wrong automatic delete is worse than the finding.
 
 **Zip size after all 15 and the storage change: 226 KB** (was 193 KB before them; 1.3.3 was 141 KB). `index.js` 89 KB, `profile.js` 15 KB.
@@ -184,76 +184,93 @@ Robin: "we are a security plugin" — the first build was pitched as login secur
 
 **Not exercised:** reCAPTCHA and hCaptcha against the live services (no keys); the WooCommerce account-page hook (WooCommerce is not on the dev site; the same render function is used by the shortcode, which was tested); passkeys on a physical device; the scheduled scan and weekly summary firing from real WP-Cron rather than being driven by hand.
 
-### 4.5 Parity to-do: every major feature of the popular security plugins (decided 2026-10-05)
+### 4.5 Parity work: every major feature of the popular security plugins (decided 2026-10-05, triaged and built for 2.1.0)
 
-Robin: "we should have all major features. we should not be less than other plugins." This is the list of what Wordfence, All-In-One Security, Kadence Security, Really Simple Security, Sucuri and WP Activity Log have that we still lack and that can be built without a research team or a paid service. Everything is free. Built in this order; status is updated as each one lands. Each item must still pass §1.1 (off by default if it can lock out or break; verified with a real request; a way back).
+Robin, 2026-10-05: "we should have all major features. we should not be less than other plugins." Then, the same day: "add all these features. make sure no duplicate feature is added. review the whole plugin features and then implement if needed. don't make the plugin garbage."
+
+The 27 candidates below are what Wordfence, All-In-One Security, Kadence Security, Really Simple Security, Sucuri and WP Activity Log have that 2.0.0 lacked. Each one was checked against the code of 2.0.0 before anything was written, and lands in one of three groups:
+
+- **Build** — a real gap. Free, off by default if it can lock out or break, verified with a real request (§1.1).
+- **Covered** — the plugin or WordPress itself already does it. Building it again would give one action two homes (§2).
+- **Not built** — it cannot pass §1.1 or §3, or it is not a security feature. The reason is written down so it is not proposed again without new facts.
+
+Status values: `to do` · `done` (built and verified; the note says how) · `covered` · `not built`.
 
 **A. Setup and everyday use**
 
-| # | Feature | What it is | Status |
-|---|---|---|---|
-| 1 | **One-click recommended setup** | One button on the Dashboard applies the safe recommended settings (nothing that can lock out), shows exactly what will change first, and can be undone. Restores what 1.x called "One-Click Secure". | to do |
-| 2 | **Setup wizard** | First-run steps: visitor address detection, login protection, two-factor for the owner, schedule, alerts. Skippable. | to do |
-| 3 | **Network-wide settings (multisite)** | A network administrator can push a settings profile to all sites or lock chosen settings. | to do |
+| # | Feature | Decision | What is built / why not | Status |
+|---|---|---|---|---|
+| 1 | One-click recommended setup | Build | A card on the Dashboard lists the safe recommended settings that are still off (nothing that can lock out), each with a tick box; "Apply" switches the ticked ones on and "Undo" puts back exactly what was there. The previous values are kept in `scan.setup_undo`. | done |
+| 2 | Setup wizard | Covered by 1 | A multi-step wizard would be a second home for the same switches. The setup card is the first-run step: it is the first thing on the Dashboard until it is applied or dismissed, and the visitor-address warning already sits above it. | covered |
+| 3 | Network-wide settings (multisite) | Build (copy), not built (lock) | Network Admin → Secure: "Copy the settings of one site to every site" (super admin; leaves out the login address, file protection and address rules, which are per site). **Locking** settings is not built: it needs a network-level option and a locked state on every control of every screen. | done |
 
 **B. Firewall and traffic**
 
-| # | Feature | What it is | Status |
-|---|---|---|---|
-| 4 | **Firewall before WordPress loads** | Optional early mode: the address rules, user-agent rules and request filter run from a small loader (`auto_prepend_file` through `.user.ini` / `.htaccess`) before WordPress and plugins start. Tested by a loopback request and removed automatically if the site stops answering. | to do |
-| 5 | **Rate limiting** | Limit requests per address per minute for the sign-in page, XML-RPC, REST and search, and optionally all pages; uses the object cache when there is one, and a small capped store otherwise. | to do |
-| 6 | **Live traffic** | Recent requests from signed-out visitors and bots (address, path, result, user agent), kept in a small capped ring; block or allow an address from the list. Off by default. | to do |
-| 7 | **reCAPTCHA v3** | Score-based check with no challenge, next to v2, hCaptcha and Turnstile. Also offer the bot check on the comment form. | to do |
-| 8 | **Blocklist import** | Paste or upload a list of addresses and ranges; export the current rules. | to do |
+| # | Feature | Decision | What is built / why not | Status |
+|---|---|---|---|---|
+| 4 | Firewall before WordPress loads | Not built | `auto_prepend_file` is set through `.user.ini`, which PHP caches for five minutes: the loopback test right after switching it on tests nothing, and removing the loader file inside that window (deactivate, uninstall, a deleted plugin folder) makes every PHP request fail. It can only be removed cleanly by leaving a file behind. The rules already run on `plugins_loaded`, before any plugin handles a request. | not built |
+| 5 | Rate limiting | Build | Requests per address per minute for the sign-in page, XML-RPC, the REST API, search and comment posts, for visitors who are not signed in. Counted in the persistent object cache only: without one, every request would cost an option write (§3 write discipline), so the switch explains that and stays off. Answers 429 with `Retry-After`. | done |
+| 6 | Live traffic | Not built | One write per page view of every visitor, which §3 forbids, for a list that is analytics rather than protection. The part that matters is already there: request-filter matches, refused requests, lockouts and the activity log. Added instead: "Block address" on a request-filter match. | not built |
+| 7 | reCAPTCHA v3, bot check on comments | Build | reCAPTCHA v3 (score, no challenge) next to Turnstile, reCAPTCHA v2 and hCaptcha; an option to put the bot check on the comment form for visitors. | done |
+| 8 | Blocklist import and export | Build | Paste a list of addresses and ranges (one per line) as Block or Allow; copy the current rules as a list. Rules that would block the person importing are dropped. | done |
 
 **C. Scanning and repair**
 
-| # | Feature | What it is | Status |
-|---|---|---|---|
-| 9 | **Repair plugin files** | Replace a changed file of a WordPress.org plugin with the official copy (checksum-verified before writing, same guards as core repair). | to do |
-| 10 | **Theme comparison** | Compare WordPress.org themes with their official release by downloading the release zip once per version and hashing it; repair from it. | to do |
-| 11 | **Automatic security updates** | When the vulnerability check finds a fix, optionally update that plugin or theme straight away (per item opt-out; logged and emailed). | to do |
-| 12 | **Abandoned software** | Flag plugins not updated for two years or not tested with the last three WordPress releases. | to do |
-| 13 | **Scan more places** | `.htaccess` and `wp-config.php` for injected rules and code; `mu-plugins` and drop-ins listed explicitly; cron events that call unknown code. | to do |
+| # | Feature | Decision | What is built / why not | Status |
+|---|---|---|---|---|
+| 9 | Repair plugin files | Build | Replace a changed file of a WordPress.org plugin with the official copy; the file must be in the release's checksum list and the download must match it before anything is written. | done |
+| 10 | Theme comparison | Build | WordPress.org publishes no theme checksums, so the release zip is downloaded and each file compared; a theme that has not changed since it last matched is not downloaded again. Repair from the same zip. | done |
+| 11 | Automatic security updates | Not built | Built and drilled on 2026-10-05 (core's `auto_update_plugin` filter, opt-in), then removed the same day: Plugin Check flags any use of that filter (`update_modification_detected`), and Robin's rule is that nothing ships that the WordPress.org review team might object to. The vulnerabilities panel links to the Updates screen instead, as before. | not built |
+| 12 | Abandoned software | Build | A Dashboard check: plugins whose latest WordPress.org release was not tested with any of the last three WordPress releases. Read from the update data WordPress already holds; no extra request. "Not updated for two years" would need one request per plugin and says the same thing. | done |
+| 13 | Scan more places | Build (files), not built (cron) | `.htaccess`, `.user.ini` and `wp-config.php` are checked for injected rules and code; must-use plugins and drop-ins are listed by name. **Cron events** are not checked: an event that malware scheduled looks exactly like any other, so the list would be noise. | done |
 
 **D. Hardening tools**
 
-| # | Feature | What it is | Status |
-|---|---|---|---|
-| 14 | **Secret keys rotation** | Replace the salts in `wp-config.php` with new ones (signs everyone out). A backup copy is written first and the result is verified by a loopback request; restored automatically on failure. | to do |
-| 15 | **Database prefix change** | Rename the tables and update `wp-config.php` and the prefix-dependent rows, behind a backup of the affected rows and a typed confirmation; verified and rolled back on failure. | to do |
-| 16 | **File permissions** | List files and folders with unsafe permissions and fix them in one click. | to do |
-| 17 | **HTTPS enforcement** | Force HTTPS for admin and front end, with a loopback test before it is applied; report mixed content. | to do |
-| 18 | **Registration and comment protection** | Honeypot field and optional manual approval for new registrations; bot check and honeypot on comments. | to do |
-| 19 | **Content protection** | Hotlink protection for images (Apache rules / nginx lines), and an option to refuse the site being shown in frames on other sites. | to do |
-| 20 | **Disable unused features** | Switches for RSS/Atom feeds, the REST index for visitors, oEmbed discovery, and the `X-Powered-By` and `Server` hints where the server allows. | to do |
+| # | Feature | Decision | What is built / why not | Status |
+|---|---|---|---|---|
+| 14 | Secret keys rotation | Build | New keys and salts written to `wp-config.php` (signs everyone out). Only when all eight are plain strings in the file; the new file is parsed before it replaces the old one, the site is then requested and the old file is put back if it does not answer; stored two-factor secrets are re-encrypted with the new key in the same step. | done |
+| 15 | Database prefix change | Not built | Table names are readable through `information_schema` by the same SQL injection the prefix is meant to hinder, so it protects against nothing. The change cannot be atomic across the database and `wp-config.php`: for a moment the site has no tables and shows the WordPress installer. The low-severity check stays and says so. | not built |
+| 16 | File permissions | Build | The key files and folders with their permissions; anything writable by every account on the server is flagged and fixed in one click (only that bit is removed). Replaces the single `wp-config.php` check. | done |
+| 17 | HTTPS enforcement | Covered | With an `https://` site address WordPress already redirects visitors and forces HTTPS for sign-in and the dashboard, and "Send security headers" adds HSTS. For a site still on `http://`, Site Health has core's own tested one-click switch. Added: the failing HTTPS check links there. A mixed-content report is not built: core rewrites the site's own `http://` addresses after that switch. | covered |
+| 18 | Registration and comment protection | Build (honeypot), not built (approval) | A hidden field on the registration and comment forms that people never see and form-filling bots fill in. Bot check on comments is item 7. **Manual approval of new accounts** is not built: it is an account workflow, and shop and membership sign-up flows sign the new user in straight away. | done |
+| 19 | Content protection | Covered / not built | Refusing frames on other sites is already part of "Send security headers" (`X-Frame-Options`). Hotlink protection is about bandwidth, not security, and its rules break images in feed readers, search results and CDNs. | not built |
+| 20 | Disable unused features | Build | Switches for RSS/Atom feeds and for the discovery links in the page head (REST, oEmbed, shortlink, RSD); "Hide the WordPress version" also removes PHP's `X-Powered-By`. The REST index for visitors is already covered by "REST API for signed-in users only"; the `Server` header cannot be changed from PHP. | done |
 
 **E. Accounts and logging**
 
-| # | Feature | What it is | Status |
-|---|---|---|---|
-| 21 | **Simultaneous-session limit** | At most N sessions per user; the oldest is ended, or the new sign-in is refused. | to do |
-| 22 | **Sign-in by email link** | Optional passwordless sign-in for chosen roles: a one-time link sent to the account's email. | to do |
-| 23 | **Sign-in notifications** | Email the user when their account signs in from a new browser or address. | to do |
-| 24 | **Temporary access** | Create an account that expires on a date, for support staff and contractors. | to do |
-| 25 | **Deeper activity log** | Posts and pages (published, changed, trashed), media, menus, widgets, comments moderation, and WooCommerce orders, products and settings when WooCommerce is active. | to do |
-| 26 | **Slack and webhook alerts** | Send the existing alerts to a Slack channel or any webhook URL. | to do |
-| 27 | **Reports** | A printable security report (score, findings, activity of the period) for the owner or a client. | to do |
+| # | Feature | Decision | What is built / why not | Status |
+|---|---|---|---|---|
+| 21 | Simultaneous-session limit | Build | At most N sessions per user; the oldest is ended. "Refuse the new sign-in" is not offered: it locks out an owner whose old session is on a lost device. | done |
+| 22 | Sign-in by email link | Not built | It replaces the password with access to a mailbox and adds a new sign-in path for visitors who are not signed in. Nothing in this plugin replaces the password (§7); passkeys are a second step for the same reason. | not built |
+| 23 | Sign-in notifications | Build | Email the user when their account signs in on a browser it has not used before (a cookie marks known browsers, so a changed address or a browser update does not cause mail). For accounts that can edit the site. | done |
+| 24 | Temporary access | Build | An expiry date on an account, set from Users: after it the account cannot sign in, its sessions end and application passwords stop working. The account is created on WordPress's own Add User screen. | done |
+| 25 | Deeper activity log | Build | Optional: posts and pages (published, changed, trashed, deleted), media, menus, widgets, comment moderation and WooCommerce settings and order status changes, when done by a signed-in user. Info rows, folded per item, so they make room first when the log is full. | done |
+| 26 | Slack and webhook alerts | Build | Every alert email is also posted to a webhook address (Slack-compatible `text`). | done |
+| 27 | Reports | Build | A printable report from the Dashboard: score, what to fix, what passed, the week's numbers and the important activity. | done |
 
 **Still not possible without a service** (unchanged): firewall rules and malware signatures from a research team, a live blocklist of known-bad addresses, virtual patching, country lookup without Cloudflare.
 
-**Storage:** none of these may add an option (§3). Live traffic and rate-limit counters go into `nhrrob_secure_state` (or the object cache when there is one) and must stay small.
+**Storage:** none of these adds an option (§3). New settings are keys of `nhrrob_secure_settings`; undo data and theme results are parts of `nhrrob_secure_scan`; rate-limit counters live in the object cache only. Two new user meta keys: `nhrrob_secure_known` (known browsers) and `nhrrob_secure_expires`.
 
-**Cost:** every item adds to a zip that is 225 KB against the 141 KB of 1.3.3 (§4.3). The zip is measured after each item and the total reported; if the size has to come down, the first lever is not shipping `admin/src` (§4.3).
+**Verified 2026-10-05 (version 2.1.0, uncommitted on `dev`):** PHPCS clean · ESLint clean · build OK · PHPUnit 43 tests / 400 assertions · endpoint probe 91 checks / 0 failures. Live drills on otm-shots with real requests: setup apply / undo / dismiss · permissions fix · key rotation (two-factor secret still readable, only the eight lines changed) and its restore path (site made to fail, file byte-identical afterwards) · honeypot on comments and registration · comment bot check with Turnstile's test keys · feeds and head links · session limit (three sign-ins, oldest ended) · end date on an account · new-browser email · webhook payload · list import · rate limit against a real Redis (20 allowed, then 429 with `Retry-After`, pages and signed-in users untouched) · plugin and theme file repair from WordPress.org · injected `.htaccess` rules found · content log. Multisite copy on otm-ms.
 
-## 5. Backlog (after 2.0; all free if they ship)
+**Found while drilling and fixed:** three sign-ins in the same second ended the newest session (now the new session always stays) · a default theme bundled with WordPress differs from its WordPress.org release in readme, stylesheet header and fonts, so only PHP, JavaScript and template files are compared.
 
-- **Passkeys (WebAuthn)** as a 2FA method and passwordless login — free in Kadence Security (ex-Solid), paid in WP 2FA; needs a small in-house verifier to respect §1.2.
-- File-change monitoring with a baseline for plugins that are not on WordPress.org.
-- Scan of `wp_options`, widgets and posts for injected scripts and redirects (requested from the Database Cleaner PRD).
-- Weekly email summary.
-- Network Admin screen.
+**Rest of the gate, run the same day:** all eight screens opened in headless Chrome signed in as an administrator: every panel renders, no console errors; setup apply and undo, the printable report (print view hides the menus), list import and the disabled rate-limit switch were driven through the UI · PHP 7.4.33 lint of every file and the unit tests on 7.4.33 and 8.4 · production copy (`.distignore`, `composer install --no-dev`) · Plugin Check on that copy: no errors, no warnings (after item 11 was removed).
+
+**Zip: 271 KB** (239 KB after §4.6; 1.3.3 was 141 KB). `index.js` 110 KB (was 93), `includes/` grew by seven services.
+
+**Rule added by Robin, 2026-10-05:** "we can't add anything that review team might object. so better to skip those features." Item 11 was removed for it; Plugin Check on the production copy is then clean.
+
+**Not done:** reCAPTCHA v3 against Google (no keys; markup and score rule only) · Semgrep and PHPStan (not installed on this machine; they run on the PR) · new screenshots for `.wordpress-org/` (the screens changed) · upgrade drill from the released 2.0.0 (no stored shape changed, so `DB_VERSION` stays 2.0.0).
+
+## 5. Backlog (after 2.1; all free if they ship)
+
+Built since this list was written and removed from it: passkeys, file-change monitoring, the database scan, the weekly summary and the Network Admin screen (all §4.4).
+
 - Local country database (only if the size can be justified; today it cannot).
+- Locking chosen settings network-wide (§4.5-3).
+- Anything marked "not built" in §4.5 comes back only with new facts that answer the reason given there.
 
 ### 4.6 Independent review and fixes (2026-10-05)
 

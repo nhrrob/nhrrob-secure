@@ -181,6 +181,36 @@ export default function Settings( { settings, meta, save, setData } ) {
 					/>
 				</Row>
 				<Row
+					label={ __( 'Also post alerts to', 'nhrrob-secure' ) }
+					help={ __(
+						'A webhook address (https) of Slack or any service that accepts the same format. Every alert is posted there as well as emailed.',
+						'nhrrob-secure'
+					) }
+				>
+					<TextSetting
+						type="url"
+						className="is-wide"
+						placeholder="https://hooks.slack.com/services/…"
+						value={ settings.alert_webhook }
+						aria-label={ __( 'Webhook address', 'nhrrob-secure' ) }
+						onCommit={ ( v ) => save( { alert_webhook: v } ) }
+					/>
+					<Button
+						onClick={ async () => {
+							try {
+								await api( '/settings/test-alert', 'POST' );
+								toast(
+									__( 'Test alert sent', 'nhrrob-secure' )
+								);
+							} catch ( e ) {
+								toast( e.message, 'error' );
+							}
+						} }
+					>
+						{ __( 'Send a test alert', 'nhrrob-secure' ) }
+					</Button>
+				</Row>
+				<Row
 					label={ __(
 						'A new administrator is created, or a role is raised to administrator',
 						'nhrrob-secure'
@@ -305,6 +335,23 @@ export default function Settings( { settings, meta, save, setData } ) {
 							) ) }
 					</select>
 				</Row>
+				<Row
+					label={ __( 'Also log content changes', 'nhrrob-secure' ) }
+					help={ __(
+						'Posts and pages published, changed, trashed or deleted, media, menus, widgets, comment moderation and, with WooCommerce, order status and shop settings. Only what a signed-in user did; these rows make room first when the log is full.',
+						'nhrrob-secure'
+					) }
+					control={
+						<Switch
+							checked={ settings.log_content }
+							label={ __(
+								'Log content changes',
+								'nhrrob-secure'
+							) }
+							onChange={ ( v ) => save( { log_content: v } ) }
+						/>
+					}
+				/>
 				<Row
 					label={ __(
 						'Move settings between sites',

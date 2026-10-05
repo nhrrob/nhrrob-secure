@@ -352,22 +352,24 @@ class TwoFactor {
 	/**
 	 * Key derived from the site salts.
 	 *
+	 * @param string|null $material The salt text to derive from; the site's current one when null.
 	 * @return string 32 bytes.
 	 */
-	private static function key() {
-		return hash( 'sha256', wp_salt( 'auth' ) . '|nhrrob_secure_2fa', true );
+	private static function key( $material = null ) {
+		return hash( 'sha256', ( null === $material ? wp_salt( 'auth' ) : $material ) . '|nhrrob_secure_2fa', true );
 	}
 
 	/**
 	 * Encrypt a secret for storage.
 	 *
-	 * @param string $plain Plain secret.
+	 * @param string      $plain    Plain secret.
+	 * @param string|null $material Salt text of keys that are about to replace the current ones (key rotation only).
 	 * @return string
 	 */
-	public static function encrypt( $plain ) {
+	public static function encrypt( $plain, $material = null ) {
 		$nonce = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- binary ciphertext stored as text in user meta.
-		return 'v1:' . base64_encode( $nonce . sodium_crypto_secretbox( $plain, $nonce, self::key() ) );
+		return 'v1:' . base64_encode( $nonce . sodium_crypto_secretbox( $plain, $nonce, self::key( $material ) ) );
 	}
 
 	/**

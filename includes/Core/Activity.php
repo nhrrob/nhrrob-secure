@@ -249,7 +249,7 @@ class Activity {
 			// Rows copied from 1.x carry the username but no user id.
 			$who = $row['l'];
 		} else {
-			$who = in_array( $row['k'], [ 'scan', 'core' ], true ) ? __( 'System', 'nhrrob-secure' ) : __( 'Visitor', 'nhrrob-secure' );
+			$who = in_array( $row['k'], [ 'scan', 'core', 'plugin', 'theme' ], true ) ? __( 'System', 'nhrrob-secure' ) : __( 'Visitor', 'nhrrob-secure' );
 		}
 
 		return [
@@ -448,6 +448,75 @@ class Activity {
 			case 'scan:restore':
 				/* translators: %s: file path. */
 				$text = sprintf( __( 'Restored %s from quarantine', 'nhrrob-secure' ), $label );
+				break;
+			case 'scan:repair_plugin':
+			case 'scan:repair_theme':
+				/* translators: %s: file path. */
+				$text = sprintf( __( 'Replaced %s with the copy from its WordPress.org release', 'nhrrob-secure' ), $label );
+				break;
+			case 'firewall:rate_limit':
+				$text = __( 'Slowed down: too many requests in a minute', 'nhrrob-secure' );
+				break;
+			case 'firewall:honeypot':
+				$text = __( 'Refused a form filled in by a bot', 'nhrrob-secure' );
+				break;
+			case 'setting:keys':
+				$text = __( 'Replaced the secret keys in wp-config.php; everyone was signed out', 'nhrrob-secure' );
+				break;
+			case 'setting:permissions':
+				/* translators: %s: file or folder name. */
+				$text = sprintf( __( 'Removed "everyone may write" from %s', 'nhrrob-secure' ), $label );
+				break;
+			case 'user:expiry':
+				/* translators: 1: username, 2: date. */
+				$text = sprintf( __( 'Access of %1$s set to end on %2$s', 'nhrrob-secure' ), $label, $detail );
+				break;
+			case 'user:expiry_off':
+				/* translators: %s: username. */
+				$text = sprintf( __( 'Removed the end date of %s', 'nhrrob-secure' ), $label );
+				break;
+			case 'content:published':
+			case 'content:updated':
+			case 'content:trashed':
+			case 'content:restored':
+			case 'content:deleted':
+				$sentences = [
+					/* translators: 1: post type, 2: title. */
+					'content:published' => __( 'Published the %1$s "%2$s"', 'nhrrob-secure' ),
+					/* translators: 1: post type, 2: title. */
+					'content:updated'   => __( 'Changed the %1$s "%2$s"', 'nhrrob-secure' ),
+					/* translators: 1: post type, 2: title. */
+					'content:trashed'   => __( 'Moved the %1$s "%2$s" to the trash', 'nhrrob-secure' ),
+					/* translators: 1: post type, 2: title. */
+					'content:restored'  => __( 'Restored the %1$s "%2$s" from the trash', 'nhrrob-secure' ),
+					/* translators: 1: post type, 2: title. */
+					'content:deleted'   => __( 'Deleted the %1$s "%2$s" for good', 'nhrrob-secure' ),
+				];
+				$text      = sprintf( $sentences[ $key ], $detail, $label );
+				break;
+			case 'content:media_added':
+				$text = __( 'Uploaded a media file', 'nhrrob-secure' );
+				break;
+			case 'content:media_deleted':
+				$text = __( 'Deleted a media file', 'nhrrob-secure' );
+				break;
+			case 'content:menu':
+				/* translators: %s: menu name. */
+				$text = sprintf( __( 'Changed the menu "%s"', 'nhrrob-secure' ), $label );
+				break;
+			case 'content:widgets':
+				$text = __( 'Changed the widgets', 'nhrrob-secure' );
+				break;
+			case 'content:comment':
+				/* translators: %s: new comment status. */
+				$text = sprintf( __( 'Moderated a comment: %s', 'nhrrob-secure' ), $label );
+				break;
+			case 'content:order':
+				/* translators: 1: order number, 2: old and new status. */
+				$text = sprintf( __( 'Changed order %1$s: %2$s', 'nhrrob-secure' ), $label, $detail );
+				break;
+			case 'content:shop_settings':
+				$text = __( 'Changed the shop settings', 'nhrrob-secure' );
 				break;
 			case 'scan:repair':
 				/* translators: %s: file path. */

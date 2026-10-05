@@ -1283,3 +1283,107 @@ span.#{$p}-chip {
 		animation: none !important;
 	}
 }
+
+/* Recommended setup: a checklist. */
+.#{$p}-setup {
+	margin: 12px 0 16px;
+	padding: 0;
+	list-style: none;
+
+	label {
+		display: flex;
+		gap: 10px;
+		align-items: flex-start;
+		padding: 6px 0;
+	}
+
+	b,
+	.#{$p}-sub {
+		display: block;
+	}
+}
+
+.#{$p}-app .#{$p}-textarea {
+	display: block;
+	width: 100%;
+	max-width: none;
+	height: auto;
+	margin-bottom: 10px;
+	font-family: var(--ns-mono);
+}
+
+.#{$p}-app .#{$p}-select.is-small {
+	min-height: 28px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	font-size: 12px;
+}
+
+/* Printable report: a plain document inside the app, and the only thing on paper. */
+.#{$p}-report {
+	max-width: 760px;
+
+	&__bar {
+		display: flex;
+		gap: 8px;
+		margin-bottom: 20px;
+	}
+
+	h1 {
+		margin: 0 0 4px;
+		font-size: 24px;
+	}
+
+	h2 {
+		margin: 24px 0 8px;
+		font-size: 16px;
+	}
+
+	ul {
+		margin: 0;
+		padding-left: 18px;
+		list-style: disc;
+	}
+
+	li {
+		margin: 4px 0;
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 13px;
+	}
+
+	td {
+		padding: 4px 8px 4px 0;
+		vertical-align: top;
+
+		&:first-child {
+			white-space: nowrap;
+		}
+	}
+}
+
+@media print {
+	#adminmenumain,
+	#wpadminbar,
+	#wpfooter,
+	.notice,
+	.#{$p}-bar,
+	.#{$p}-nav,
+	.#{$p}-report__bar {
+		display: none !important;
+	}
+
+	#wpcontent {
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+
+	.#{$p}-app,
+	.#{$p}-report {
+		background: #fff !important;
+		color: #000 !important;
+	}
+}

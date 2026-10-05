@@ -2,7 +2,7 @@
 
 Slug `nhrrob-secure` · display name "NHR Secure – Security, Firewall, 2FA, Login Protection & Activity Log" · in-app and menu label **Secure** (Tools → Secure; never "NHR" in the UI).
 
-Planning docs (dev-only, never shipped): `.ai/PRD.md` (free scope + the 1.3.3 audit), `.ai/PRD-PRO.md`, `.ai/DESIGN.md`, `.ai/design/mockup.html`, `.ai/design/brand/` (banner + icon SVG sources).
+Planning docs (dev-only, never shipped): `.ai/PRD.md` (free scope, the 1.3.3 audit, and §4.5: what was built for 2.1 and what was deliberately left out — read it before proposing a feature), `.ai/PRD-PRO.md`, `.ai/DESIGN.md`, `.ai/design/mockup.html`, `.ai/design/brand/` (banner + icon SVG sources).
 
 ## Rules that are specific to this plugin
 
@@ -21,14 +21,14 @@ nhrrob-secure.php          main class, constants, activation, maybe_upgrade(), c
 uninstall.php              per-site cleanup (respects delete_on_uninstall), user meta, .htaccess block
 includes/
   Core/     Settings, Ip, Activity, State, Store, Alerts, Upgrade, Bootstrap, Module, ModuleRegistry
-  Services/ LoginGuard, LoginUrl, BotCheck, Totp, TwoFactor, Passkeys, Passwords, Sessions, Firewall,
-            Hardening, FileProtection, Scan, Vulnerabilities, Integrity, Monitor, DatabaseScan, CodeScan,
-            Schedule, Summary, Checks, EventLogger
+  Services/ LoginGuard, LoginUrl, BotCheck, Honeypot, Totp, TwoFactor, Passkeys, Passwords, Sessions, Access,
+            Firewall, RateLimit, Hardening, FileProtection, Permissions, Salts, Scan, Vulnerabilities,
+            Integrity, Monitor, DatabaseScan, CodeScan, Schedule, Summary, Checks, Setup, EventLogger
   Rest/     RestController (base), SettingsController, SecurityController, ScannerController, TwoFactorController
-  Admin/    AppPage (Tools → Secure, enqueue, boot data), NetworkPage (multisite overview, server-rendered)
+  Admin/    AppPage (Tools → Secure, enqueue, boot data), NetworkPage (multisite overview and "copy one site's settings to all", server-rendered)
   Cli/      Commands (wp nhrrob-secure …)
   Interfaces/ModuleInterface
-admin/src/                 React source: index.js, app.js, api.js, components/, screens/, style.scss, profile.js(+scss)
+admin/src/                 React source: index.js, app.js, api.js, components/ (incl. Report.js, the printable report), screens/, style.scss, profile.js(+scss)
 admin/build/               compiled output (ships)
 tests/                     PHPUnit + WP_Mock
 .github/workflows/         plugin-check.yml, security.yml (PR checks), two deploy workflows
@@ -42,11 +42,13 @@ tests/                     PHPUnit + WP_Mock
 | `nhrrob_secure_settings` (autoloaded) | every setting + `db_version` | fixed keys |
 | `nhrrob_secure_activity` | activity rows, newest first (`t,u,k,a,l,i,s,n,d`) | 1,000 rows / 256 KB / retention days |
 | `nhrrob_secure_state` | hot, small data written under attack — `lockouts` (per address, or per /64 for IPv6: `c,u,l,x,v` for sign-in + `q,ql,px,pv` for probe lockouts), `filter_log`, `blocked` (per day), `denied` (last counted refusal per address) | 300 addresses / 100 rows / 7 days |
-| `nhrrob_secure_scan` | cold, large data — last result per check: `vuln`, `vuln_run`, `core`, `plugins`, `plugins_run`, `files`, `monitor`, `database`, `code` (code-scan queue + findings), `scheduled*` | lists capped; 200 code findings |
+| `nhrrob_secure_scan` | cold, large data — last result per check: `vuln`, `vuln_run`, `core` (with `config` findings and `loaders`), `plugins`, `plugins_run`, `themes` (with `clean`: version and fingerprint of themes that matched), `themes_run`, `files`, `monitor`, `database`, `code` (code-scan queue + findings), `scheduled*`, `setup` (undo values of the recommended setup, or `dismissed`) | lists capped; 200 code findings |
 
 **Four options, no more** (Robin, 2026-10-05: "goal is to use less options"). New features store into `state` (if written per request or per failed sign-in — keep it small) or `scan` (if large and written rarely) through `Core\State` and `Services\Scan`; they do not add an option. `state` and `scan` are separate on purpose: merging them would make every failed sign-in rewrite the scan results.
 
-User meta: `nhrrob_secure_2fa_enabled|method|secret|recovery_codes|pending|last_step|due|trusted|fails`, `nhrrob_secure_passkeys`, `nhrrob_secure_pw_changed|pw_must`, `nhrrob_secure_last_login`, `nhrrob_secure_last_activity`. Transients: `nhrrob_secure_2fa_{md5}` (sign-in challenge, 10 min), `nhrrob_secure_pk_{id}` (passkey registration challenge), `nhrrob_secure_pw_{id}`, `nhrrob_secure_alert_{md5}`, `nhrrob_secure_vuln_lock` (one stepper at a time); site transient `nhrrob_secure_network` (Network Admin rows, 5 min). Cookie: `nhrrob_secure_trust_{COOKIEHASH}` (trusted browser). Cron: `nhrrob_secure_vulnerability_check` (daily, reschedules itself per batch), `nhrrob_secure_scan` (daily/weekly per `scan_schedule`, walks its phases one tick a minute), `nhrrob_secure_summary` (weekly, when on).
+Rate-limit counters are **not stored**: they live in the persistent object cache (group `nhrrob_secure_rate`, two-minute keys), and the feature cannot be switched on without one.
+
+User meta: `nhrrob_secure_2fa_enabled|method|secret|recovery_codes|pending|last_step|due|trusted|fails`, `nhrrob_secure_passkeys`, `nhrrob_secure_pw_changed|pw_must`, `nhrrob_secure_last_login`, `nhrrob_secure_last_activity`, `nhrrob_secure_known` (hashes of browsers the account has used, for sign-in notifications), `nhrrob_secure_expires` (end date of temporary access). Transients: `nhrrob_secure_2fa_{md5}` (sign-in challenge, 10 min), `nhrrob_secure_pk_{id}` (passkey registration challenge), `nhrrob_secure_pw_{id}`, `nhrrob_secure_alert_{md5}`, `nhrrob_secure_vuln_lock` (one stepper at a time); site transient `nhrrob_secure_network` (Network Admin rows, 5 min). Cookies: `nhrrob_secure_trust_{COOKIEHASH}` (trusted browser), `nhrrob_secure_known_{COOKIEHASH}` (known browser, one year). Cron: `nhrrob_secure_vulnerability_check` (daily, reschedules itself per batch), `nhrrob_secure_scan` (daily/weekly per `scan_schedule`, walks its phases one tick a minute), `nhrrob_secure_summary` (weekly, when on).
 
 A change of stored shape needs a migration: bump `NHRRob_Secure::DB_VERSION` and add the step to `Core\Upgrade::run()`. An install coming from 1.x migrates on its first request of any kind; later bumps wait for admin/cron/CLI.
 
@@ -54,12 +56,12 @@ A change of stored shape needs a migration: bump `NHRRob_Secure::DB_VERSION` and
 
 Gate `can_manage` = `manage_options`. `can_manage_files` adds "super admin on multisite". `can_repair` adds `update_core`. On multisite the whole Scanner section (module capability `manage_network`, every route behind `can_manage_files`) is for network admins: plugin, theme and core files are shared by all sites.
 
-- `GET /dashboard` · `GET|POST /settings` · `POST /settings/import` · `GET /login` · `POST /login/unlock`
-- `GET /users` (also needs `list_users`) · `POST /users/{id}/signout`, `/reset-2fa` and `/force-password` (per-object `edit_user`) · `POST /users/force-password` (role or everyone; needs `edit_users`) · `POST /users/signout-all` (files gate)
-- `GET /firewall` · `POST|DELETE /firewall/rules`
-- `GET /hardening` · `POST /hardening/check`
+- `GET /dashboard` · `GET|POST /settings` · `POST /settings/import` · `POST /settings/test-alert` · `POST /setup`, `/setup/undo`, `/setup/close` (recommended setup) · `GET /login` · `POST /login/unlock`
+- `GET /users` (also needs `list_users`) · `POST /users/{id}/signout`, `/reset-2fa` and `/force-password` (per-object `edit_user`) · `POST /users/force-password` (role or everyone; needs `edit_users`) · `POST /users/{id}/expiry` (per-object `edit_user`; refuses the caller's own id) · `POST /users/signout-all` (files gate)
+- `GET /firewall` · `POST|DELETE /firewall/rules` · `POST /firewall/rules/import` (pasted list)
+- `GET /hardening` (file protection, permissions, whether the keys can be rotated) · `POST /hardening/check` · `POST /hardening/permissions` and `POST /hardening/keys` (files gate)
 - `GET /activity` · `GET /activity/export`
-- `GET /scanner` · `POST /scanner/vulnerabilities|plugins|monitor|code` (stepped by the browser) · `POST /scanner/database` · `POST /scanner/monitor/accept` (files gate) · `POST /scanner/core` · `POST /scanner/core/repair` (repair gate) · `POST /scanner/code/view` · `POST /scanner/code/quarantine|restore` (files gate)
+- `GET /scanner` · `POST /scanner/vulnerabilities|plugins|themes|monitor|code` (stepped by the browser) · `POST /scanner/plugins/repair` (adds `update_plugins`) · `POST /scanner/themes/repair` (adds `update_themes`) · `POST /scanner/database` · `POST /scanner/monitor/accept` (files gate) · `POST /scanner/core` · `POST /scanner/core/repair` (repair gate) · `POST /scanner/code/view` · `POST /scanner/code/quarantine|restore` (files gate)
 - `GET /2fa` · `POST /2fa/begin|confirm|passkey|disable|recovery|forget-browsers` — any signed-in user, own account only, only while two-factor is on; `disable` and `recovery` re-check the password.
 
 ## Invariants (do not weaken)
@@ -68,6 +70,14 @@ Gate `can_manage` = `manage_options`. `can_manage_files` adds "super admin on mu
 - A block rule that matches the requester's own address is refused (`SecurityController::add_rule`, and import drops such rules).
 - Moving the login address: slug validated (`Settings::slug_problem`), pretty permalinks required, tested with a loopback request and **reverted if the form does not appear**, then emailed.
 - File actions never take a free path: core repair only for files in the official checksum list **and** only when the download matches that checksum; quarantine/restore only for paths in the scan's own findings/quarantine lists, resolved with `realpath` inside `wp-content`.
+- Plugin and theme repair follow the same rule: the plugin or theme must be installed, the file must be in that release (`validate_file` first), a plugin download must match the release's checksum, and a theme file comes out of the release zip from `downloads.wordpress.org`. Theme comparison looks at PHP, JavaScript and template files only: the copy of a default theme bundled with WordPress differs from WordPress.org in readme, stylesheet header and fonts.
+- **Key rotation** (`Services\Salts`) only replaces the eight values when each is a plain string defined exactly once; the new file must parse (`token_get_all( …, TOKEN_PARSE )`), is swapped in with `rename()`, and the old one is put back if the home page then answers 5xx. Two-factor secrets are encrypted with a key made from `AUTH_KEY . AUTH_SALT`, so they are re-encrypted for the new values in the same step. **Anything else that changes the salts (`wp config shuffle-salts`, a manual edit) makes stored app secrets unreadable**; those users reset two-factor.
+- The permissions fix removes the "others may write" bit and nothing else, and only for the fixed list in `Permissions::paths()`.
+- Rate limiting counts in the object cache only, signed-out visitors only, and never ordinary page views (`RateLimit::bucket`).
+- The session limit ends the oldest sessions; the session just created always stays (`Sessions::newest( …, $keep )`), also when several sign-ins share a second.
+- Temporary access: an end date cannot be put on the caller's own account; after it, `authenticate` (40) refuses, `init` ends live sessions and application passwords are unavailable.
+- The recommended setup (`Services\Setup`) may only contain settings that cannot lock anyone out or turn a visitor away.
+- Content logging (`log_content`) records only what a signed-in user did, as info rows folded per item and hour.
 - `.htaccess` rules are removed again if the home page answers 5xx after writing them, on deactivation and on uninstall.
 - Two-factor: setup needs a working code. **Every** wrong code counts twice: against the address (`LoginGuard::register_failure`) and against the account (`nhrrob_secure_2fa_fails`; 5 in 15 minutes pause that account's second step, 15 min doubling to 24 h, and email its owner) — a new challenge never buys new guesses. The challenge (authenticate 50) checks the address lock and the account hold itself, because it exits before `LoginGuard` (100); the bot check runs at 45 and answers the same for a right and a wrong password. A second step that is on cannot be replaced: `/2fa/begin|confirm|passkey` answer 409 until it is switched off (password needed), and `/users/{id}/reset-2fa` refuses the caller's own id. On multisite the challenge is hooked on every site, whatever that site's `twofa_enabled` says (enrolment is user meta, shared by the network). The challenge only starts when a password was submitted; TOTP steps are single-use; secrets are stored `v1:`-encrypted (sodium secretbox, key from `wp_salt('auth')`); 1.x plain secrets are read and encrypted on first use.
 - The request filter inspects path and query string of signed-out visitors. Request bodies are looked at only when `filter_forms` is on, and then only with the `traversal`, `wrapper` and `code` rules (`Firewall::match_body`) — never the SQL or script rules, which normal writing can match.
@@ -98,8 +108,10 @@ PHP filters `nhrrob_secure_modules`, `nhrrob_secure_app_boot`, `nhrrob_secure_ch
 npm run build          # admin/build
 npm run lint           # ESLint (text domain enforced in .eslintrc.js)
 composer run phpcs     # WordPress Coding Standards
-composer run test:unit # PHPUnit: filter corpus, TOTP vectors, address rules, lockouts, signatures, score, review fixes
+composer run test:unit # PHPUnit: filter corpus, TOTP vectors, address rules, lockouts, signatures, score, review fixes, 2.1 decisions (ParityTest)
 ```
+
+`vendor/` in git is the **production** autoloader (plain PSR-4, no dev packages). `composer install` to run the tests rewrites `vendor/composer/*`; put it back with `git checkout -- vendor` before committing.
 
 `typescript` is pinned to `~6.0` in `package.json` only because the lint plugin does not load with 7.x.
 

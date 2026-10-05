@@ -62,6 +62,182 @@ class EventLogger {
 		foreach ( self::WATCHED_OPTIONS as $option ) {
 			add_action( 'update_option_' . $option, [ $this, 'on_option_change' ], 10, 3 );
 		}
+
+		if ( Settings::get( 'log_content' ) ) {
+			add_action( 'transition_post_status', [ $this, 'on_post_status' ], 10, 3 );
+			add_action( 'before_delete_post', [ $this, 'on_post_deleted' ], 10, 2 );
+			add_action( 'add_attachment', [ $this, 'on_media_added' ] );
+			add_action( 'delete_attachment', [ $this, 'on_media_deleted' ] );
+			add_action( 'wp_update_nav_menu', [ $this, 'on_menu' ] );
+			add_action( 'update_option_sidebars_widgets', [ $this, 'on_widgets' ] );
+			add_action( 'transition_comment_status', [ $this, 'on_comment' ], 10, 2 );
+			add_action( 'woocommerce_order_status_changed', [ $this, 'on_order' ], 10, 3 );
+			add_action( 'woocommerce_settings_saved', [ $this, 'on_shop_settings' ] );
+		}
+	}
+
+	// ---- Content (optional). Only what a signed-in user did; rows are routine, and repeats on the same item fold into one. ----
+
+	/**
+	 * Record a content event.
+	 *
+	 * @param string $action Action.
+	 * @param string $label  Label.
+	 * @param string $detail Detail.
+	 * @return void
+	 */
+	private function content( $action, $label = '', $detail = '' ) {
+		if ( ! get_current_user_id() ) {
+			return;
+		}
+		Activity::record(
+			'content',
+			$action,
+			$label,
+			Activity::INFO,
+			[
+				'detail'   => $detail,
+				'coalesce' => HOUR_IN_SECONDS,
+			]
+		);
+	}
+
+	/**
+	 * What a change of post status means for the log ('' when it is not logged). Pure.
+	 *
+	 * @param string $new_status New status.
+	 * @param string $old_status Old status.
+	 * @return string published | updated | trashed | restored | ''
+	 */
+	public static function post_event( $new_status, $old_status ) {
+		if ( 'trash' === $new_status ) {
+			return 'trash' === $old_status ? '' : 'trashed';
+		}
+		if ( 'trash' === $old_status ) {
+			return 'restored';
+		}
+		if ( 'publish' === $new_status ) {
+			return 'publish' === $old_status ? 'updated' : 'published';
+		}
+		return '';
+	}
+
+	/**
+	 * The post type's name when its posts are logged, or '' (revisions, menu items, orders and other internal types).
+	 *
+	 * @param \WP_Post $post Post.
+	 * @return string
+	 */
+	private function logged_type( $post ) {
+		$type = $post instanceof \WP_Post ? get_post_type_object( $post->post_type ) : null;
+		if ( ! $type || ! $type->show_ui || in_array( $post->post_type, [ 'attachment', 'shop_order', 'shop_order_refund', 'wp_navigation' ], true ) ) {
+			return '';
+		}
+		return (string) $type->labels->singular_name;
+	}
+
+	/**
+	 * A post was published, changed, trashed or restored.
+	 *
+	 * @param string   $new_status New status.
+	 * @param string   $old_status Old status.
+	 * @param \WP_Post $post       Post.
+	 * @return void
+	 */
+	public function on_post_status( $new_status, $old_status, $post ) {
+		$event = self::post_event( $new_status, $old_status );
+		$type  = '' !== $event ? $this->logged_type( $post ) : '';
+		if ( '' !== $type ) {
+			$this->content( $event, $post->post_title, $type );
+		}
+	}
+
+	/**
+	 * A post was deleted for good.
+	 *
+	 * @param int      $post_id Post id.
+	 * @param \WP_Post $post    Post.
+	 * @return void
+	 */
+	public function on_post_deleted( $post_id, $post = null ) {
+		$type = $post instanceof \WP_Post && 'auto-draft' !== $post->post_status ? $this->logged_type( $post ) : '';
+		if ( '' !== $type ) {
+			$this->content( 'deleted', $post->post_title, $type );
+		}
+	}
+
+	/**
+	 * A media file was uploaded.
+	 *
+	 * @return void
+	 */
+	public function on_media_added() {
+		$this->content( 'media_added' );
+	}
+
+	/**
+	 * A media file was deleted.
+	 *
+	 * @return void
+	 */
+	public function on_media_deleted() {
+		$this->content( 'media_deleted' );
+	}
+
+	/**
+	 * A menu was saved.
+	 *
+	 * @param int $menu_id Menu id.
+	 * @return void
+	 */
+	public function on_menu( $menu_id ) {
+		$menu = wp_get_nav_menu_object( $menu_id );
+		$this->content( 'menu', $menu ? $menu->name : '' );
+	}
+
+	/**
+	 * Widgets were added, moved or removed.
+	 *
+	 * @return void
+	 */
+	public function on_widgets() {
+		$this->content( 'widgets' );
+	}
+
+	/**
+	 * A comment was approved, held, marked as spam or trashed.
+	 *
+	 * @param string $new_status New status.
+	 * @param string $old_status Old status.
+	 * @return void
+	 */
+	public function on_comment( $new_status, $old_status ) {
+		if ( $new_status !== $old_status ) {
+			$this->content( 'comment', (string) $new_status );
+		}
+	}
+
+	/**
+	 * A member of staff changed an order's status.
+	 *
+	 * @param int    $order_id Order id.
+	 * @param string $from     Old status.
+	 * @param string $to       New status.
+	 * @return void
+	 */
+	public function on_order( $order_id, $from, $to ) {
+		if ( current_user_can( 'edit_others_posts' ) ) {
+			$this->content( 'order', '#' . (int) $order_id, $from . ' → ' . $to );
+		}
+	}
+
+	/**
+	 * The shop's settings were saved.
+	 *
+	 * @return void
+	 */
+	public function on_shop_settings() {
+		$this->content( 'shop_settings' );
 	}
 
 	/**

@@ -5,7 +5,7 @@
  * Description: WordPress security that stays out of the way: login protection, two-factor, firewall, hardening, a scanner and an activity log.
  * Author: Nazmul Hasan Robin
  * Author URI: https://profiles.wordpress.org/nhrrob/
- * Version: 2.0.0
+ * Version: 2.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: nhrrob-secure
@@ -31,7 +31,7 @@ final class NHRRob_Secure {
 	 *
 	 * @var string
 	 */
-	const version = '2.0.0'; // phpcs:ignore Generic.NamingConventions.UpperCaseConstantName.ClassConstantNotUpperCase -- nhrrob plugin standard.
+	const version = '2.1.0'; // phpcs:ignore Generic.NamingConventions.UpperCaseConstantName.ClassConstantNotUpperCase -- nhrrob plugin standard.
 
 	/**
 	 * Version of the plugin's stored data (options only; it has no tables).

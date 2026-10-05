@@ -162,9 +162,77 @@ export default function Scanner( { boot, settings, save } ) {
 	const code = data.code;
 	const monitor = data.monitor;
 	const database = data.database;
+	const themes = data.themes;
+	const config = ( core && core.config ) || [];
+	const loaders = ( core && core.loaders ) || [];
 	const coreIssues = core
-		? core.modified.length + core.missing.length + core.unexpected.length
+		? core.modified.length +
+		  core.missing.length +
+		  core.unexpected.length +
+		  config.length
 		: 0;
+
+	const repairItem = async ( kind, slug, file ) => {
+		if (
+			await confirm(
+				__(
+					'Replace this file with the copy from WordPress.org?',
+					'nhrrob-secure'
+				),
+				{
+					description: slug + '/' + file,
+					confirmLabel: __( 'Replace file', 'nhrrob-secure' ),
+				}
+			)
+		) {
+			simple(
+				kind,
+				'/scanner/' + kind + '/repair',
+				{ slug, file },
+				__( 'File replaced with the official copy', 'nhrrob-secure' )
+			);
+		}
+	};
+
+	const compared = ( item, kind, allowed ) => (
+		<div key={ item.slug }>
+			<FileList
+				title={ sprintf(
+					/* translators: 1: plugin or theme name, 2: version. */
+					__( '%1$s %2$s — changed files', 'nhrrob-secure' ),
+					item.name,
+					item.version
+				) }
+				files={ item.files }
+				action={
+					allowed
+						? ( file ) => (
+								<Button
+									small
+									disabled={ !! busy[ kind ] }
+									onClick={ () =>
+										repairItem( kind, item.slug, file )
+									}
+								>
+									{ __( 'Replace', 'nhrrob-secure' ) }
+								</Button>
+						  )
+						: null
+				}
+			/>
+			<FileList
+				title={ sprintf(
+					/* translators: %s: plugin or theme name. */
+					__(
+						'%s — PHP files that are not in the release',
+						'nhrrob-secure'
+					),
+					item.name
+				) }
+				files={ item.extra }
+			/>
+		</div>
+	);
 
 	const repair = async ( file ) => {
 		if (
@@ -513,6 +581,38 @@ export default function Scanner( { boot, settings, save } ) {
 								) }
 								files={ core.unexpected }
 							/>
+							{ config.length > 0 && (
+								<div className="nhrrob-secure-filelist">
+									<b>
+										{ __(
+											'Server and configuration files to review',
+											'nhrrob-secure'
+										) }
+									</b>
+									<ul>
+										{ config.map( ( finding ) => (
+											<li key={ finding.file }>
+												<code>{ finding.file }</code>
+												<span>{ finding.reason }</span>
+											</li>
+										) ) }
+									</ul>
+								</div>
+							) }
+							{ loaders.length > 0 && (
+								<p className="nhrrob-secure-sub">
+									{ sprintf(
+										/* translators: %s: list of file names. */
+										__(
+											'Loaded by WordPress without appearing on the Plugins screen (must-use plugins and drop-ins): %s.',
+											'nhrrob-secure'
+										),
+										loaders
+											.map( ( item ) => item.file )
+											.join( ', ' )
+									) }
+								</p>
+							) }
 						</>
 					) : (
 						<p>
@@ -531,7 +631,7 @@ export default function Scanner( { boot, settings, save } ) {
 							  ) + ' '
 							: '' }
 						{ __(
-							'Your themes, plugins and uploads are not part of this check.',
+							'Also looks at .htaccess, .user.ini and wp-config.php for injected rules and code. Your themes, plugins and uploads are not part of this check.',
 							'nhrrob-secure'
 						) }
 					</p>
@@ -584,33 +684,9 @@ export default function Scanner( { boot, settings, save } ) {
 									plugins.ok
 								) }
 							</p>
-							{ plugins.changed.map( ( plugin ) => (
-								<div key={ plugin.slug }>
-									<FileList
-										title={ sprintf(
-											/* translators: 1: plugin name, 2: version. */
-											__(
-												'%1$s %2$s — changed files',
-												'nhrrob-secure'
-											),
-											plugin.name,
-											plugin.version
-										) }
-										files={ plugin.files }
-									/>
-									<FileList
-										title={ sprintf(
-											/* translators: %s: plugin name. */
-											__(
-												'%s — PHP files that are not in the release',
-												'nhrrob-secure'
-											),
-											plugin.name
-										) }
-										files={ plugin.extra }
-									/>
-								</div>
-							) ) }
+							{ plugins.changed.map( ( plugin ) =>
+								compared( plugin, 'plugins', data.can_plugins )
+							) }
 							{ plugins.unknown.length > 0 && (
 								<p className="nhrrob-secure-sub">
 									{ sprintf(
@@ -627,7 +703,7 @@ export default function Scanner( { boot, settings, save } ) {
 					) : (
 						<p>
 							{ __(
-								'Compares each plugin with the release published on WordPress.org. Themes have no official checksums, so they cannot be compared.',
+								'Compares each plugin with the release published on WordPress.org, and can put the official copy of a changed file back.',
 								'nhrrob-secure'
 							) }
 						</p>
@@ -651,6 +727,85 @@ export default function Scanner( { boot, settings, save } ) {
 					</Button>
 				</Panel>
 			</div>
+
+			<Panel
+				title={ __( 'Theme files', 'nhrrob-secure' ) }
+				icon="file"
+				actions={
+					themes && (
+						<Pill tone={ themes.changed.length ? 'warn' : 'ok' }>
+							{ themes.changed.length
+								? sprintf(
+										/* translators: %d: number of themes. */
+										_n(
+											'%d changed',
+											'%d changed',
+											themes.changed.length,
+											'nhrrob-secure'
+										),
+										themes.changed.length
+								  )
+								: __( 'All match', 'nhrrob-secure' ) }
+						</Pill>
+					)
+				}
+			>
+				{ themes ? (
+					<>
+						<p>
+							{ sprintf(
+								/* translators: %d: number of themes. */
+								_n(
+									'%d theme matches its WordPress.org original.',
+									'%d themes match their WordPress.org originals.',
+									themes.ok,
+									'nhrrob-secure'
+								),
+								themes.ok
+							) }
+						</p>
+						{ themes.changed.map( ( theme ) =>
+							compared( theme, 'themes', data.can_themes )
+						) }
+						{ themes.unknown.length > 0 && (
+							<p className="nhrrob-secure-sub">
+								{ sprintf(
+									/* translators: %s: list of theme names. */
+									__(
+										'Cannot be compared (not from WordPress.org, that version is not published there, or the download failed): %s.',
+										'nhrrob-secure'
+									),
+									themes.unknown.join( ', ' )
+								) }
+							</p>
+						) }
+					</>
+				) : (
+					<p>
+						{ __(
+							'WordPress.org publishes no checksums for themes, so each theme’s release is downloaded and its PHP, JavaScript and template files are compared. A theme that has not changed since it last matched is not downloaded again.',
+							'nhrrob-secure'
+						) }
+					</p>
+				) }
+				<p className="nhrrob-secure-sub">
+					{ busy.themes && progressText( busy.themes ) }
+					{ ! busy.themes &&
+						themes &&
+						sprintf(
+							/* translators: %s: relative time. */
+							__( 'Checked %s.', 'nhrrob-secure' ),
+							ago( themes.checked )
+						) }
+				</p>
+				<Button
+					small
+					disabled={ !! busy.themes }
+					onClick={ () => run( 'themes' ) }
+				>
+					{ __( 'Compare now', 'nhrrob-secure' ) }
+				</Button>
+			</Panel>
 
 			<Panel
 				title={ __( 'Code changes outside updates', 'nhrrob-secure' ) }

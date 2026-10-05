@@ -60,6 +60,7 @@ export default function Activity( { settings } ) {
 		[ 'setting', __( 'Secure settings', 'nhrrob-secure' ) ],
 		[ 'firewall', __( 'Firewall', 'nhrrob-secure' ) ],
 		[ 'scan', __( 'Scanner', 'nhrrob-secure' ) ],
+		[ 'content', __( 'Content', 'nhrrob-secure' ) ],
 	];
 
 	const exportCsv = async () => {

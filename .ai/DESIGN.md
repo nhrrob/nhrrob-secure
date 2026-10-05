@@ -39,11 +39,15 @@ Neutrals lean toward the teal accent. Semantic colours (good / warning / critica
 - **Note** — info (blue) or warn (amber) block for the one thing the owner must read.
 - **Gauge** — inline SVG ring, score in the middle; teal ≥ 80, amber ≥ 50, red below.
 - **Issue list** (Dashboard) — a coloured left edge by severity, the finding in bold, a muted detail line, a severity pill and one action.
+- **Setup list** (Dashboard) — the recommended settings that are still off, one tick box each, a primary "Switch N on" and a quiet "Not now". After applying, a Note offers Undo / Keep them.
+- **Report** (Dashboard → Printable report) — a plain document inside the app (`components/Report.js`): score, numbers, to fix, passed, recent warnings. `@media print` hides wp-admin's menu and bar, the app bar and the nav, so the report is the only thing on paper.
 - **Toast** bottom-right (success 3 s, errors 12 s so the text can be read); a screen whose data cannot be loaded shows a warning note instead of an endless "Loading…"; **Confirm dialog** for anything that ends sessions, moves the login address or renames a file.
 
 ## 4. Screens
 
 Dashboard · Login · Users & Sessions · Firewall · Hardening · Scanner · Activity · Settings (separated from the rest in the nav). One home per action; a new feature goes into one of these.
+
+Where the 2.1 features live: **Dashboard** recommended setup, printable report · **Login** bot check on comments, bot trap, sign-in notifications · **Users & Sessions** temporary access (a select per user row), session limit · **Firewall** paste / copy a list, "Block address" on a match, rate limiting · **Hardening** feeds and head-link switches, file permissions, secret keys · **Scanner** configuration findings (in the WordPress files panel), "Replace" on changed plugin files, theme files · **Settings** webhook address with a test button, content logging.
 
 ## 5. Copy
 

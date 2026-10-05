@@ -23,6 +23,7 @@ use NHRRob\Secure\Services\LoginUrl;
 use NHRRob\Secure\Services\Scan;
 use NHRRob\Secure\Services\Schedule;
 use NHRRob\Secure\Services\Sessions;
+use NHRRob\Secure\Services\Setup;
 use NHRRob\Secure\Services\Summary;
 use NHRRob\Secure\Services\Vulnerabilities;
 
@@ -31,6 +32,10 @@ use NHRRob\Secure\Services\Vulnerabilities;
  * GET  /settings          settings + what the app needs to describe them
  * POST /settings          partial update, validated per key
  * POST /settings/import   replace settings from an export
+ * POST /settings/test-alert  send a test alert to the email address and the webhook
+ * POST /setup             switch the chosen recommended settings on
+ * POST /setup/undo        put back what /setup changed
+ * POST /setup/close       keep what was applied, or stop offering the rest
  * GET  /login             addresses locked out now
  * POST /login/unlock      unlock one address (or all)
  */
@@ -53,6 +58,10 @@ class SettingsController extends RestController {
 		$this->route( '/settings', 'GET', [ $this, 'get' ] );
 		$this->route( '/settings', 'POST', [ $this, 'update' ] );
 		$this->route( '/settings/import', 'POST', [ $this, 'import' ] );
+		$this->route( '/settings/test-alert', 'POST', [ $this, 'test_alert' ] );
+		$this->route( '/setup', 'POST', [ $this, 'setup' ] );
+		$this->route( '/setup/undo', 'POST', [ $this, 'setup_undo' ] );
+		$this->route( '/setup/close', 'POST', [ $this, 'setup_close' ] );
 		$this->route( '/login', 'GET', [ $this, 'lockouts' ] );
 		$this->route( '/login/unlock', 'POST', [ $this, 'unlock' ], [ 'ip' => $this->text( false ) ] );
 	}
@@ -88,6 +97,11 @@ class SettingsController extends RestController {
 				],
 				'activity' => $recent['items'],
 				'notice'   => (string) Settings::get( 'upgrade_notice' ),
+				'setup'    => Setup::for_app(),
+				'site'     => [
+					'name' => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
+					'url'  => home_url( '/' ),
+				],
 			]
 		);
 	}
@@ -134,6 +148,7 @@ class SettingsController extends RestController {
 					'can_files'    => $this->can_manage_files(),
 					'files_server' => FileProtection::server(),
 					'files_write'  => FileProtection::can_write(),
+					'object_cache' => (bool) wp_using_ext_object_cache(),
 				],
 			],
 			$extra
@@ -271,6 +286,65 @@ class SettingsController extends RestController {
 		}
 
 		return rest_ensure_response( $this->payload( $extra ) );
+	}
+
+	/**
+	 * Send a test alert, so the owner can see that the email address and the webhook work.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function test_alert() {
+		$sent = Alerts::send( __( 'Test alert', 'nhrrob-secure' ), [ __( 'This is a test. Alerts from Secure will arrive like this one.', 'nhrrob-secure' ) ] );
+		return rest_ensure_response( [ 'sent' => $sent ] );
+	}
+
+	/**
+	 * Switch on the recommended settings the owner left ticked.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function setup( $request ) {
+		$params = (array) $request->get_json_params();
+		$patch  = Setup::patch( array_map( 'sanitize_key', isset( $params['keys'] ) ? (array) $params['keys'] : [] ) );
+		if ( ! $patch ) {
+			return new \WP_Error( 'nhrrob_secure_setup', __( 'Nothing was selected.', 'nhrrob-secure' ), [ 'status' => 400 ] );
+		}
+		$previous = array_intersect_key( Settings::all(), $patch );
+		$response = $this->apply( $patch );
+		if ( ! is_wp_error( $response ) ) {
+			Setup::remember( $previous );
+		}
+		return $response;
+	}
+
+	/**
+	 * Put back what the recommended setup changed.
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function setup_undo() {
+		$values = Setup::undo_values();
+		if ( ! $values ) {
+			return new \WP_Error( 'nhrrob_secure_setup', __( 'There is nothing to undo.', 'nhrrob-secure' ), [ 'status' => 400 ] );
+		}
+		$response = $this->apply( $values );
+		if ( ! is_wp_error( $response ) ) {
+			Setup::close( false );
+		}
+		return $response;
+	}
+
+	/**
+	 * Close the setup card.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function setup_close( $request ) {
+		$params = (array) $request->get_json_params();
+		Setup::close( ! empty( $params['dismiss'] ) );
+		return rest_ensure_response( Setup::for_app() );
 	}
 
 	/**

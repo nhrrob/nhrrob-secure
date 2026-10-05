@@ -28,6 +28,9 @@ class Sessions {
 	 * @return void
 	 */
 	public function hooks() {
+		if ( (int) Settings::get( 'max_sessions' ) > 0 ) {
+			add_action( 'set_logged_in_cookie', [ $this, 'limit_sessions' ], 10, 6 );
+		}
 		if ( (int) Settings::get( 'idle_timeout' ) <= 0 ) {
 			return;
 		}
@@ -37,6 +40,59 @@ class Sessions {
 		add_action( 'template_redirect', [ $this, 'tick' ] );
 		add_filter( 'rest_pre_dispatch', [ $this, 'tick_rest' ] );
 		add_filter( 'wp_login_errors', [ $this, 'idle_notice' ] );
+	}
+
+	/**
+	 * The newest sessions of a user, up to a limit. Pure.
+	 *
+	 * Sessions that started in the same second are told apart by their place
+	 * in the list (WordPress appends), and the session named in $keep always
+	 * stays: it is the one that was just created.
+	 *
+	 * @param array  $sessions Session list: token hash => session.
+	 * @param int    $max      How many to keep.
+	 * @param string $keep     Token hash that must stay ('' for none).
+	 * @return array
+	 */
+	public static function newest( array $sessions, $max, $keep = '' ) {
+		$order = [];
+		$place = 0;
+		foreach ( $sessions as $hash => $session ) {
+			$order[ $hash ] = [ (string) $hash === (string) $keep ? PHP_INT_MAX : ( isset( $session['login'] ) ? (int) $session['login'] : 0 ), ++$place ];
+		}
+		uasort(
+			$order,
+			function ( $a, $b ) {
+				return $a[0] === $b[0] ? $b[1] - $a[1] : ( $b[0] > $a[0] ? 1 : -1 );
+			}
+		);
+		return array_intersect_key( $sessions, array_slice( $order, 0, max( 1, (int) $max ), true ) );
+	}
+
+	/**
+	 * A new session was just created: end the oldest ones beyond the limit.
+	 * The new sign-in is never the one refused, so a lost device cannot keep
+	 * its owner out.
+	 *
+	 * @param string $cookie     Cookie value (unused).
+	 * @param int    $expire     Cookie expiry (unused).
+	 * @param int    $expiration Session expiry (unused).
+	 * @param int    $user_id    User id.
+	 * @param string $scheme     Cookie scheme (unused).
+	 * @param string $token      The new session's token.
+	 * @return void
+	 */
+	public function limit_sessions( $cookie, $expire, $expiration, $user_id, $scheme = '', $token = '' ) {
+		// Only WordPress's own session store keeps the list where it can be trimmed.
+		if ( ! \WP_Session_Tokens::get_instance( $user_id ) instanceof \WP_User_Meta_Session_Tokens ) {
+			return;
+		}
+		$sessions = get_user_meta( $user_id, 'session_tokens', true );
+		$max      = (int) Settings::get( 'max_sessions' );
+		if ( is_array( $sessions ) && count( $sessions ) > $max ) {
+			// WordPress stores a session under the SHA-256 of its token.
+			update_user_meta( $user_id, 'session_tokens', self::newest( $sessions, $max, hash( 'sha256', (string) $token ) ) );
+		}
 	}
 
 	/**
@@ -145,6 +201,7 @@ class Sessions {
 				'last_login'  => (int) get_user_meta( $user->ID, 'nhrrob_secure_last_login', true ),
 				'sessions'    => $sessions,
 				'must_change' => Passwords::user_must_change( $user ),
+				'expires'     => Access::expires( $user->ID ),
 				'is_you'      => get_current_user_id() === $user->ID,
 				'can_edit'    => current_user_can( 'edit_user', $user->ID ),
 			];

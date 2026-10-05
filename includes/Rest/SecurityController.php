@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 use NHRRob\Secure\Core\Activity;
 use NHRRob\Secure\Core\Ip;
 use NHRRob\Secure\Core\Settings;
+use NHRRob\Secure\Services\Access;
+use NHRRob\Secure\Services\Permissions;
+use NHRRob\Secure\Services\Salts;
 use NHRRob\Secure\Services\FileProtection;
 use NHRRob\Secure\Services\Firewall;
 use NHRRob\Secure\Services\Passwords;
@@ -27,7 +30,11 @@ use NHRRob\Secure\Services\TwoFactor;
  * POST   /users/signout-all        end every session but the current one
  * POST   /users/{id}/force-password  make one user choose a new password
  * POST   /users/force-password     the same for a role, or everyone
+ * POST   /users/{id}/expiry        give one account an end date, or remove it
  * GET    /firewall                 rules, recent filter matches, detection
+ * POST   /firewall/rules/import    add a pasted list of addresses and ranges
+ * POST   /hardening/permissions    take "everyone may write" off a listed path
+ * POST   /hardening/keys           replace the secret keys in wp-config.php
  * POST   /firewall/rules           add an address rule
  * DELETE /firewall/rules           remove an address rule
  * GET    /hardening                last file-protection check
@@ -58,6 +65,34 @@ class SecurityController extends RestController {
 		$this->route( '/users/(?P<id>\d+)/force-password', 'POST', [ $this, 'force_password' ], $id );
 		$this->route( '/users/force-password', 'POST', [ $this, 'force_password_scope' ], [ 'scope' => $this->text() ] );
 
+		$this->route(
+			'/users/(?P<id>\d+)/expiry',
+			'POST',
+			[ $this, 'expiry' ],
+			$id + [
+				'days' => [
+					'type'              => 'integer',
+					'required'          => true,
+					'sanitize_callback' => 'absint',
+				],
+			]
+		);
+
+		$this->route(
+			'/firewall/rules/import',
+			'POST',
+			[ $this, 'import_rules' ],
+			[
+				'list' => [
+					'type'              => 'string',
+					'required'          => true,
+					'sanitize_callback' => 'sanitize_textarea_field',
+				],
+				'type' => $this->text(),
+			]
+		);
+		$this->route( '/hardening/permissions', 'POST', [ $this, 'fix_permissions' ], [ 'id' => $this->text() ], 'can_manage_files' );
+		$this->route( '/hardening/keys', 'POST', [ $this, 'rotate_keys' ], [], 'can_manage_files' );
 		$this->route( '/firewall', 'GET', [ $this, 'firewall' ] );
 		$this->route(
 			'/firewall/rules',
@@ -180,6 +215,24 @@ class SecurityController extends RestController {
 	}
 
 	/**
+	 * Give one account an end date, or remove it.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function expiry( $request ) {
+		$user = $this->target_user( $request );
+		if ( is_wp_error( $user ) ) {
+			return $user;
+		}
+		// An end date on your own account is a lockout waiting to happen.
+		if ( get_current_user_id() === (int) $user->ID ) {
+			return new \WP_Error( 'nhrrob_secure_self', __( 'You cannot put an end date on your own account.', 'nhrrob-secure' ), [ 'status' => 400 ] );
+		}
+		return rest_ensure_response( [ 'expires' => Access::set_expiry( $user, (int) $request['days'] ) ] );
+	}
+
+	/**
 	 * End every session except the current one.
 	 *
 	 * @return \WP_REST_Response
@@ -249,6 +302,66 @@ class SecurityController extends RestController {
 	}
 
 	/**
+	 * Read a pasted list of addresses and ranges. Pure.
+	 *
+	 * One entry per line or separated by commas; anything after "#" on a line
+	 * is taken as its note.
+	 *
+	 * @param string $text Pasted text.
+	 * @return array[] Each: range, note.
+	 */
+	public static function parse_list( $text ) {
+		$out = [];
+		foreach ( preg_split( '/[\r\n]+/', (string) $text ) as $line ) {
+			$parts = explode( '#', $line, 2 );
+			$note  = isset( $parts[1] ) ? trim( $parts[1] ) : '';
+			foreach ( preg_split( '/[\s,;]+/', trim( $parts[0] ), -1, PREG_SPLIT_NO_EMPTY ) as $range ) {
+				$out[] = [
+					'range' => $range,
+					'note'  => $note,
+				];
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Add a pasted list of addresses and ranges.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function import_rules( $request ) {
+		$type    = 'allow' === $request['type'] ? 'allow' : 'block';
+		$rules   = (array) Settings::get( 'ip_rules' );
+		$before  = count( Settings::sanitize_ip_rules( $rules ) );
+		$skipped = 0;
+		foreach ( self::parse_list( (string) $request['list'] ) as $entry ) {
+			// Never a rule that would shut out the person importing it.
+			if ( ! Ip::valid_range( $entry['range'] ) || ( 'block' === $type && ( Ip::in_range( Ip::client(), $entry['range'] ) || Ip::in_range( Ip::remote(), $entry['range'] ) ) ) ) {
+				++$skipped;
+				continue;
+			}
+			$rules[] = [
+				'range' => $entry['range'],
+				'type'  => $type,
+				'note'  => $entry['note'],
+				'added' => time(),
+			];
+		}
+		$rules = Settings::sanitize_ip_rules( $rules );
+		$added = count( $rules ) - $before;
+		if ( $added > 0 ) {
+			Settings::set_raw( 'ip_rules', $rules );
+			Activity::record( 'setting', 'changed', 'ip rules (' . $type . ' × ' . $added . ')', Activity::INFO );
+		}
+		$response            = $this->firewall()->get_data();
+		$response['added']   = max( 0, $added );
+		$response['skipped'] = $skipped;
+		return rest_ensure_response( $response );
+	}
+
+	/**
 	 * Remove an address rule.
 	 *
 	 * @param \WP_REST_Request $request Request.
@@ -274,7 +387,42 @@ class SecurityController extends RestController {
 	 * @return \WP_REST_Response
 	 */
 	public function files() {
-		return rest_ensure_response( FileProtection::last() );
+		return rest_ensure_response( $this->hardening( FileProtection::last() ) );
+	}
+
+	/**
+	 * The file-protection result with what else the Hardening screen shows.
+	 *
+	 * @param array $files File-protection result.
+	 * @return array
+	 */
+	private function hardening( array $files ) {
+		$files['permissions'] = Permissions::items();
+		$files['keys']        = $this->can_manage_files() ? Salts::problem() : null;
+		return $files;
+	}
+
+	/**
+	 * Take the "everyone may write" permission off one of the listed paths.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function fix_permissions( $request ) {
+		if ( ! Permissions::fix( sanitize_key( (string) $request['id'] ) ) ) {
+			return new \WP_Error( 'nhrrob_secure_permissions', __( 'WordPress is not the owner of that file or folder, so it cannot change its permissions. Change them over SFTP or ask your host.', 'nhrrob-secure' ), [ 'status' => 409 ] );
+		}
+		return $this->files();
+	}
+
+	/**
+	 * Replace the secret keys in wp-config.php.
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function rotate_keys() {
+		$result = Salts::rotate();
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
 
 	/**
@@ -283,7 +431,7 @@ class SecurityController extends RestController {
 	 * @return \WP_REST_Response
 	 */
 	public function check_files() {
-		return rest_ensure_response( FileProtection::check() );
+		return rest_ensure_response( $this->hardening( FileProtection::check() ) );
 	}
 
 	// ---- Activity. ----

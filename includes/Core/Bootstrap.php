@@ -16,10 +16,12 @@ use NHRRob\Secure\Rest\ScannerController;
 use NHRRob\Secure\Rest\SecurityController;
 use NHRRob\Secure\Rest\SettingsController;
 use NHRRob\Secure\Rest\TwoFactorController;
+use NHRRob\Secure\Services\Access;
 use NHRRob\Secure\Services\Checks;
 use NHRRob\Secure\Services\EventLogger;
 use NHRRob\Secure\Services\Firewall;
 use NHRRob\Secure\Services\Hardening;
+use NHRRob\Secure\Services\Honeypot;
 use NHRRob\Secure\Services\LoginGuard;
 use NHRRob\Secure\Services\LoginUrl;
 use NHRRob\Secure\Services\Monitor;
@@ -27,6 +29,7 @@ use NHRRob\Secure\Services\Schedule;
 use NHRRob\Secure\Services\Sessions;
 use NHRRob\Secure\Services\BotCheck;
 use NHRRob\Secure\Services\Passwords;
+use NHRRob\Secure\Services\RateLimit;
 use NHRRob\Secure\Services\Summary;
 use NHRRob\Secure\Services\TwoFactor;
 use NHRRob\Secure\Services\Vulnerabilities;
@@ -59,9 +62,12 @@ class Bootstrap {
 	public function init() {
 		// Address rules first: a blocked address gets nothing else.
 		( new Firewall() )->hooks();
+		( new RateLimit() )->hooks();
 		( new LoginUrl() )->hooks();
 		( new LoginGuard() )->hooks();
 		( new BotCheck() )->hooks();
+		( new Honeypot() )->hooks();
+		( new Access() )->hooks();
 		( new TwoFactor() )->hooks();
 		( new Sessions() )->hooks();
 		( new Hardening() )->hooks();
