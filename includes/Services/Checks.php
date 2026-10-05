@@ -111,6 +111,18 @@ class Checks {
 			);
 		}
 
+		$stale = self::untested( self::tested_versions(), get_bloginfo( 'version' ) );
+		if ( $stale ) {
+			$add(
+				'abandoned',
+				false,
+				'medium',
+				/* translators: %d: number of plugins. */
+				sprintf( _n( '%d plugin looks abandoned.', '%d plugins look abandoned.', count( $stale ), 'nhrrob-secure' ), count( $stale ) ),
+				implode( ', ', array_slice( $stale, 0, 8 ) ) . '. ' . __( 'The latest release on WordPress.org was not tested with any of the last three WordPress versions; look for a maintained replacement.', 'nhrrob-secure' )
+			);
+		}
+
 		// Accounts.
 		$coverage = Sessions::admin_coverage();
 		$missing  = count( $coverage['without'] );
@@ -182,7 +194,9 @@ class Checks {
 			$https,
 			'high',
 			$https ? __( 'The site is served over HTTPS.', 'nhrrob-secure' ) : __( 'The site address does not use HTTPS.', 'nhrrob-secure' ),
-			$https ? '' : __( 'Passwords typed on this site can be read in transit.', 'nhrrob-secure' )
+			$https ? '' : __( 'Passwords typed on this site can be read in transit. Site Health can switch the site to HTTPS when your server supports it.', 'nhrrob-secure' ),
+			'site-health',
+			__( 'Open Site Health', 'nhrrob-secure' )
 		);
 		$debug = defined( 'WP_DEBUG' ) && WP_DEBUG && ( ! defined( 'WP_DEBUG_DISPLAY' ) || WP_DEBUG_DISPLAY );
 		$add(
@@ -220,15 +234,20 @@ class Checks {
 			$php ? '' : __( 'Ask your host to move the site to a supported PHP version.', 'nhrrob-secure' )
 		);
 
-		$config = file_exists( ABSPATH . 'wp-config.php' ) ? ABSPATH . 'wp-config.php' : dirname( ABSPATH ) . '/wp-config.php';
-		$perms  = file_exists( $config ) ? fileperms( $config ) : 0;
-		$world  = (bool) ( $perms & 0002 );
+		$open = [];
+		foreach ( Permissions::items() as $item ) {
+			if ( $item['open'] ) {
+				$open[] = $item['path'];
+			}
+		}
 		$add(
-			'config_perms',
-			! $world,
+			'permissions',
+			! $open,
 			'high',
-			$world ? __( 'wp-config.php can be changed by any account on the server.', 'nhrrob-secure' ) : __( 'wp-config.php is not writable by other accounts on the server.', 'nhrrob-secure' ),
-			$world ? __( 'Set its permissions to 640 or 600.', 'nhrrob-secure' ) : ''
+			$open ? __( 'Key files or folders can be changed by any account on the server.', 'nhrrob-secure' ) : __( 'No key file or folder is writable by other accounts on the server.', 'nhrrob-secure' ),
+			implode( ', ', $open ),
+			'hardening',
+			__( 'Fix permissions', 'nhrrob-secure' )
 		);
 		global $wpdb;
 		$default_prefix = 'wp_' === $wpdb->base_prefix;
@@ -327,6 +346,53 @@ class Checks {
 			'plugins' => isset( $plugins->response ) ? count( (array) $plugins->response ) : 0,
 			'themes'  => isset( $themes->response ) ? count( (array) $themes->response ) : 0,
 		];
+	}
+
+	/**
+	 * The WordPress version each WordPress.org plugin says it was tested with,
+	 * from the update data WordPress already holds. No request is made.
+	 *
+	 * @return array plugin name => "tested up to" version
+	 */
+	private static function tested_versions() {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		$updates = get_site_transient( 'update_plugins' );
+		$names   = get_plugins();
+		$out     = [];
+		foreach ( [ 'response', 'no_update' ] as $list ) {
+			foreach ( isset( $updates->$list ) ? (array) $updates->$list : [] as $file => $item ) {
+				if ( isset( $names[ $file ] ) && is_object( $item ) && ! empty( $item->tested ) ) {
+					$out[ $names[ $file ]['Name'] ] = (string) $item->tested;
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Plugins not tested with any of the last three WordPress releases. Pure.
+	 *
+	 * WordPress numbers its releases 6.8, 6.9, 7.0, 7.1: one step is a tenth.
+	 *
+	 * @param array  $tested     Plugin name => "tested up to" version.
+	 * @param string $wp_version This site's WordPress version.
+	 * @return string[] Plugin names.
+	 */
+	public static function untested( array $tested, $wp_version ) {
+		$branch  = function ( $version ) {
+			return preg_match( '/^(\d+)\.(\d+)/', (string) $version, $m ) ? (int) $m[1] * 10 + (int) $m[2] : 0;
+		};
+		$current = $branch( $wp_version );
+		$out     = [];
+		foreach ( $tested as $name => $version ) {
+			$value = $branch( $version );
+			if ( $current && $value && $value < $current - 2 ) {
+				$out[] = (string) $name;
+			}
+		}
+		return $out;
 	}
 
 	/**

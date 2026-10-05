@@ -136,6 +136,7 @@ class AppPage {
 			'version'    => NHRROB_SECURE_VERSION,
 			'modules'    => $modules,
 			'updatesUrl' => admin_url( 'update-core.php' ),
+			'healthUrl'  => admin_url( 'site-health.php' ),
 			'profileUrl' => admin_url( 'profile.php#nhrrob-secure-2fa' ),
 			'locale'     => str_replace( '_', '-', get_user_locale() ),
 		];

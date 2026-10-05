@@ -24,6 +24,9 @@ use NHRRob\Secure\Services\Vulnerabilities;
  * POST /scanner/core               compare WordPress core files
  * POST /scanner/core/repair        replace one core file with the official copy
  * POST /scanner/plugins            compare the next few plugins
+ * POST /scanner/plugins/repair     replace one plugin file with the WordPress.org copy
+ * POST /scanner/themes             compare the next theme with its WordPress.org release
+ * POST /scanner/themes/repair      replace one theme file with the WordPress.org copy
  * POST /scanner/monitor            fingerprint the next plugins and themes
  * POST /scanner/monitor/accept     accept a changed item's code as it is now
  * POST /scanner/database           look through posts and options for injected content
@@ -65,6 +68,13 @@ class ScannerController extends RestController {
 		$this->route( '/scanner/core', 'POST', [ $this, 'core' ] );
 		$this->route( '/scanner/core/repair', 'POST', [ $this, 'repair' ], $file, 'can_repair' );
 		$this->route( '/scanner/plugins', 'POST', [ $this, 'plugins' ], $restart );
+		$item = [
+			'slug' => $this->text(),
+			'file' => $this->text(),
+		];
+		$this->route( '/scanner/plugins/repair', 'POST', [ $this, 'repair_plugin' ], $item, 'can_repair_plugins' );
+		$this->route( '/scanner/themes', 'POST', [ $this, 'themes' ], $restart );
+		$this->route( '/scanner/themes/repair', 'POST', [ $this, 'repair_theme' ], $item, 'can_repair_themes' );
 		$this->route( '/scanner/monitor', 'POST', [ $this, 'monitor' ], $restart );
 		$this->route( '/scanner/monitor/accept', 'POST', [ $this, 'accept' ], [ 'key' => $this->text() ], 'can_manage_files' );
 		$this->route( '/scanner/database', 'POST', [ $this, 'database' ] );
@@ -84,6 +94,24 @@ class ScannerController extends RestController {
 	}
 
 	/**
+	 * Replacing a plugin file needs the same right as updating plugins.
+	 *
+	 * @return bool
+	 */
+	public function can_repair_plugins() {
+		return $this->can_manage_files() && current_user_can( 'update_plugins' );
+	}
+
+	/**
+	 * Replacing a theme file needs the same right as updating themes.
+	 *
+	 * @return bool
+	 */
+	public function can_repair_themes() {
+		return $this->can_manage_files() && current_user_can( 'update_themes' );
+	}
+
+	/**
 	 * Everything the scanner screen shows.
 	 *
 	 * @return array
@@ -94,6 +122,9 @@ class ScannerController extends RestController {
 			'core'            => Scan::get( 'core' ),
 			'plugins'         => Scan::get( 'plugins' ),
 			'plugins_running' => is_array( Scan::get( 'plugins_run' ) ),
+			'themes'          => Scan::get( 'themes' ),
+			'can_plugins'     => $this->can_repair_plugins(),
+			'can_themes'      => $this->can_repair_themes(),
 			'code'            => CodeScan::for_app(),
 			'monitor'         => Monitor::for_app(),
 			'database'        => Scan::get( 'database' ),
@@ -173,6 +204,41 @@ class ScannerController extends RestController {
 			Integrity::start_plugins();
 		}
 		return $this->progress( Integrity::step_plugins() );
+	}
+
+	/**
+	 * Replace one plugin file with the WordPress.org copy.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function repair_plugin( $request ) {
+		$result = Integrity::repair_plugin_file( (string) $request['slug'], (string) $request['file'] );
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $this->data() );
+	}
+
+	/**
+	 * Compare the next theme.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function themes( $request ) {
+		if ( $request['restart'] ) {
+			Integrity::start_themes();
+		}
+		return $this->progress( Integrity::step_themes() );
+	}
+
+	/**
+	 * Replace one theme file with the WordPress.org copy.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function repair_theme( $request ) {
+		$result = Integrity::repair_theme_file( (string) $request['slug'], (string) $request['file'] );
+		return is_wp_error( $result ) ? $result : rest_ensure_response( $this->data() );
 	}
 
 	/**

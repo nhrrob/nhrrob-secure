@@ -4,7 +4,7 @@ Tags: security, firewall, 2fa, limit login attempts, activity log
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,8 +22,10 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 
 **Dashboard**
 
-* A security score out of 100, built from checks of your site as it is today: known vulnerabilities, pending updates, administrators without two-factor, an `admin` username, open registration, HTTPS, debug output, secret keys, PHP version, exposed files and more.
+* A security score out of 100, built from checks of your site as it is today: known vulnerabilities, pending updates, plugins that look abandoned, administrators without two-factor, an `admin` username, open registration, HTTPS, debug output, secret keys, PHP version, file permissions, exposed files and more.
 * A "To fix" list ordered by seriousness, where each item takes you to the right setting.
+* **Recommended setup in one step.** The safe settings that are still off are listed with a tick box each; switch them on together, and undo it if something stops working.
+* **Printable report** of the score, what to fix, what passed and the recent warnings, for your records or a client.
 * The same result appears in **Tools → Site Health**.
 
 **Login**
@@ -34,33 +36,41 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 * **Trusted browsers.** Optionally let users skip the second step on a browser for 7, 30 or 90 days.
 * **Two-factor outside wp-admin.** The `[nhrrob_secure_2fa]` shortcode and WooCommerce's "Account details" page let customers and members enrol.
 * **Generic sign-in errors**, so the form does not confirm that a username exists.
-* **Bot check** with Cloudflare Turnstile, Google reCAPTCHA v2 or hCaptcha on the sign-in, register and lost-password forms (optional, with your own keys).
+* **Bot check** with Cloudflare Turnstile, Google reCAPTCHA (v2 or v3) or hCaptcha on the sign-in, register and lost-password forms and, if you want, on the comment form (optional, with your own keys).
+* **Bot trap.** A hidden field on the registration and comment forms that people never see and form-filling bots fill in. No outside service.
+* **Sign-in notifications.** A user who can edit the site gets an email when their account signs in on a browser it has not used before.
 
 **Users & Sessions**
 
 * Every user with their role, two-factor status, last sign-in and active sessions.
 * Sign out one user or everyone else, reset a user's two-factor, and automatically sign out idle users who can work in the dashboard (customers and subscribers are left alone).
 * **Password expiry** for administrators and editors, and **"require a new password"** for one user, a role or everyone.
+* **Session limit.** At most the number of sessions you choose per user; the oldest one is ended, so a lost device cannot keep its owner out.
+* **Temporary access.** Give an account an end date, for support staff or a contractor. After it the account cannot sign in and its sessions end; nothing is deleted.
 
 **Firewall**
 
-* **Address rules** for IPv4 and IPv6, single addresses or ranges. Allowed addresses skip every rule and are never locked out.
+* **Address rules** for IPv4 and IPv6, single addresses or ranges. Allowed addresses skip every rule and are never locked out. Paste a whole list at once, or copy your rules as a list.
 * **Request filter** for probing requests: path traversal, hunts for config and backup files, and SQL or script fragments in the address. It starts in log-only mode so you can see what it would refuse, and any match can be allowed with one click. It checks the address of visitors who are not signed in; checking submitted forms is optional and limited to rules that normal writing cannot trigger.
 * **Probe lockout.** An address that keeps asking for files that do not exist (`.php`, `.env`, backups) is locked out of the public site; the sign-in form stays reachable. Broken links, missing images and requests triggered from other websites do not count.
+* **Rate limiting** for the sign-in page, XML-RPC, the REST API, search and the comment form, per address and minute, for visitors who are not signed in. It needs a persistent object cache (Redis or Memcached), because counting every request in the database would add the load it is meant to remove.
 * **Country rule** for the sign-in page or the whole site (when your site is behind Cloudflare) and **user-agent rules**.
 
 **Hardening**
 
-* Turn off XML-RPC, the theme and plugin file editor and application passwords; hide usernames from visitors and the WordPress version; send security headers; limit the REST API to signed-in users with a list of routes left public.
+* Turn off XML-RPC, the theme and plugin file editor, application passwords and RSS/Atom feeds; hide usernames from visitors, the WordPress and PHP versions and the discovery links in the page head; send security headers; limit the REST API to signed-in users with a list of routes left public.
 * Require strong passwords for administrators and editors, and optionally refuse passwords found in known breaches.
 * Every switch says what could stop working, so you can decide.
 * **File protection that is verified.** The plugin requests `debug.log`, readme files and the uploads folder from your own site and shows what came back. On Apache and LiteSpeed it can add the rules for you; on nginx it shows the lines to add.
 
+* **File permissions.** The key files and folders with their permissions; anything every account on the server may write to is flagged and fixed with one click.
+* **Replace the secret keys** in `wp-config.php` after a suspected break-in, which signs everyone out. The new file is checked before it replaces the old one, and the old one is put back if the site does not answer.
+
 **Scanner**
 
 * **Known vulnerabilities** in WordPress, plugins and themes, checked daily, with one alert per new finding.
-* **WordPress files** compared with the official release: changed, missing, and files that do not belong.
-* **Plugin files** compared with their WordPress.org releases.
+* **WordPress files** compared with the official release: changed, missing, and files that do not belong. `.htaccess`, `.user.ini` and `wp-config.php` are checked for injected rules and code, and must-use plugins and drop-ins are listed.
+* **Plugin and theme files** compared with their WordPress.org releases; a changed file can be put back from the official copy.
 * **Code changes outside updates.** A fingerprint of every plugin and theme, including the ones WordPress.org cannot verify; a change without a new version is reported.
 * **Database content** checked for invisible iframes and obfuscated JavaScript in posts and settings.
 * **Suspicious code** review of every PHP file in `wp-content`. Findings can be viewed and quarantined (renamed so they cannot run) and restored. Nothing is deleted.
@@ -68,9 +78,9 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 
 **Activity**
 
-* Sign-ins of users who can edit the site, lockouts, user and role changes, plugin and theme changes, changes to critical site settings, and what the firewall refused. Routine entries make room first, so a busy shop or an attack cannot push the important ones out.
+* Sign-ins of users who can edit the site, lockouts, user and role changes, plugin and theme changes, changes to critical site settings, and what the firewall refused. Optionally also content changes: posts and pages, media, menus, widgets, comment moderation and WooCommerce order status and settings. Routine entries make room first, so a busy shop or an attack cannot push the important ones out.
 * Search, filter by type and importance, export to CSV. Bursts are folded into one entry.
-* Email alerts for a new administrator, a new vulnerability, a new scan finding or a burst of lockouts, and an optional weekly summary.
+* Email alerts for a new administrator, a new vulnerability, a new scan finding or a burst of lockouts, and an optional weekly summary. The same alerts can be posted to Slack or any webhook address.
 
 **Small and tidy**
 
@@ -130,7 +140,7 @@ It is off by default and starts in log-only mode. It looks at the address of a r
 
 = Does it work on multisite? =
 
-Yes. Each site has its own settings, and Network Admin → Settings → Secure shows every site's score in one table. Actions that change files or end everyone's sessions need a network administrator.
+Yes. Each site has its own settings, and Network Admin → Settings → Secure shows every site's score in one table and can copy one site's settings to all the others. Actions that change files or end everyone's sessions need a network administrator.
 
 = Do passkeys replace the password? =
 
@@ -152,12 +162,12 @@ The plugin works without any outside service. The connections below are made onl
 Sent: the slug of each installed plugin and theme, and your WordPress version. Nothing about your site, users or visitors. When: once a day, and when you press "Check now".
 Service: https://www.wpvulnerability.com/ · Privacy: https://www.wpvulnerability.com/privacy/
 
-**WordPress.org** (`api.wordpress.org`, `downloads.wordpress.org`, `core.svn.wordpress.org`) — the file comparisons.
-Sent: your WordPress version and language, and the slug and version of each plugin, to fetch the official checksums; the path of a core file when you choose to replace it with the official copy. When: only when you press "Compare now" or "Replace".
+**WordPress.org** (`api.wordpress.org`, `downloads.wordpress.org`, `core.svn.wordpress.org`, `plugins.svn.wordpress.org`) — the file comparisons.
+Sent: your WordPress version and language, and the slug and version of each plugin and theme, to fetch the official checksums or the theme's release; the path of a file when you choose to replace it with the official copy. When: when you press "Compare now" or "Replace", and during a scheduled scan if you have one.
 Privacy: https://wordpress.org/about/privacy/
 
-**Bot check: Cloudflare Turnstile, Google reCAPTCHA or hCaptcha** — off unless you switch it on, choose one provider and enter your own keys.
-While it is on, the sign-in, register and lost-password screens load that provider's script in the visitor's browser, and the plugin sends the visitor's token and IP address to the provider to verify it.
+**Bot check: Cloudflare Turnstile, Google reCAPTCHA (v2 or v3) or hCaptcha** — off unless you switch it on, choose one provider and enter your own keys.
+While it is on, the sign-in, register and lost-password screens (and pages with a comment form, if you switch that on) load that provider's script in the visitor's browser, and the plugin sends the visitor's token and IP address to the provider to verify it.
 Cloudflare Turnstile (`challenges.cloudflare.com`): Terms https://www.cloudflare.com/website-terms/ · Privacy https://www.cloudflare.com/privacypolicy/
 Google reCAPTCHA (`www.google.com/recaptcha`): Terms https://policies.google.com/terms · Privacy https://policies.google.com/privacy
 hCaptcha (`js.hcaptcha.com`, `api.hcaptcha.com`): Terms https://www.hcaptcha.com/terms · Privacy https://www.hcaptcha.com/privacy
@@ -166,7 +176,10 @@ hCaptcha (`js.hcaptcha.com`, `api.hcaptcha.com`): Terms https://www.hcaptcha.com
 Sent: the first five characters of the SHA-1 hash of a password, when an administrator or editor sets one. The password itself never leaves your site.
 Terms: https://haveibeenpwned.com/TermsOfUse · Privacy: https://haveibeenpwned.com/Privacy
 
-File protection and the test of a moved login address make requests from your site to itself.
+**Your own webhook address** — "Also post alerts to". Off unless you enter an address.
+Sent: the text of each alert email (site name, what happened, a link to the plugin's screen) to the address you entered, for example a Slack incoming webhook. Which service that is, and its terms, are your choice. Slack: Terms https://slack.com/terms-of-service · Privacy https://slack.com/privacy-policy
+
+File protection, the test of a moved login address and the check after replacing the secret keys make requests from your site to itself.
 
 == Source Code ==
 
@@ -186,6 +199,23 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 10. Dark theme.
 
 == Changelog ==
+
+= 2.1.0 - 05/10/2026 =
+- New: recommended setup in one step on the Dashboard, with undo.
+- New: printable security report.
+- New: rate limiting for the sign-in page, XML-RPC, the REST API, search and comments (needs a persistent object cache).
+- New: reCAPTCHA v3, the bot check on the comment form, and a bot trap field on the registration and comment forms.
+- New: paste a list of addresses into the address rules, copy the rules as a list, and block an address from a request-filter match.
+- New: replace a changed plugin file with its WordPress.org copy; theme files compared with their WordPress.org release, with the same repair.
+- New: `.htaccess`, `.user.ini` and `wp-config.php` are checked for injected rules and code; must-use plugins and drop-ins are listed.
+- New: checks for abandoned plugins and for files and folders every account on the server may write to, with a one-click fix.
+- New: replace the secret keys in `wp-config.php`, with a check of the new file and an automatic restore.
+- New: switches for RSS/Atom feeds and the discovery links in the page head; "Hide the WordPress version" also removes PHP's X-Powered-By header.
+- New: session limit per user, temporary access with an end date, and sign-in notifications for new browsers.
+- New: optional logging of content changes (posts, media, menus, widgets, comments, WooCommerce orders and settings).
+- New: alerts to Slack or any webhook address, and a test alert button.
+- New: Network Admin can copy one site's settings to every site.
+- Changed: the failing HTTPS check links to Site Health, where WordPress can switch the site to HTTPS.
 
 = 2.0.0 - 05/10/2026 =
 - New: a rebuilt admin screen under Tools → Secure with eight sections, light and dark themes, and settings that save as you change them.
@@ -287,6 +317,9 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 - Initial beta release. Cheers!
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+New protections and tools, all off until you switch them on. Open the Dashboard for the recommended setup.
 
 = 2.0.0 =
 A rebuilt plugin. Your settings, login address and two-factor users are kept. The old firewall is replaced by a request filter that starts in log-only mode. The settings screen is now under Tools → Secure.

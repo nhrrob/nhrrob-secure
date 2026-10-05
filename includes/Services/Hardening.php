@@ -45,6 +45,26 @@ class Hardening {
 			add_filter( 'the_generator', '__return_empty_string' );
 			add_filter( 'style_loader_src', [ $this, 'mask_version' ], 9999 );
 			add_filter( 'script_loader_src', [ $this, 'mask_version' ], 9999 );
+			// PHP's own version header, where the server lets PHP take it off.
+			if ( ! headers_sent() ) {
+				header_remove( 'X-Powered-By' );
+			}
+		}
+		if ( Settings::get( 'disable_feeds' ) ) {
+			foreach ( [ 'do_feed', 'do_feed_rdf', 'do_feed_rss', 'do_feed_rss2', 'do_feed_atom', 'do_feed_rss2_comments', 'do_feed_atom_comments' ] as $hook ) {
+				add_action( $hook, [ $this, 'no_feed' ], 1 );
+			}
+			remove_action( 'wp_head', 'feed_links', 2 );
+			remove_action( 'wp_head', 'feed_links_extra', 3 );
+		}
+		if ( Settings::get( 'trim_head' ) ) {
+			remove_action( 'wp_head', 'rest_output_link_wp_head', 10 );
+			remove_action( 'template_redirect', 'rest_output_link_header', 11 );
+			remove_action( 'wp_head', 'wp_oembed_add_discovery_links' );
+			remove_action( 'wp_head', 'wp_shortlink_wp_head', 10 );
+			remove_action( 'template_redirect', 'wp_shortlink_header', 11 );
+			remove_action( 'wp_head', 'rsd_link' );
+			remove_action( 'wp_head', 'wlwmanifest_link' );
 		}
 		if ( Settings::get( 'security_headers' ) ) {
 			add_filter( 'wp_headers', [ $this, 'headers' ] );
@@ -58,6 +78,16 @@ class Hardening {
 			add_action( 'user_profile_update_errors', [ $this, 'check_profile_password' ], 10, 3 );
 			add_action( 'validate_password_reset', [ $this, 'check_reset_password' ], 10, 2 );
 		}
+	}
+
+	/**
+	 * Send a feed request to the home page instead.
+	 *
+	 * @return void
+	 */
+	public function no_feed() {
+		wp_safe_redirect( home_url( '/' ), 301 );
+		exit;
 	}
 
 	/**

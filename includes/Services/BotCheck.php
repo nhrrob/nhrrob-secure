@@ -15,10 +15,11 @@ use NHRRob\Secure\Core\Ip;
 use NHRRob\Secure\Core\Settings;
 
 /**
- * Adds Cloudflare Turnstile, Google reCAPTCHA v2 or hCaptcha to the WordPress
- * sign-in, register and lost-password forms. Off unless the owner supplied
- * their own keys. Only the core wp-login.php screens are checked, so sign-in
- * forms of other plugins keep working.
+ * Adds Cloudflare Turnstile, Google reCAPTCHA (v2 or v3) or hCaptcha to the
+ * WordPress sign-in, register and lost-password forms and, when asked, to the
+ * comment form for visitors. Off unless the owner supplied their own keys.
+ * Only the core wp-login.php screens and the core comment form are checked,
+ * so forms of other plugins keep working.
  *
  * These are services: each provider requires its widget script to be loaded
  * from its own servers and it cannot be bundled. All three are disclosed in
@@ -34,19 +35,26 @@ class BotCheck {
 	public static function providers() {
 		// phpcs:disable PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- service endpoints, not hosted assets.
 		return [
-			'turnstile' => [
+			'turnstile'  => [
 				'script' => 'https://challenges.cloudflare.com/turnstile/v0/api.js',
 				'class'  => 'cf-turnstile',
 				'field'  => 'cf-turnstile-response',
 				'verify' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
 			],
-			'recaptcha' => [
+			'recaptcha'  => [
 				'script' => 'https://www.google.com/recaptcha/api.js',
 				'class'  => 'g-recaptcha',
 				'field'  => 'g-recaptcha-response',
 				'verify' => 'https://www.google.com/recaptcha/api/siteverify',
 			],
-			'hcaptcha'  => [
+			// v3 shows nothing: the page asks for a token when the form is sent and Google answers with a score.
+			'recaptcha3' => [
+				'script' => 'https://www.google.com/recaptcha/api.js',
+				'class'  => '',
+				'field'  => 'g-recaptcha-response',
+				'verify' => 'https://www.google.com/recaptcha/api/siteverify',
+			],
+			'hcaptcha'   => [
 				'script' => 'https://js.hcaptcha.com/1/api.js',
 				'class'  => 'h-captcha',
 				'field'  => 'h-captcha-response',
@@ -85,6 +93,38 @@ class BotCheck {
 		add_filter( 'authenticate', [ $this, 'check_login' ], 45 );
 		add_filter( 'registration_errors', [ $this, 'check_form' ] );
 		add_action( 'lostpassword_post', [ $this, 'check_lost_password' ] );
+
+		if ( Settings::get( 'captcha_comments' ) ) {
+			add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_comments' ] );
+			// Printed for visitors only: core does not run this hook for signed-in users.
+			add_action( 'comment_form_after_fields', [ $this, 'render' ] );
+			add_filter( 'preprocess_comment', [ $this, 'check_comment' ], 1 );
+		}
+	}
+
+	/**
+	 * Load the widget script on pages that show a comment form to a visitor.
+	 *
+	 * @return void
+	 */
+	public function enqueue_comments() {
+		if ( is_singular() && comments_open() && ! is_user_logged_in() ) {
+			$this->enqueue();
+		}
+	}
+
+	/**
+	 * Check the token on a comment a visitor sends through the comment form.
+	 *
+	 * @param array $comment Comment data.
+	 * @return array
+	 */
+	public function check_comment( $comment ) {
+		global $pagenow;
+		if ( 'wp-comments-post.php' === $pagenow && ! is_user_logged_in() && ! $this->passes() ) {
+			wp_die( esc_html( $this->error()->get_error_message() ), '', [ 'response' => 403, 'back_link' => true ] ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+		}
+		return $comment;
 	}
 
 	/**
@@ -93,9 +133,18 @@ class BotCheck {
 	 * @return void
 	 */
 	public function enqueue() {
-		$provider = $this->provider();
+		$provider  = $this->provider();
+		$key       = (string) Settings::get( 'turnstile_site_key' );
+		$invisible = '' === $provider['class'];
 		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion, PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent -- a service script that must come from the provider and must not be pinned.
-		wp_enqueue_script( 'nhrrob-secure-bot-check', $provider['script'], [], null, true );
+		wp_enqueue_script( 'nhrrob-secure-bot-check', $invisible ? add_query_arg( 'render', rawurlencode( $key ), $provider['script'] ) : $provider['script'], [], null, true );
+		if ( $invisible ) {
+			// Ask for the token when the form is sent, then send the form. A field named "submit" (the comment form has one) hides form.submit(), hence the prototype call.
+			wp_add_inline_script(
+				'nhrrob-secure-bot-check',
+				'document.addEventListener("submit",function(e){var f=e.target,i=f.querySelector(".nhrrob-secure-token");if(!i||i.value||!window.grecaptcha){return;}e.preventDefault();grecaptcha.ready(function(){grecaptcha.execute(' . wp_json_encode( $key ) . ',{action:"submit"}).then(function(t){i.value=t;HTMLFormElement.prototype.submit.call(f);});});},true);'
+			);
+		}
 	}
 
 	/**
@@ -105,6 +154,10 @@ class BotCheck {
 	 */
 	public function render() {
 		$provider = $this->provider();
+		if ( '' === $provider['class'] ) {
+			printf( '<input type="hidden" class="nhrrob-secure-token" name="%s" value="">', esc_attr( $provider['field'] ) );
+			return;
+		}
 		printf(
 			'<div class="%s" data-sitekey="%s" style="margin-bottom:16px"></div>',
 			esc_attr( $provider['class'] ),
@@ -207,7 +260,22 @@ class BotCheck {
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
 			return true;
 		}
-		$data = json_decode( wp_remote_retrieve_body( $response ), true );
-		return ! empty( $data['success'] );
+		return self::verdict( json_decode( wp_remote_retrieve_body( $response ), true ) );
+	}
+
+	/**
+	 * Whether a provider's answer lets the form through. Pure.
+	 *
+	 * Version 3 of reCAPTCHA adds a score from 0.0 (a bot) to 1.0 (a person); Google's
+	 * own suggested threshold is used. The other providers send no score.
+	 *
+	 * @param mixed $data Decoded answer.
+	 * @return bool
+	 */
+	public static function verdict( $data ) {
+		if ( ! is_array( $data ) || empty( $data['success'] ) ) {
+			return false;
+		}
+		return ! isset( $data['score'] ) || (float) $data['score'] >= 0.5;
 	}
 }

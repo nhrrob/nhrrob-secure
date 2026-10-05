@@ -18,6 +18,7 @@ import {
 	ago,
 } from '../components/ui';
 import { useToast } from '../components/ToastProvider';
+import { useConfirm } from '../components/ConfirmProvider';
 
 function StatePill( { state, id } ) {
 	const open = {
@@ -39,7 +40,9 @@ function StatePill( { state, id } ) {
 
 export default function Hardening( { settings, meta, save } ) {
 	const toast = useToast();
+	const confirm = useConfirm();
 	const [ files, setFiles ] = useState( null );
+	const [ rotating, setRotating ] = useState( false );
 	const [ checking, setChecking ] = useState( false );
 
 	const [ failed, setFailed ] = useState( null );
@@ -56,6 +59,40 @@ export default function Hardening( { settings, meta, save } ) {
 			toast( e.message, 'error' );
 		}
 		setChecking( false );
+	};
+
+	const fixPermissions = async ( id ) => {
+		try {
+			setFiles( await api( '/hardening/permissions', 'POST', { id } ) );
+			toast( __( 'Permissions changed', 'nhrrob-secure' ) );
+		} catch ( e ) {
+			toast( e.message, 'error' );
+		}
+	};
+
+	const rotateKeys = async () => {
+		if (
+			! ( await confirm(
+				__( 'Replace the secret keys?', 'nhrrob-secure' ),
+				{
+					description: __(
+						'Everyone is signed out, you included, and trusted browsers are asked for their second step again. Nothing else changes.',
+						'nhrrob-secure'
+					),
+					confirmLabel: __( 'Replace keys', 'nhrrob-secure' ),
+				}
+			) )
+		) {
+			return;
+		}
+		setRotating( true );
+		try {
+			await api( '/hardening/keys', 'POST' );
+			window.location.reload();
+		} catch ( e ) {
+			toast( e.message, 'error' );
+			setRotating( false );
+		}
 	};
 
 	const toggle = ( key, label, help, risk, recommended ) => (
@@ -91,6 +128,8 @@ export default function Hardening( { settings, meta, save } ) {
 		'breached_passwords',
 		'security_headers',
 		'rest_signed_in_only',
+		'disable_feeds',
+		'trim_head',
 	].filter( ( key ) => settings[ key ] ).length;
 
 	const copy = async () => {
@@ -125,7 +164,7 @@ export default function Hardening( { settings, meta, save } ) {
 					/* translators: 1: switches that are on, 2: all switches. */
 					__( '%1$d of %2$d on', 'nhrrob-secure' ),
 					on,
-					9
+					11
 				) }
 			>
 				{ toggle(
@@ -180,7 +219,34 @@ export default function Hardening( { settings, meta, save } ) {
 					'hide_wp_version',
 					__( 'Hide the WordPress version', 'nhrrob-secure' ),
 					__(
-						'Removes the version from the page source, feeds and asset addresses.',
+						'Removes the version from the page source, feeds and asset addresses, and PHP’s own X-Powered-By header.',
+						'nhrrob-secure'
+					)
+				) }
+				{ toggle(
+					'trim_head',
+					__(
+						'Remove discovery links from the page head',
+						'nhrrob-secure'
+					),
+					__(
+						'The links that tell programs where the REST API, oEmbed data, the short link and the remote-editing endpoint are. Browsers and search engines do not use them.',
+						'nhrrob-secure'
+					),
+					__(
+						'previews of your pages when their address is pasted into another WordPress site.',
+						'nhrrob-secure'
+					)
+				) }
+				{ toggle(
+					'disable_feeds',
+					__( 'Turn off RSS and Atom feeds', 'nhrrob-secure' ),
+					__(
+						'Feed addresses lead to the home page instead.',
+						'nhrrob-secure'
+					),
+					__(
+						'feed readers, podcast apps and newsletter services that read your feed.',
 						'nhrrob-secure'
 					)
 				) }
@@ -381,6 +447,115 @@ export default function Hardening( { settings, meta, save } ) {
 					</>
 				) }
 			</Panel>
+
+			{ files && files.permissions.length > 0 && (
+				<Panel
+					title={ __( 'File permissions', 'nhrrob-secure' ) }
+					icon="file"
+					anchor="permissions"
+					flush
+				>
+					<div className="nhrrob-secure-pad">
+						<p className="nhrrob-secure-muted">
+							{ __(
+								'A file or folder that every account on the server may write to can be changed by a neighbour on shared hosting, or through any other site on the same server. The fix takes away that one permission and leaves the rest as it is.',
+								'nhrrob-secure'
+							) }
+						</p>
+					</div>
+					<div className="nhrrob-secure-scroll">
+						<table className="nhrrob-secure-grid">
+							<thead>
+								<tr>
+									<th>{ __( 'Path', 'nhrrob-secure' ) }</th>
+									<th>
+										{ __( 'Permissions', 'nhrrob-secure' ) }
+									</th>
+									<th>{ __( 'Result', 'nhrrob-secure' ) }</th>
+									<th />
+								</tr>
+							</thead>
+							<tbody>
+								{ files.permissions.map( ( item ) => (
+									<tr key={ item.id }>
+										<td className="is-mono is-wrap">
+											{ item.path }
+										</td>
+										<td className="is-mono">
+											{ item.mode }
+										</td>
+										<td>
+											<Pill
+												tone={
+													item.open ? 'bad' : 'ok'
+												}
+											>
+												{ item.open
+													? __(
+															'Anyone can write',
+															'nhrrob-secure'
+													  )
+													: __(
+															'Fine',
+															'nhrrob-secure'
+													  ) }
+											</Pill>
+										</td>
+										<td className="is-actions">
+											{ item.open && meta.can_files && (
+												<Button
+													small
+													onClick={ () =>
+														fixPermissions(
+															item.id
+														)
+													}
+												>
+													{ __(
+														'Fix',
+														'nhrrob-secure'
+													) }
+												</Button>
+											) }
+										</td>
+									</tr>
+								) ) }
+							</tbody>
+						</table>
+					</div>
+				</Panel>
+			) }
+
+			{ files && files.keys !== null && (
+				<Panel
+					title={ __( 'Secret keys', 'nhrrob-secure' ) }
+					icon="login"
+				>
+					<Row
+						label={ __(
+							'Replace the secret keys in wp-config.php',
+							'nhrrob-secure'
+						) }
+						help={
+							files.keys ||
+							__(
+								'Use this after a suspected break-in: every sign-in cookie stops working, so a copied cookie or a copied wp-config.php is worth nothing. The new file is checked before it replaces the old one, and the old one is put back if the site does not answer.',
+								'nhrrob-secure'
+							)
+						}
+					>
+						<Button
+							variant="danger"
+							disabled={ !! files.keys || rotating }
+							onClick={ rotateKeys }
+						>
+							{ rotating
+								? __( 'Replacing…', 'nhrrob-secure' )
+								: __( 'Replace keys', 'nhrrob-secure' ) }
+						</Button>
+					</Row>
+				</Panel>
+			) }
 		</>
 	);
 }

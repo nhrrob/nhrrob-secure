@@ -26,7 +26,7 @@ use NHRRob\Secure\Core\Settings;
 class Schedule {
 
 	const CRON   = 'nhrrob_secure_scan';
-	const PHASES = [ 'core', 'database', 'plugins', 'monitor', 'code' ];
+	const PHASES = [ 'core', 'database', 'plugins', 'themes', 'monitor', 'code' ];
 
 	/**
 	 * Make the cron event match the setting.
@@ -116,6 +116,12 @@ class Schedule {
 			}
 			$step    = Integrity::step_plugins();
 			$running = $step['running'];
+		} elseif ( 'themes' === $phase ) {
+			if ( $restart ) {
+				Integrity::start_themes();
+			}
+			$step    = Integrity::step_themes();
+			$running = $step['running'];
 		} elseif ( 'monitor' === $phase ) {
 			$step    = Monitor::step( $restart );
 			$running = $step['running'];
@@ -158,6 +164,15 @@ class Schedule {
 					$out[] = sprintf( __( 'WordPress file: %s', 'nhrrob-secure' ), $file );
 				}
 			}
+		}
+		foreach ( is_array( $core ) && isset( $core['config'] ) ? $core['config'] : [] as $finding ) {
+			/* translators: %s: file name. */
+			$out[] = sprintf( __( 'Server or configuration file: %s', 'nhrrob-secure' ), $finding['file'] );
+		}
+		$themes = Scan::get( 'themes' );
+		foreach ( is_array( $themes ) ? $themes['changed'] : [] as $theme ) {
+			/* translators: %s: theme name. */
+			$out[] = sprintf( __( 'Theme differs from its WordPress.org release: %s', 'nhrrob-secure' ), $theme['name'] );
 		}
 		$plugins = Scan::get( 'plugins' );
 		if ( is_array( $plugins ) ) {

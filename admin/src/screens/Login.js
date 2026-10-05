@@ -554,6 +554,9 @@ export default function Login( { boot, settings, meta, save } ) {
 							<option value="recaptcha">
 								Google reCAPTCHA v2
 							</option>
+							<option value="recaptcha3">
+								Google reCAPTCHA v3
+							</option>
 							<option value="hcaptcha">hCaptcha</option>
 						</select>
 					</Field>
@@ -594,6 +597,72 @@ export default function Login( { boot, settings, meta, save } ) {
 						/>
 					</Field>
 				</Row>
+				<Row
+					label={ __(
+						'Also check comments from visitors',
+						'nhrrob-secure'
+					) }
+					help={ __(
+						'Adds the same check to the comment form for people who are not signed in. Works while the bot check above is on.',
+						'nhrrob-secure'
+					) }
+					control={
+						<Switch
+							checked={ settings.captcha_comments }
+							label={ __(
+								'Bot check on comments',
+								'nhrrob-secure'
+							) }
+							onChange={ ( v ) =>
+								save( { captcha_comments: v } )
+							}
+						/>
+					}
+				/>
+				<Row
+					label={ __( 'Trap form-filling bots', 'nhrrob-secure' ) }
+					help={ __(
+						'Adds a field to the registration and comment forms that people never see. A form that arrives with it filled in is refused. No outside service, and nothing for a visitor to do.',
+						'nhrrob-secure'
+					) }
+					control={
+						<Switch
+							checked={ settings.honeypot }
+							label={ __(
+								'Trap form-filling bots',
+								'nhrrob-secure'
+							) }
+							onChange={ ( v ) => save( { honeypot: v } ) }
+						/>
+					}
+				/>
+			</Panel>
+
+			<Panel
+				title={ __( 'Sign-in notifications', 'nhrrob-secure' ) }
+				icon="mail"
+				actions={ <OnOff on={ settings.login_notify } /> }
+			>
+				<Row
+					label={ __(
+						'Email a user when their account signs in on a new browser',
+						'nhrrob-secure'
+					) }
+					help={ __(
+						'For accounts that can edit the site. A browser is remembered with a cookie, so a new address or a browser update does not cause mail. The first sign-in after you switch this on only teaches it the browser.',
+						'nhrrob-secure'
+					) }
+					control={
+						<Switch
+							checked={ settings.login_notify }
+							label={ __(
+								'Sign-in notifications',
+								'nhrrob-secure'
+							) }
+							onChange={ ( v ) => save( { login_notify: v } ) }
+						/>
+					}
+				/>
 			</Panel>
 		</>
 	);

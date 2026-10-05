@@ -49,6 +49,20 @@ class Alerts {
 		/* translators: %s: URL of the plugin's admin screen. */
 		$lines[] = sprintf( __( 'Open Secure: %s', 'nhrrob-secure' ), admin_url( 'tools.php?page=nhrrob-secure' ) );
 
+		// The same text to a chat channel, when the owner gave a webhook address. Not waited for.
+		$webhook = (string) Settings::get( 'alert_webhook' );
+		if ( '' !== $webhook ) {
+			wp_safe_remote_post(
+				$webhook,
+				[
+					'timeout'  => 3,
+					'blocking' => false,
+					'headers'  => [ 'Content-Type' => 'application/json' ],
+					'body'     => wp_json_encode( [ 'text' => sprintf( '[%s] %s', $site, $subject ) . "\n" . implode( "\n", $lines ) ] ),
+				]
+			);
+		}
+
 		return (bool) wp_mail( self::recipient(), sprintf( '[%s] %s', $site, $subject ), implode( "\n", $lines ) );
 	}
 }

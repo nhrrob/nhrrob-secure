@@ -18,6 +18,8 @@ import {
 	ago,
 	when,
 } from '../components/ui';
+import { useToast } from '../components/ToastProvider';
+import Report from '../components/Report';
 
 const ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 const TONE = { critical: 'bad', high: 'warn', medium: 'info', low: 'off' };
@@ -52,19 +54,63 @@ function headline( score, failed ) {
 	return sprintf( __( 'At risk, with %s', 'nhrrob-secure' ), things );
 }
 
-export default function Dashboard( { boot, settings, save, navigate } ) {
+export default function Dashboard( {
+	boot,
+	settings,
+	save,
+	setData: setSettings,
+	navigate,
+} ) {
+	const toast = useToast();
 	const [ data, setData ] = useState( null );
+	const [ unticked, setUnticked ] = useState( [] );
+	const [ working, setWorking ] = useState( false );
+	const [ report, setReport ] = useState( false );
 	const [ showPassed, setShowPassed ] = useState( false );
 
 	const [ loadError, setLoadError ] = useState( null );
 
-	useEffect( () => {
+	const load = () =>
 		api( '/dashboard' ).then( setData ).catch( setLoadError );
+
+	useEffect( () => {
+		load();
 	}, [] );
 
 	if ( ! data ) {
 		return <Loading error={ loadError } />;
 	}
+	if ( report ) {
+		return <Report data={ data } onClose={ () => setReport( false ) } />;
+	}
+
+	/**
+	 * Run one step of the recommended setup, then show the Dashboard as it is now.
+	 *
+	 * @param {string} path    Route.
+	 * @param {Object} body    Request body.
+	 * @param {string} message Toast when it worked.
+	 */
+	const setupStep = async ( path, body, message ) => {
+		setWorking( true );
+		try {
+			const res = await api( path, 'POST', body );
+			if ( res.settings ) {
+				setSettings( res );
+			}
+			await load();
+			if ( message ) {
+				toast( message );
+			}
+		} catch ( e ) {
+			toast( e.message, 'error' );
+		}
+		setWorking( false );
+	};
+	const setup = data.setup;
+	const ticked = setup.items
+		.map( ( item ) => item.key )
+		.filter( ( key ) => ! unticked.includes( key ) );
 
 	const failed = data.checks
 		.filter( ( check ) => ! check.passed )
@@ -77,17 +123,28 @@ export default function Dashboard( { boot, settings, save, navigate } ) {
 		if ( ! check.fix ) {
 			return null;
 		}
-		if ( check.fix.section === 'updates' ) {
+		if (
+			check.fix.section === 'updates' ||
+			check.fix.section === 'site-health'
+		) {
 			return (
 				<a
 					className="nhrrob-secure-btn nhrrob-secure-btn--soft nhrrob-secure-btn--sm"
-					href={ boot.updatesUrl }
+					href={
+						check.fix.section === 'updates'
+							? boot.updatesUrl
+							: boot.healthUrl
+					}
 				>
 					{ check.fix.label }
 				</a>
 			);
 		}
-		const anchors = { files: 'files', admins_2fa: 'twofa' };
+		const anchors = {
+			files: 'files',
+			admins_2fa: 'twofa',
+			permissions: 'permissions',
+		};
 		return (
 			<Button
 				variant={ check.severity === 'critical' ? 'primary' : 'soft' }
@@ -143,6 +200,131 @@ export default function Dashboard( { boot, settings, save, navigate } ) {
 						{ __( 'Got it', 'nhrrob-secure' ) }
 					</Button>
 				</Note>
+			) }
+
+			{ setup.undo && (
+				<Note>
+					<strong>
+						{ __(
+							'The recommended settings are on.',
+							'nhrrob-secure'
+						) }
+					</strong>{ ' ' }
+					{ __(
+						'If something stopped working, you can put back exactly what was there before.',
+						'nhrrob-secure'
+					) }{ ' ' }
+					<Button
+						small
+						disabled={ working }
+						onClick={ () =>
+							setupStep(
+								'/setup/undo',
+								{},
+								__( 'Put back as it was', 'nhrrob-secure' )
+							)
+						}
+					>
+						{ __( 'Undo', 'nhrrob-secure' ) }
+					</Button>{ ' ' }
+					<Button
+						small
+						disabled={ working }
+						onClick={ () => setupStep( '/setup/close', {} ) }
+					>
+						{ __( 'Keep them', 'nhrrob-secure' ) }
+					</Button>
+				</Note>
+			) }
+			{ ! setup.undo && ! setup.dismissed && setup.items.length > 0 && (
+				<Panel
+					title={ __( 'Recommended setup', 'nhrrob-secure' ) }
+					icon="check"
+					meta={ sprintf(
+						/* translators: %d: number of settings. */
+						_n(
+							'%d setting still off',
+							'%d settings still off',
+							setup.items.length,
+							'nhrrob-secure'
+						),
+						setup.items.length
+					) }
+				>
+					<p className="nhrrob-secure-muted">
+						{ __(
+							'These are safe on every site: none of them can lock you out or turn a visitor away. Untick what you do not want, then switch the rest on in one step. You can undo it afterwards.',
+							'nhrrob-secure'
+						) }
+					</p>
+					<ul className="nhrrob-secure-setup">
+						{ setup.items.map( ( item ) => (
+							<li key={ item.key }>
+								{ /* eslint-disable-next-line jsx-a11y/label-has-associated-control -- the text is in the nested spans. */ }
+								<label
+									htmlFor={
+										'nhrrob-secure-setup-' + item.key
+									}
+								>
+									<input
+										type="checkbox"
+										id={ 'nhrrob-secure-setup-' + item.key }
+										checked={ ticked.includes( item.key ) }
+										onChange={ ( e ) =>
+											setUnticked(
+												e.target.checked
+													? unticked.filter(
+															( k ) =>
+																k !== item.key
+													  )
+													: [ ...unticked, item.key ]
+											)
+										}
+									/>
+									<span>
+										<b>{ item.label }</b>
+										<span className="nhrrob-secure-sub">
+											{ item.help }
+										</span>
+									</span>
+								</label>
+							</li>
+						) ) }
+					</ul>
+					<Button
+						variant="primary"
+						disabled={ working || ! ticked.length }
+						onClick={ () =>
+							setupStep(
+								'/setup',
+								{ keys: ticked },
+								__(
+									'Recommended settings switched on',
+									'nhrrob-secure'
+								)
+							)
+						}
+					>
+						{ sprintf(
+							/* translators: %d: number of settings. */
+							_n(
+								'Switch %d on',
+								'Switch %d on',
+								ticked.length,
+								'nhrrob-secure'
+							),
+							ticked.length
+						) }
+					</Button>{ ' ' }
+					<Button
+						disabled={ working }
+						onClick={ () =>
+							setupStep( '/setup/close', { dismiss: true } )
+						}
+					>
+						{ __( 'Not now', 'nhrrob-secure' ) }
+					</Button>
+				</Panel>
 			) }
 
 			<Panel>
@@ -361,9 +543,14 @@ export default function Dashboard( { boot, settings, save, navigate } ) {
 				icon="activity"
 				flush
 				actions={
-					<Button small onClick={ () => navigate( 'activity' ) }>
-						{ __( 'View all', 'nhrrob-secure' ) }
-					</Button>
+					<>
+						<Button small onClick={ () => setReport( true ) }>
+							{ __( 'Printable report', 'nhrrob-secure' ) }
+						</Button>
+						<Button small onClick={ () => navigate( 'activity' ) }>
+							{ __( 'View all', 'nhrrob-secure' ) }
+						</Button>
+					</>
 				}
 			>
 				{ data.activity.length ? (
