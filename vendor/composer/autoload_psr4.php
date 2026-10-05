@@ -6,12 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'WP_Mock\\' => array($vendorDir . '/10up/wp_mock/php/WP_Mock'),
-    'PhpParser\\' => array($vendorDir . '/nikic/php-parser/lib/PhpParser'),
-    'PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => array($vendorDir . '/dealerdirect/phpcodesniffer-composer-installer/src'),
-    'NHRRob\\Secure\\Tests\\' => array($baseDir . '/tests'),
     'NHRRob\\Secure\\' => array($baseDir . '/includes'),
-    'Mockery\\' => array($vendorDir . '/mockery/mockery/library/Mockery'),
-    'Doctrine\\Instantiator\\' => array($vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator'),
-    'DeepCopy\\' => array($vendorDir . '/myclabs/deep-copy/src/DeepCopy'),
 );

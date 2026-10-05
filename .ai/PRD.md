@@ -176,7 +176,7 @@ Robin: "we are a security plugin" — the first build was pitched as login secur
 - **Salt rotation, database prefix change** — rewriting `wp-config.php` or renaming tables from a plugin is how sites get broken; the checks report them instead.
 - **Automatic malware removal** — a wrong automatic delete is worse than the finding.
 
-**Zip size after all 15: 225 KB** (was 193 KB before them; 1.3.3 was 141 KB). `index.js` 89 KB, `profile.js` 15 KB.
+**Zip size after all 15 and the storage change: 226 KB** (was 193 KB before them; 1.3.3 was 141 KB). `index.js` 89 KB, `profile.js` 15 KB.
 
 **Gate re-run on the final code (2026-10-05):** PHPCS clean · ESLint clean · PHPUnit 27 tests / 257 assertions on PHP 8.4 and 7.4.33 · Plugin Check: no errors · Semgrep: 0 findings in 41 files · PHPStan: no errors · endpoint probe: 69 checks / 0 failures (38 routes) · multisite: Network Admin table for 4 sites, uninstall leaves nothing.
 
