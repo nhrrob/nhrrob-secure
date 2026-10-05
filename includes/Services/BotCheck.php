@@ -80,7 +80,9 @@ class BotCheck {
 		foreach ( [ 'login_form', 'register_form', 'lostpassword_form' ] as $hook ) {
 			add_action( $hook, [ $this, 'render' ] );
 		}
-		add_filter( 'authenticate', [ $this, 'check_login' ], 99 );
+		// After core has looked at the password (20–30) and before the two-factor step (50). The answer
+		// is the same whether the password was right or wrong, so the check cannot be used to test passwords.
+		add_filter( 'authenticate', [ $this, 'check_login' ], 45 );
 		add_filter( 'registration_errors', [ $this, 'check_form' ] );
 		add_action( 'lostpassword_post', [ $this, 'check_lost_password' ] );
 	}
@@ -119,7 +121,7 @@ class BotCheck {
 	public function check_login( $user ) {
 		global $pagenow;
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- sign-in form of a visitor who is not signed in; the provider's token is the check.
-		if ( 'wp-login.php' !== $pagenow || ! isset( $_POST['log'] ) || is_wp_error( $user ) ) {
+		if ( 'wp-login.php' !== $pagenow || ! isset( $_POST['log'] ) ) {
 			return $user;
 		}
 		return $this->passes() ? $user : $this->error();
@@ -132,6 +134,12 @@ class BotCheck {
 	 * @return \WP_Error
 	 */
 	public function check_form( $errors ) {
+		global $pagenow;
+		// Only the forms on wp-login.php carry the widget. A reset email sent from the Users screen,
+		// or another plugin's own account form, runs the same hooks without it.
+		if ( 'wp-login.php' !== $pagenow ) {
+			return $errors;
+		}
 		if ( $errors instanceof \WP_Error && ! $this->passes() ) {
 			$errors->add( 'nhrrob_secure_bot_check', $this->error()->get_error_message() );
 		}
@@ -166,6 +174,19 @@ class BotCheck {
 	 * @return bool
 	 */
 	private function passes() {
+		static $result = null;
+		if ( null === $result ) {
+			$result = $this->ask();
+		}
+		return $result;
+	}
+
+	/**
+	 * One request to the provider.
+	 *
+	 * @return bool
+	 */
+	private function ask() {
 		$provider = $this->provider();
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- the provider's token is the anti-forgery check here.
 		$token = isset( $_POST[ $provider['field'] ] ) ? sanitize_text_field( wp_unslash( $_POST[ $provider['field'] ] ) ) : '';

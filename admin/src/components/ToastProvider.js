@@ -14,6 +14,8 @@ import Toast from './Toast';
 
 const ToastContext = createContext( null );
 const AUTO_DISMISS_MS = 3000;
+// An error often says what to do next; it stays long enough to be read.
+const ERROR_DISMISS_MS = 12000;
 
 export function ToastProvider( { children } ) {
 	const [ toasts, setToasts ] = useState( [] );
@@ -26,7 +28,10 @@ export function ToastProvider( { children } ) {
 		( message, type = 'success' ) => {
 			const id = Date.now() + Math.random();
 			setToasts( ( list ) => [ ...list, { id, message, type } ] );
-			setTimeout( () => dismiss( id ), AUTO_DISMISS_MS );
+			setTimeout(
+				() => dismiss( id ),
+				type === 'error' ? ERROR_DISMISS_MS : AUTO_DISMISS_MS
+			);
 		},
 		[ dismiss ]
 	);

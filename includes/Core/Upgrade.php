@@ -71,13 +71,23 @@ class Upgrade {
 		$lock = 'nhrrob_secure_migrating';
 		if ( ! add_option( $lock, time(), '', false ) ) {
 			if ( time() - (int) get_option( $lock ) < 10 * MINUTE_IN_SECONDS ) {
+				// Another request is migrating right now. This one must not run on defaults in the
+				// meantime — that would skip two-factor and reopen wp-login.php for a moment — so it
+				// works from the same 1.x settings, in memory.
+				if ( ! Settings::exists() && self::is_legacy() ) {
+					Settings::prime( self::settings_from_legacy() );
+				}
 				return;
 			}
 			update_option( $lock, time(), false );
 		}
 
-		if ( ! Settings::exists() && self::is_legacy() ) {
-			Settings::write( self::settings_from_legacy() );
+		// Each step can be repeated: a run that died half-way is finished by the next one,
+		// because the test is "is 1.x data still there", not "are there no settings yet".
+		if ( self::is_legacy() ) {
+			if ( ! Settings::exists() ) {
+				Settings::write( self::settings_from_legacy() );
+			}
 			self::migrate_audit_table();
 			self::remove_legacy();
 		}
@@ -136,7 +146,7 @@ class Upgrade {
 		$settings['protect_files']       = (bool) $old['protect_debug_log'] || (bool) $old['protect_readme_files'];
 
 		if ( $old['enable_proxy_ip'] ) {
-			$settings['ip_source'] = isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ? 'cloudflare' : 'proxy';
+			$settings['ip_source'] = Ip::via_cloudflare() ? 'cloudflare' : 'proxy';
 		}
 
 		$uas = [];
@@ -240,7 +250,7 @@ class Upgrade {
 				'a' => $map[ $key ][1],
 				'l' => substr( wp_strip_all_tags( (string) $old['item_label'], true ), 0, 160 ),
 				'i' => substr( sanitize_text_field( (string) $old['ip_address'] ), 0, 45 ),
-				's' => max( 1, min( 3, (int) $old['severity'] ) ),
+				's' => self::severity( $old['severity'] ),
 				'n' => 1,
 			];
 		}
@@ -250,6 +260,28 @@ class Upgrade {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- removes the table an older version of this plugin created.
 		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+	}
+
+	/**
+	 * A 1.x severity, stored as a number or a word, on the 1–3 scale.
+	 *
+	 * @param mixed $value Stored severity.
+	 * @return int
+	 */
+	public static function severity( $value ) {
+		if ( is_numeric( $value ) ) {
+			return max( 1, min( 3, (int) $value ) );
+		}
+		$words = [
+			'warning'  => 2,
+			'medium'   => 2,
+			'notice'   => 2,
+			'high'     => 3,
+			'critical' => 3,
+			'error'    => 3,
+		];
+		$value = strtolower( (string) $value );
+		return isset( $words[ $value ] ) ? $words[ $value ] : 1;
 	}
 
 	/**

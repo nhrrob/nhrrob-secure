@@ -23,6 +23,7 @@ use NHRRob\Secure\Services\Vulnerabilities;
 class NetworkPage {
 
 	const MAX_SITES = 50;
+	const CACHE     = 'nhrrob_secure_network';
 
 	/**
 	 * Hook the network menu.
@@ -55,6 +56,11 @@ class NetworkPage {
 	 * @return array[]
 	 */
 	public static function rows() {
+		// Running every check for every site is a lot of work for one page view; a few minutes old is fine here.
+		$cached = get_site_transient( self::CACHE );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
 		$rows  = [];
 		$sites = get_sites(
 			[
@@ -90,6 +96,7 @@ class NetworkPage {
 			restore_current_blog();
 		}
 		Settings::flush();
+		set_site_transient( self::CACHE, $rows, 5 * MINUTE_IN_SECONDS );
 		return $rows;
 	}
 

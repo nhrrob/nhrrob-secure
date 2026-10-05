@@ -157,6 +157,26 @@ class AppPage {
 	}
 
 	/**
+	 * Make sure the `react-jsx-runtime` script the bundles depend on exists.
+	 *
+	 * WordPress ships it since 6.6. On 6.0–6.5 a script with a missing
+	 * dependency is silently not printed, which would leave an empty screen —
+	 * so the same three functions are provided here on top of React.
+	 *
+	 * @return void
+	 */
+	public static function jsx_runtime() {
+		if ( wp_script_is( 'react-jsx-runtime', 'registered' ) ) {
+			return;
+		}
+		wp_register_script( 'react-jsx-runtime', false, [ 'react' ], NHRROB_SECURE_VERSION, true );
+		wp_add_inline_script(
+			'react-jsx-runtime',
+			'(function(R){function m(s){return function(t,p,k){var q={},n,c=p.children;for(n in p){if("children"!==n){q[n]=p[n];}}if(void 0!==k){q.key=k;}if(void 0===c){return R.createElement(t,q);}return s&&Array.isArray(c)?R.createElement.apply(null,[t,q].concat(c)):R.createElement(t,q,c);};}window.ReactJSXRuntime={jsx:m(false),jsxs:m(true),Fragment:R.Fragment};})(window.React);'
+		);
+	}
+
+	/**
 	 * Enqueue one compiled entry with its stylesheet and boot data.
 	 *
 	 * @param string $entry  Entry name in admin/build.
@@ -174,6 +194,7 @@ class AppPage {
 		$url    = NHRROB_SECURE_URL . '/admin/build';
 		$handle = 'nhrrob-secure-' . $entry;
 
+		self::jsx_runtime();
 		wp_enqueue_script( $handle, $url . '/' . $entry . '.js', $meta['dependencies'], $meta['version'], true );
 		wp_set_script_translations( $handle, 'nhrrob-secure' );
 		wp_localize_script( $handle, $object_name, $data );

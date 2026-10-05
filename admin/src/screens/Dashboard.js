@@ -56,12 +56,14 @@ export default function Dashboard( { boot, settings, save, navigate } ) {
 	const [ data, setData ] = useState( null );
 	const [ showPassed, setShowPassed ] = useState( false );
 
+	const [ loadError, setLoadError ] = useState( null );
+
 	useEffect( () => {
-		api( '/dashboard' ).then( setData );
+		api( '/dashboard' ).then( setData ).catch( setLoadError );
 	}, [] );
 
 	if ( ! data ) {
-		return <Loading />;
+		return <Loading error={ loadError } />;
 	}
 
 	const failed = data.checks

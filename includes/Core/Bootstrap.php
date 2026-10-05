@@ -113,7 +113,8 @@ class Bootstrap {
 			new Module( 'users', __( 'Users & Sessions', 'nhrrob-secure' ), SecurityController::class ),
 			new Module( 'firewall', __( 'Firewall', 'nhrrob-secure' ) ),
 			new Module( 'hardening', __( 'Hardening', 'nhrrob-secure' ) ),
-			new Module( 'scanner', __( 'Scanner', 'nhrrob-secure' ), ScannerController::class ),
+			// Plugin, theme and core files are shared by every site of a network, so there the scanner is for the network's admins.
+			new Module( 'scanner', __( 'Scanner', 'nhrrob-secure' ), ScannerController::class, is_multisite() ? 'manage_network' : 'manage_options' ),
 			new Module( 'activity', __( 'Activity', 'nhrrob-secure' ) ),
 			new Module( 'settings', __( 'Settings', 'nhrrob-secure' ) ),
 		];

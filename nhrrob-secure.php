@@ -167,8 +167,11 @@ final class NHRRob_Secure {
 		if ( \NHRRob\Secure\Core\Settings::get( 'db_version' ) === self::DB_VERSION ) {
 			return;
 		}
-		$from_legacy = ! \NHRRob\Secure\Core\Settings::exists() && \NHRRob\Secure\Core\Upgrade::is_legacy();
-		if ( ! $force && ! $from_legacy && ! is_admin() && ! wp_doing_cron() && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+		// No stored settings yet means a first run: either a 1.x install to migrate or a site
+		// (often a network subsite) nobody has opened in the dashboard. Both are handled now, once,
+		// so a visitor request never has to ask that question again.
+		$first_run = ! \NHRRob\Secure\Core\Settings::exists();
+		if ( ! $force && ! $first_run && ! is_admin() && ! wp_doing_cron() && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 			return;
 		}
 		\NHRRob\Secure\Core\Upgrade::run( self::DB_VERSION );

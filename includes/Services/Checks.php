@@ -133,6 +133,30 @@ class Checks {
 			username_exists( 'admin' ) ? __( 'An account is named "admin".', 'nhrrob-secure' ) : __( 'No account is named "admin".', 'nhrrob-secure' ),
 			username_exists( 'admin' ) ? __( 'It is the first name every attack tries. Create a new administrator with another name and delete this one.', 'nhrrob-secure' ) : ''
 		);
+
+		// Two things that are only worth a line when they are wrong.
+		if ( LoginGuard::address_is_shared() ) {
+			$add(
+				'visitor_address',
+				false,
+				'high',
+				__( 'Secure cannot tell your visitors apart.', 'nhrrob-secure' ),
+				__( 'This site is behind a proxy or load balancer, so every visitor seems to come from the same address. Lockouts are paused until you choose how visitors reach this site.', 'nhrrob-secure' ),
+				'settings',
+				__( 'Open Settings', 'nhrrob-secure' )
+			);
+		}
+		if ( Settings::get( 'login_url_enabled' ) && 'hidden-access-52w' === Settings::get( 'login_slug' ) ) {
+			$add(
+				'login_slug_default',
+				false,
+				'medium',
+				__( 'Your sign-in address is the one every older copy of this plugin used.', 'nhrrob-secure' ),
+				__( 'It is published in the plugin\'s code, so it hides nothing. Choose an address of your own.', 'nhrrob-secure' ),
+				'login',
+				__( 'Change it', 'nhrrob-secure' )
+			);
+		}
 		$add(
 			'limit_login',
 			Settings::get( 'limit_login' ) && ! Settings::safe_mode(),

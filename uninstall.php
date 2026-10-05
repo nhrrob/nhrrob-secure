@@ -20,6 +20,11 @@ global $wpdb;
 function nhrrob_secure_uninstall_site() {
 	global $wpdb;
 
+	// Scheduled events go either way: with the plugin deleted nothing is left to run them.
+	foreach ( [ 'vulnerability_check', 'scan', 'summary', 'vulnerability_scan_cron', 'daily_cleanup' ] as $nhrrob_secure_hook ) {
+		wp_clear_scheduled_hook( 'nhrrob_secure_' . $nhrrob_secure_hook );
+	}
+
 	$settings = get_option( 'nhrrob_secure_settings', [] );
 	if ( is_array( $settings ) && isset( $settings['delete_on_uninstall'] ) && ! $settings['delete_on_uninstall'] ) {
 		return; // The owner asked to keep the data.
@@ -28,13 +33,8 @@ function nhrrob_secure_uninstall_site() {
 	foreach ( [ 'settings', 'activity', 'state', 'scan', 'migrating' ] as $nhrrob_secure_name ) {
 		delete_option( 'nhrrob_secure_' . $nhrrob_secure_name );
 	}
-	wp_clear_scheduled_hook( 'nhrrob_secure_vulnerability_check' );
-	wp_clear_scheduled_hook( 'nhrrob_secure_scan' );
-	wp_clear_scheduled_hook( 'nhrrob_secure_summary' );
 
-	// Options, transients and cron events of versions before 2.0.
-	wp_clear_scheduled_hook( 'nhrrob_secure_vulnerability_scan_cron' );
-	wp_clear_scheduled_hook( 'nhrrob_secure_daily_cleanup' );
+	// Options and transients of versions before 2.0.
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall cleanup of this plugin's own rows.
 	$wpdb->query(
 		$wpdb->prepare(
@@ -68,6 +68,8 @@ if ( is_multisite() ) {
 	nhrrob_secure_uninstall_site();
 }
 
+delete_site_transient( 'nhrrob_secure_network' );
+
 // User meta is shared by the whole network: two-factor secrets, recovery codes and activity stamps.
 $nhrrob_secure_settings = get_option( 'nhrrob_secure_settings', false );
 if ( false === $nhrrob_secure_settings ) {
@@ -75,8 +77,10 @@ if ( false === $nhrrob_secure_settings ) {
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE %s", $wpdb->esc_like( 'nhrrob_secure_' ) . '%' ) );
 }
 
-// Rules this plugin wrote to .htaccess.
-$nhrrob_secure_htaccess = ABSPATH . '.htaccess';
+// Rules this plugin wrote to .htaccess. The file lives in the site's home folder,
+// which is not ABSPATH when WordPress is installed in its own directory.
+require_once ABSPATH . 'wp-admin/includes/file.php';
+$nhrrob_secure_htaccess = get_home_path() . '.htaccess';
 if ( file_exists( $nhrrob_secure_htaccess ) && wp_is_writable( $nhrrob_secure_htaccess ) ) {
 	require_once ABSPATH . 'wp-admin/includes/misc.php';
 	insert_with_markers( $nhrrob_secure_htaccess, 'NHRRob Secure', [] );

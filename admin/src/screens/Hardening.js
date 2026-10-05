@@ -42,8 +42,10 @@ export default function Hardening( { settings, meta, save } ) {
 	const [ files, setFiles ] = useState( null );
 	const [ checking, setChecking ] = useState( false );
 
+	const [ failed, setFailed ] = useState( null );
+
 	useEffect( () => {
-		api( '/hardening' ).then( setFiles );
+		api( '/hardening' ).then( setFiles ).catch( setFailed );
 	}, [] );
 
 	const check = async () => {
@@ -274,7 +276,7 @@ export default function Hardening( { settings, meta, save } ) {
 					</Button>
 				}
 			>
-				{ ! files && <Loading /> }
+				{ ! files && <Loading error={ failed } /> }
 				{ files && (
 					<>
 						<div className="nhrrob-secure-pad">
@@ -345,9 +347,9 @@ export default function Hardening( { settings, meta, save } ) {
 														protect_files: v,
 													} )
 												) {
-													api( '/hardening' ).then(
-														setFiles
-													);
+													api( '/hardening' )
+														.then( setFiles )
+														.catch( setFailed );
 												}
 											} }
 										/>

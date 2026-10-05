@@ -109,6 +109,10 @@ class FileProtection {
 			require_once ABSPATH . 'wp-admin/includes/misc.php';
 		}
 		$file = self::htaccess_path();
+		// Nothing to take out of a file that is not there; do not create an empty one.
+		if ( ! $on && ! file_exists( $file ) ) {
+			return true;
+		}
 		if ( ! insert_with_markers( $file, self::MARKER, $on ? self::htaccess_rules() : [] ) ) {
 			return false;
 		}
@@ -117,6 +121,27 @@ class FileProtection {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * What the answer to a PHP path in uploads says. Pure.
+	 *
+	 * "Forbidden" means a rule is in place. "Not found" proves nothing on a
+	 * server whose rules this plugin does not write: many hosts answer 404 for
+	 * PHP in uploads on purpose, so it is reported as unknown, not as open.
+	 *
+	 * @param int    $status HTTP status (0 when the request failed).
+	 * @param string $server apache | nginx | other.
+	 * @return string protected | open | unknown
+	 */
+	public static function uploads_state( $status, $server ) {
+		if ( 403 === $status ) {
+			return 'protected';
+		}
+		if ( 0 === $status || ( 404 === $status && 'apache' !== $server ) ) {
+			return 'unknown';
+		}
+		return 'open';
 	}
 
 	/**
@@ -165,7 +190,7 @@ class FileProtection {
 			'id'    => 'uploads_php',
 			'label' => __( 'PHP files in uploads', 'nhrrob-secure' ),
 			'path'  => (string) wp_parse_url( $probe, PHP_URL_PATH ),
-			'state' => 0 === $status ? 'unknown' : ( 403 === $status ? 'protected' : 'open' ),
+			'state' => self::uploads_state( $status, self::server() ),
 		];
 
 		$listing = wp_remote_get( trailingslashit( $uploads['baseurl'] ), self::request_args() );

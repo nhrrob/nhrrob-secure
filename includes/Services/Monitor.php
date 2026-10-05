@@ -30,19 +30,60 @@ class Monitor {
 	 * @return void
 	 */
 	public function hooks() {
-		add_action( 'upgrader_process_complete', [ __CLASS__, 'forget_all' ] );
+		add_action( 'upgrader_process_complete', [ __CLASS__, 'on_upgrade' ], 10, 2 );
 	}
 
 	/**
-	 * After an install or update the stored fingerprints are stale; the next
-	 * run records fresh ones. Items already reported as changed stay reported.
+	 * Which watched items an install or update touched. Pure.
 	 *
+	 * Only those are forgotten. A translation or core update, or an update of
+	 * another plugin, says nothing about the rest — forgetting everything would
+	 * let any update hide a change made somewhere else.
+	 *
+	 * @param array  $data        What the upgrader reports (type, plugins, plugin, themes, theme).
+	 * @param string $destination Folder name the upgrader wrote to ('' when unknown).
+	 * @return string[] Item keys.
+	 */
+	public static function touched( array $data, $destination = '' ) {
+		$type = isset( $data['type'] ) ? $data['type'] : '';
+		if ( 'plugin' !== $type && 'theme' !== $type ) {
+			return [];
+		}
+		$names = [];
+		foreach ( [ $type . 's', $type ] as $field ) {
+			if ( ! empty( $data[ $field ] ) ) {
+				$names = array_merge( $names, (array) $data[ $field ] );
+			}
+		}
+		if ( '' !== $destination ) {
+			$names[] = $destination;
+		}
+		$keys = [];
+		foreach ( $names as $name ) {
+			// Plugins are reported as "folder/file.php", themes as their folder.
+			$slug = 'plugin' === $type && false !== strpos( (string) $name, '/' ) ? dirname( (string) $name ) : (string) $name;
+			if ( '' !== $slug && '.' !== $slug ) {
+				$keys[] = $type . ':' . $slug;
+			}
+		}
+		return array_values( array_unique( $keys ) );
+	}
+
+	/**
+	 * After an install or update, the fingerprint of what was installed is
+	 * stale; the next run records a fresh one. Items already reported as
+	 * changed stay reported.
+	 *
+	 * @param object $upgrader The upgrader.
+	 * @param array  $data     What it did.
 	 * @return void
 	 */
-	public static function forget_all() {
-		$state = self::state();
-		if ( $state['items'] ) {
-			$state['items'] = [];
+	public static function on_upgrade( $upgrader = null, $data = [] ) {
+		$destination = is_object( $upgrader ) && isset( $upgrader->result ) && is_array( $upgrader->result ) && ! empty( $upgrader->result['destination_name'] ) ? (string) $upgrader->result['destination_name'] : '';
+		$keys        = self::touched( (array) $data, $destination );
+		$state       = self::state();
+		if ( $keys && array_intersect_key( $state['items'], array_flip( $keys ) ) ) {
+			$state['items'] = array_diff_key( $state['items'], array_flip( $keys ) );
 			Scan::set( 'monitor', $state );
 		}
 	}
@@ -96,11 +137,16 @@ class Monitor {
 	public static function fingerprint( $dir ) {
 		$hashes = [];
 		if ( is_dir( $dir ) ) {
-			$iterator = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
-			foreach ( $iterator as $file ) {
-				if ( $file->isFile() && preg_match( '/\.(?:php\d?|phtml|phar)$/i', $file->getFilename() ) ) {
-					$hashes[ substr( $file->getPathname(), strlen( $dir ) ) ] = md5_file( $file->getPathname() );
+			try {
+				// A folder that cannot be read is skipped rather than ending the scan.
+				$iterator = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ), \RecursiveIteratorIterator::LEAVES_ONLY, \RecursiveIteratorIterator::CATCH_GET_CHILD );
+				foreach ( $iterator as $file ) {
+					if ( $file->isFile() && preg_match( '/\.(?:php\d?|phtml|phar)$/i', $file->getFilename() ) ) {
+						$hashes[ substr( $file->getPathname(), strlen( $dir ) ) ] = md5_file( $file->getPathname() );
+					}
 				}
+			} catch ( \Exception $e ) {
+				unset( $e );
 			}
 		}
 		ksort( $hashes );

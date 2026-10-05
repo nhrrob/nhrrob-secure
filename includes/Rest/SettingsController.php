@@ -206,6 +206,17 @@ class SettingsController extends RestController {
 		}
 		$extra = [];
 
+		// A rule that would shut out the person saving it is refused, like a block rule for their own address.
+		$agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+		if ( $before['blocked_uas'] !== $after['blocked_uas'] && '' !== Firewall::blocked_agent( $agent, (array) $after['blocked_uas'] ) ) {
+			Settings::write( $before );
+			return new \WP_Error( 'nhrrob_secure_own_agent', __( 'One of those user agents matches the browser you are using, so nothing was changed.', 'nhrrob-secure' ), [ 'status' => 409 ] );
+		}
+		if ( $after['country_enabled'] && Firewall::country_refused( Firewall::country(), (string) $after['country_mode'], (array) $after['country_list'] ) ) {
+			Settings::write( $before );
+			return new \WP_Error( 'nhrrob_secure_own_country', __( 'That country rule would refuse the country you are in right now, so nothing was changed.', 'nhrrob-secure' ), [ 'status' => 409 ] );
+		}
+
 		// Moved login address: prove it works before leaving it on, and send the owner the address.
 		$moved = $after['login_url_enabled'] && ( ! $before['login_url_enabled'] || $before['login_slug'] !== $after['login_slug'] );
 		if ( $moved && ! Settings::safe_mode() ) {

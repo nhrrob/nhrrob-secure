@@ -46,12 +46,14 @@ export default function Firewall( { boot, settings, meta, save } ) {
 	const [ note, setNote ] = useState( '' );
 	const [ country, setCountry ] = useState( '' );
 
+	const [ failed, setFailed ] = useState( null );
+
 	useEffect( () => {
-		api( '/firewall' ).then( setData );
+		api( '/firewall' ).then( setData ).catch( setFailed );
 	}, [] );
 
 	if ( ! data ) {
-		return <Loading />;
+		return <Loading error={ failed } />;
 	}
 
 	const call = async ( path, method, body, message ) => {

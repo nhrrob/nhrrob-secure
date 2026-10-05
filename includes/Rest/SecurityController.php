@@ -143,6 +143,10 @@ class SecurityController extends RestController {
 		if ( is_wp_error( $user ) ) {
 			return $user;
 		}
+		// Your own second step is switched off on your profile, where it asks for your password.
+		if ( get_current_user_id() === (int) $user->ID ) {
+			return new \WP_Error( 'nhrrob_secure_self', __( 'To switch off your own two-factor, use your profile: it asks for your password.', 'nhrrob-secure' ), [ 'status' => 400 ] );
+		}
 		TwoFactor::disable( $user );
 		return rest_ensure_response( [ 'done' => true ] );
 	}
@@ -193,14 +197,14 @@ class SecurityController extends RestController {
 	 * @return \WP_REST_Response
 	 */
 	public function firewall() {
-		$rules = Firewall::rules();
+		$rules = Firewall::labels();
 		$rows  = [];
 		foreach ( Firewall::log() as $row ) {
 			$rows[] = [
 				'time'    => (int) $row['t'],
 				'ip'      => $row['i'],
 				'rule'    => $row['r'],
-				'label'   => isset( $rules[ $row['r'] ] ) ? $rules[ $row['r'] ][0] : $row['r'],
+				'label'   => isset( $rules[ $row['r'] ] ) ? $rules[ $row['r'] ] : $row['r'],
 				'path'    => $row['p'],
 				'request' => $row['u'],
 				'blocked' => (bool) $row['b'],
@@ -336,7 +340,7 @@ class SecurityController extends RestController {
 			foreach ( $cells as &$cell ) {
 				$cell = (string) $cell;
 				// A cell that starts like a formula would run in a spreadsheet.
-				if ( '' !== $cell && false !== strpos( '=+-@', $cell[0] ) ) {
+				if ( '' !== $cell && false !== strpos( "=+-@\t\r", $cell[0] ) ) {
 					$cell = "'" . $cell;
 				}
 				$cell = '"' . str_replace( '"', '""', $cell ) . '"';

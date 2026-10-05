@@ -38,7 +38,9 @@ export default function Login( { boot, settings, meta, save } ) {
 	const [ secret, setSecret ] = useState( '' );
 
 	useEffect( () => {
-		api( '/login' ).then( ( res ) => setLocked( res.locked ) );
+		api( '/login' )
+			.then( ( res ) => setLocked( res.locked ) )
+			.catch( () => setLocked( [] ) );
 	}, [] );
 
 	const unlock = async ( ip ) => {

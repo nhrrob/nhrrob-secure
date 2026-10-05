@@ -23,7 +23,8 @@ use NHRRob\Secure\Core\State;
  * requests no visitor makes by accident, checked against the URL and query
  * string of visitors who are not signed in. It runs inside WordPress — it is
  * not a network firewall and does not claim to be one. Form and comment text
- * is never inspected, so normal writing cannot be blocked.
+ * is only looked at when the owner asks for it, and then only with the rules
+ * normal writing cannot match.
  */
 class Firewall {
 
@@ -31,7 +32,8 @@ class Firewall {
 
 	/**
 	 * Register the hooks. Address and user-agent rules run right away; the
-	 * request filter waits for `init` so it can skip signed-in users.
+	 * request filter and the probe lock wait for `init` so they can leave
+	 * signed-in users alone.
 	 *
 	 * @return void
 	 */
@@ -50,12 +52,9 @@ class Firewall {
 		$this->check_user_agent();
 
 		if ( Settings::get( 'probe_lockout' ) ) {
-			if ( LoginGuard::probe_locked( Ip::client() ) ) {
-				$this->deny( 'probe_block', '' );
-			}
+			add_action( 'init', [ $this, 'probe_gate' ], 0 );
 			add_action( 'template_redirect', [ $this, 'count_probe' ], 0 );
 		}
-
 		if ( 'off' !== Settings::get( 'request_filter' ) ) {
 			add_action( 'init', [ $this, 'filter_request' ], 0 );
 		}
@@ -69,48 +68,54 @@ class Firewall {
 	}
 
 	/**
-	 * The request filter's rules: id => [ label, where it looks, pattern ].
+	 * The request filter's rules: id => [ where it looks, pattern ].
+	 *
+	 * Whitespace-or-comment runs use atomic groups, so a crafted query string
+	 * cannot push the pattern into heavy backtracking.
 	 *
 	 * @return array
 	 */
-	public static function rules() {
+	public static function patterns() {
+		$gap = '(?>\s+|/\*(?>[^*]+|\*(?!/))*\*/)++';
 		return [
-			'traversal' => [
-				__( 'Path traversal', 'nhrrob-secure' ),
-				'both',
-				'~(?:\.\.[/\\\\]){2,}|\.\.[/\\\\].*(?:wp-config|etc/passwd|\.env|win\.ini)~i',
-			],
-			'config'    => [
-				__( 'Config or backup file probe', 'nhrrob-secure' ),
-				'path',
-				'#(?:^|/)\.(?:env|git|svn|hg|aws|ssh|htpasswd)(?:[./]|$)|wp-config\.(?:php[._~-]?)?(?:bak|old|save|swp|orig|txt|backup|copy|dist)\b|wp-config\.php~|(?:^|/)(?:dump|backup|database|db|site|wordpress)\.(?:sql|sql\.gz|zip|tar\.gz|tgz)$#i',
-			],
-			'shell'     => [
-				__( 'Web shell probe', 'nhrrob-secure' ),
-				'path',
-				'~(?:^|/)(?:alfa(?:new|cgiapi)?|wso\d*|c99|r57|b374k|indoxploit|xleet|wp-conflg|shell\d+|simple-backdoor)\.php$~i',
-			],
-			'sqli'      => [
-				__( 'SQL in the query string', 'nhrrob-secure' ),
-				'query',
-				'~\bunion(?:\s|/\*.*?\*/)+(?:all(?:\s|/\*.*?\*/)+)?select(?:\s|/\*.*?\*/)+(?:null\b|\d|[\'"@(*]|[\w.`]+\s*(?:,|\(|from\b))|\binformation_schema\b|\b(?:sleep|pg_sleep)\s*\(\s*\d+\s*\)|\bbenchmark\s*\(\s*\d+\s*,|\binto\s+(?:out|dump)file\b|\bload_file\s*\(|[\'"]\s*(?:or|and)\s+[\'"]?\d+[\'"]?\s*=\s*[\'"]?\d~i',
-			],
-			'xss'       => [
-				__( 'Script in the query string', 'nhrrob-secure' ),
-				'query',
-				'~<script\b|<(?:img|svg|body|iframe)\b[^>]*\bon\w+\s*=|javascript:\s*[\w.]+\s*\(~i',
-			],
-			'wrapper'   => [
-				__( 'PHP stream wrapper', 'nhrrob-secure' ),
-				'query',
-				'~(?:php://(?:input|filter)|data://text|expect://|phar://)~i',
-			],
-			'code'      => [
-				__( 'PHP code in the query string', 'nhrrob-secure' ),
-				'query',
-				'~(?<![\w.])(?:eval|assert|system|passthru|shell_exec|base64_decode)\s*\(\s*[\'"$]|<\?php~i',
-			],
+			'traversal' => [ 'both', '~(?:\.\.[/\\\\]){2,}|\.\.[/\\\\].*(?:wp-config|etc/passwd|\.env|win\.ini)~i' ],
+			'config'    => [ 'path', '#(?:^|/)\.(?:env|git|svn|hg|aws|ssh|htpasswd)(?:[./]|$)|wp-config\.(?:php[._~-]?)?(?:bak|old|save|swp|orig|txt|backup|copy|dist)\b|wp-config\.php~|(?:^|/)(?:dump|backup|database|db|site|wordpress)\.(?:sql|sql\.gz|zip|tar\.gz|tgz)$#i' ],
+			'shell'     => [ 'path', '~(?:^|/)(?:alfa(?:new|cgiapi)?|wso\d*|c99|r57|b374k|indoxploit|xleet|wp-conflg|shell\d+|simple-backdoor)\.php$~i' ],
+			'sqli'      => [ 'query', '~\bunion' . $gap . '(?:all' . $gap . ')?select' . $gap . '(?:null\b|\d|[\'"@(*]|[\w.`]+\s*(?:,|\(|from\b))|\binformation_schema\b|\b(?:sleep|pg_sleep)\s*\(\s*\d+\s*\)|\bbenchmark\s*\(\s*\d+\s*,|\binto\s+(?:out|dump)file\b|\bload_file\s*\(|[\'"]\s*(?:or|and)\s+[\'"]?\d+[\'"]?\s*=\s*[\'"]?\d~i' ],
+			'xss'       => [ 'query', '~<script\b|<(?:img|svg|body|iframe)\b[^>]*\bon\w+\s*=|javascript:\s*[\w.]+\s*\(~i' ],
+			'wrapper'   => [ 'query', '~(?:php://(?:input|filter)|data://text|expect://|phar://)~i' ],
+			'code'      => [ 'query', '~(?<![\w.])(?:eval|assert|system|passthru|shell_exec|base64_decode)\s*\(\s*[\'"$]|<\?php~i' ],
 		];
+	}
+
+	/**
+	 * Readable names of the rules. Not for use before `init`: it translates.
+	 *
+	 * @return array id => label
+	 */
+	public static function labels() {
+		return [
+			'traversal' => __( 'Path traversal', 'nhrrob-secure' ),
+			'config'    => __( 'Config or backup file probe', 'nhrrob-secure' ),
+			'shell'     => __( 'Web shell probe', 'nhrrob-secure' ),
+			'sqli'      => __( 'SQL in the query string', 'nhrrob-secure' ),
+			'xss'       => __( 'Script in the query string', 'nhrrob-secure' ),
+			'wrapper'   => __( 'PHP stream wrapper', 'nhrrob-secure' ),
+			'code'      => __( 'PHP code in the request', 'nhrrob-secure' ),
+		];
+	}
+
+	/**
+	 * Whether a pattern matches. A pattern that fails to run (PCRE gave up on
+	 * a hostile input) counts as a match: failing open would be a bypass.
+	 *
+	 * @param string $pattern Pattern.
+	 * @param string $subject Text.
+	 * @return bool
+	 */
+	private static function hit( $pattern, $subject ) {
+		$result = preg_match( $pattern, $subject );
+		return false === $result || 1 === $result;
 	}
 
 	/**
@@ -122,9 +127,8 @@ class Firewall {
 	 * @return string Rule id or ''.
 	 */
 	public static function match( $path, $query ) {
-		foreach ( self::rules() as $id => $rule ) {
-			$where = $rule[1];
-			if ( ( 'query' !== $where && preg_match( $rule[2], $path ) ) || ( 'path' !== $where && '' !== $query && preg_match( $rule[2], $query ) ) ) {
+		foreach ( self::patterns() as $id => $rule ) {
+			if ( ( 'query' !== $rule[0] && self::hit( $rule[1], $path ) ) || ( 'path' !== $rule[0] && '' !== $query && self::hit( $rule[1], $query ) ) ) {
 				return $id;
 			}
 		}
@@ -140,13 +144,34 @@ class Firewall {
 	 * @return string Rule id or ''.
 	 */
 	public static function match_body( $body ) {
-		$rules = self::rules();
+		$patterns = self::patterns();
 		foreach ( [ 'traversal', 'wrapper', 'code' ] as $id ) {
-			if ( preg_match( $rules[ $id ][2], $body ) ) {
+			if ( self::hit( $patterns[ $id ][1], $body ) ) {
 				return $id;
 			}
 		}
 		return '';
+	}
+
+	/**
+	 * The first part of the submitted form as one string, without building
+	 * the whole thing for a very large POST.
+	 *
+	 * @param array $post Submitted data.
+	 * @param int   $max  Maximum length.
+	 * @return string
+	 */
+	public static function flatten( array $post, $max = 20000 ) {
+		$out = '';
+		array_walk_recursive(
+			$post,
+			function ( $value ) use ( &$out, $max ) {
+				if ( strlen( $out ) < $max && is_scalar( $value ) ) {
+					$out .= substr( (string) $value, 0, $max - strlen( $out ) ) . "\n";
+				}
+			}
+		);
+		return substr( $out, 0, $max );
 	}
 
 	/**
@@ -160,12 +185,39 @@ class Firewall {
 	}
 
 	/**
+	 * Whether the browser says this request was triggered by another site.
+	 * Such requests are never counted as probes: a page elsewhere could
+	 * otherwise make a visitor's browser "probe" this site and get them
+	 * locked out.
+	 *
+	 * @return bool
+	 */
+	private static function is_cross_site() {
+		return isset( $_SERVER['HTTP_SEC_FETCH_SITE'] ) && 'cross-site' === $_SERVER['HTTP_SEC_FETCH_SITE'];
+	}
+
+	/**
+	 * Keep an address that is locked out for probing off the front of the
+	 * site. Signed-in users and the sign-in form are never affected, so an
+	 * owner behind the same address can still get in.
+	 *
+	 * @return void
+	 */
+	public function probe_gate() {
+		global $pagenow;
+		if ( is_user_logged_in() || 'wp-login.php' === $pagenow || ! LoginGuard::probe_locked( Ip::client() ) ) {
+			return;
+		}
+		$this->deny( 'probe_block', '' );
+	}
+
+	/**
 	 * Count a "not found" answer for a probe-type path from a signed-out visitor.
 	 *
 	 * @return void
 	 */
 	public function count_probe() {
-		if ( ! is_404() || is_user_logged_in() ) {
+		if ( ! is_404() || is_user_logged_in() || self::is_cross_site() ) {
 			return;
 		}
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only matched against a fixed pattern.
@@ -195,8 +247,7 @@ class Firewall {
 		$rule = self::match( $path, $query );
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- a filter has to look at what a signed-out visitor submits before any handler does; nothing is stored or acted on except the match.
 		if ( '' === $rule && Settings::get( 'filter_forms' ) && ! empty( $_POST ) ) {
-			$body = substr( (string) wp_json_encode( wp_unslash( $_POST ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ), 0, 20000 );
-			$rule = self::match_body( $body );
+			$rule = self::match_body( self::flatten( wp_unslash( $_POST ) ) );
 			if ( '' !== $rule ) {
 				$query = __( '(form data)', 'nhrrob-secure' );
 			}
@@ -208,16 +259,17 @@ class Firewall {
 
 		$block = 'block' === Settings::get( 'request_filter' );
 		self::log_hit( $rule, $path, $query, $block );
-		if ( $block && Settings::get( 'probe_lockout' ) ) {
+		if ( $block && Settings::get( 'probe_lockout' ) && ! self::is_cross_site() ) {
 			LoginGuard::register_probe();
 		}
 		if ( $block ) {
-			$this->deny( '', '', false );
+			$this->refuse();
 		}
 	}
 
 	/**
-	 * Keep a short list of what the filter matched, and count blocks per day.
+	 * Keep a short list of what the filter matched, and count blocks per day —
+	 * in one write.
 	 *
 	 * @param string $rule    Rule id.
 	 * @param string $path    Request path.
@@ -226,35 +278,38 @@ class Firewall {
 	 * @return void
 	 */
 	private static function log_hit( $rule, $path, $query, $blocked ) {
-		$rules = self::rules();
-		$log   = self::log();
 		$shown = sanitize_text_field( $path . ( '' !== $query ? '?' . $query : '' ) );
-
-		array_unshift(
-			$log,
-			[
-				't' => time(),
-				'i' => Ip::client(),
-				'r' => $rule,
-				'p' => sanitize_text_field( $path ),
-				'u' => strlen( $shown ) > 200 ? substr( $shown, 0, 199 ) . '…' : $shown,
-				'b' => $blocked ? 1 : 0,
-			]
+		$row   = [
+			't' => time(),
+			'i' => Ip::client(),
+			'r' => $rule,
+			'p' => sanitize_text_field( $path ),
+			'u' => strlen( $shown ) > 200 ? substr( $shown, 0, 199 ) . '…' : $shown,
+			'b' => $blocked ? 1 : 0,
+		];
+		State::mutate(
+			function ( $state ) use ( $row, $blocked ) {
+				$log = isset( $state['filter_log'] ) && is_array( $state['filter_log'] ) ? $state['filter_log'] : [];
+				array_unshift( $log, $row );
+				$state['filter_log'] = array_slice( $log, 0, self::LOG_ROWS );
+				if ( $blocked ) {
+					$state['blocked'] = self::bumped( isset( $state['blocked'] ) && is_array( $state['blocked'] ) ? $state['blocked'] : [] );
+				}
+				return $state;
+			}
 		);
-		State::set( 'filter_log', array_slice( $log, 0, self::LOG_ROWS ) );
-		if ( $blocked ) {
-			self::bump();
-		}
 
+		// One activity row per address and rule, however many different paths are tried,
+		// so a flood of probes cannot push everything else out of the log.
 		Activity::record(
 			'firewall',
 			$blocked ? 'filter_block' : 'filter_log',
-			$path,
+			$rule,
 			Activity::WARNING,
 			[
 				'user'     => 0,
-				'detail'   => $rules[ $rule ][0],
-				'coalesce' => 10 * MINUTE_IN_SECONDS,
+				'detail'   => $path,
+				'coalesce' => HOUR_IN_SECONDS,
 			]
 		);
 	}
@@ -269,20 +324,21 @@ class Firewall {
 	}
 
 	/**
-	 * Add one to today's refused-requests counter (part of the small
-	 * state option, so a refused request costs one small write) and keep a week of days.
+	 * Add one to today's counter and keep a week of days.
 	 *
-	 * @return void
+	 * @param array $days Counter per day.
+	 * @return array
 	 */
-	private static function bump() {
-		$days           = State::get( 'blocked' );
+	private static function bumped( array $days ) {
 		$today          = gmdate( 'Y-m-d' );
 		$days[ $today ] = isset( $days[ $today ] ) ? $days[ $today ] + 1 : 1;
-		State::set( 'blocked', array_slice( $days, -7, 7, true ) );
+		return array_slice( $days, -7, 7, true );
 	}
 
 	/**
-	 * Requests refused in the last seven days (all rule types).
+	 * Requests refused in the last seven days. For flat rules (address, user
+	 * agent, country, probe lock) at most one a minute per address is counted,
+	 * so a flood costs reads, not writes.
 	 *
 	 * @return int
 	 */
@@ -296,16 +352,26 @@ class Firewall {
 	 * @return void
 	 */
 	private function check_user_agent() {
-		$blocked = (array) Settings::get( 'blocked_uas' );
-		if ( ! $blocked ) {
-			return;
+		$fragment = self::blocked_agent( isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '', (array) Settings::get( 'blocked_uas' ) );
+		if ( '' !== $fragment ) {
+			$this->deny( 'ua_block', $fragment );
 		}
-		$agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+	}
+
+	/**
+	 * Which blocked fragment a user agent contains ('' for none). Pure.
+	 *
+	 * @param string   $agent   User-agent text.
+	 * @param string[] $blocked Blocked fragments.
+	 * @return string
+	 */
+	public static function blocked_agent( $agent, array $blocked ) {
 		foreach ( $blocked as $fragment ) {
 			if ( '' !== $fragment && false !== stripos( $agent, $fragment ) ) {
-				$this->deny( 'ua_block', $fragment );
+				return $fragment;
 			}
 		}
+		return '';
 	}
 
 	/**
@@ -323,34 +389,57 @@ class Firewall {
 	}
 
 	/**
-	 * Apply the country rule to the sign-in page only. Without a country from
-	 * Cloudflare the rule does nothing rather than guess.
+	 * Whether a country is refused by a rule. Pure.
+	 *
+	 * @param string   $country Two-letter code ('' when unknown).
+	 * @param string   $mode    block | allow.
+	 * @param string[] $codes   The listed countries.
+	 * @return bool
+	 */
+	public static function country_refused( $country, $mode, array $codes ) {
+		if ( '' === $country || ! $codes ) {
+			return false; // Without a country the rule does nothing rather than guess.
+		}
+		$listed = in_array( $country, $codes, true );
+		return 'allow' === $mode ? ! $listed : $listed;
+	}
+
+	/**
+	 * Apply the country rule.
 	 *
 	 * @return void
 	 */
 	public function check_country() {
 		$country = self::country();
-		$list    = (array) Settings::get( 'country_list' );
-		if ( '' === $country || ! $list ) {
-			return;
-		}
-		$listed = in_array( $country, $list, true );
-		$allow  = 'allow' === Settings::get( 'country_mode' );
-		if ( $allow !== $listed ) {
+		if ( self::country_refused( $country, (string) Settings::get( 'country_mode' ), (array) Settings::get( 'country_list' ) ) ) {
 			$this->deny( 'country_block', $country );
 		}
 	}
 
 	/**
-	 * Refuse the request with a 403.
+	 * Refuse a request by a flat rule (address, user agent, country, probe
+	 * lock). The log row and the counter are written at most once a minute per
+	 * address; every other refused request from it costs no write at all.
 	 *
-	 * @param string $action Activity action to record ('' to skip).
+	 * @param string $action Activity action.
 	 * @param string $label  Activity label.
-	 * @param bool   $count  Whether to add to the blocked-per-day counter.
 	 * @return void
 	 */
-	private function deny( $action, $label, $count = true ) {
-		if ( '' !== $action ) {
+	private function deny( $action, $label ) {
+		$ip   = Ip::client();
+		$now  = time();
+		$seen = State::get( 'denied' );
+		if ( ! isset( $seen[ $ip ] ) || $now - (int) $seen[ $ip ] >= MINUTE_IN_SECONDS ) {
+			State::mutate(
+				function ( $state ) use ( $ip, $now ) {
+					$denied        = isset( $state['denied'] ) && is_array( $state['denied'] ) ? $state['denied'] : [];
+					$denied[ $ip ] = $now;
+					arsort( $denied );
+					$state['denied']  = array_slice( $denied, 0, 100, true );
+					$state['blocked'] = self::bumped( isset( $state['blocked'] ) && is_array( $state['blocked'] ) ? $state['blocked'] : [] );
+					return $state;
+				}
+			);
 			Activity::record(
 				'firewall',
 				$action,
@@ -358,17 +447,20 @@ class Firewall {
 				Activity::WARNING,
 				[
 					'user'     => 0,
-					'coalesce' => HOUR_IN_SECONDS,
+					'coalesce' => DAY_IN_SECONDS,
 				]
 			);
 		}
-		if ( $count ) {
-			self::bump();
-		}
-		wp_die(
-			esc_html__( 'Access to this site is not allowed from your connection.', 'nhrrob-secure' ),
-			esc_html__( 'Access denied', 'nhrrob-secure' ),
-			[ 'response' => 403 ]
-		);
+		$this->refuse();
+	}
+
+	/**
+	 * Answer 403. Plain English on purpose: this can run before WordPress has
+	 * loaded translations.
+	 *
+	 * @return void
+	 */
+	private function refuse() {
+		wp_die( 'Access to this site is not allowed from your connection.', 'Access denied', [ 'response' => 403 ] );
 	}
 }

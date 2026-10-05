@@ -78,8 +78,10 @@ export default function Scanner( { boot, settings, save } ) {
 	const [ preview, setPreview ] = useState( null );
 	const alive = useRef( true );
 
+	const [ failed, setFailed ] = useState( null );
+
 	useEffect( () => {
-		api( '/scanner' ).then( setData );
+		api( '/scanner' ).then( setData ).catch( setFailed );
 		return () => {
 			alive.current = false;
 		};
@@ -151,7 +153,7 @@ export default function Scanner( { boot, settings, save } ) {
 	};
 
 	if ( ! data ) {
-		return <Loading />;
+		return <Loading error={ failed } />;
 	}
 
 	const vuln = data.vulnerabilities;
@@ -305,6 +307,20 @@ export default function Scanner( { boot, settings, save } ) {
 					</Button>
 				}
 			>
+				{ vuln.failed > 0 && (
+					<Note tone="warn">
+						{ sprintf(
+							/* translators: %d: number of items. */
+							_n(
+								'%d item could not be looked up, so this result is incomplete. Check again later.',
+								'%d items could not be looked up, so this result is incomplete. Check again later.',
+								vuln.failed,
+								'nhrrob-secure'
+							),
+							vuln.failed
+						) }
+					</Note>
+				) }
 				{ vuln.items.length > 0 && (
 					<div className="nhrrob-secure-scroll">
 						<table className="nhrrob-secure-grid">
@@ -779,6 +795,14 @@ export default function Scanner( { boot, settings, save } ) {
 						) }
 					</p>
 				</div>
+				{ database && database.partial && (
+					<Note tone="warn">
+						{ __(
+							'The database is large and the scan ran out of time before it had looked at everything. What it found so far is below.',
+							'nhrrob-secure'
+						) }
+					</Note>
+				) }
 				{ database && database.findings.length > 0 && (
 					<div className="nhrrob-secure-scroll">
 						<table className="nhrrob-secure-grid">

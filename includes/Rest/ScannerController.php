@@ -38,6 +38,15 @@ use NHRRob\Secure\Services\Vulnerabilities;
 class ScannerController extends RestController {
 
 	/**
+	 * Every scanner route reads or changes files the whole network shares.
+	 *
+	 * @return bool
+	 */
+	public function can_manage() {
+		return $this->can_manage_files();
+	}
+
+	/**
 	 * Register the routes.
 	 *
 	 * @return void

@@ -41,16 +41,25 @@ class Module implements ModuleInterface {
 	private $controller;
 
 	/**
+	 * Capability needed to see and use the module.
+	 *
+	 * @var string
+	 */
+	private $capability;
+
+	/**
 	 * Set up the module.
 	 *
 	 * @param string $id         Module id.
 	 * @param string $label      Nav label.
 	 * @param string $controller Class extending Rest\RestController, or '' when the section shares another section's routes.
+	 * @param string $capability Capability needed to see and use the module.
 	 */
-	public function __construct( $id, $label, $controller = '' ) {
+	public function __construct( $id, $label, $controller = '', $capability = 'manage_options' ) {
 		$this->id         = $id;
 		$this->label      = $label;
 		$this->controller = $controller;
+		$this->capability = $capability;
 	}
 
 	/**
@@ -77,7 +86,7 @@ class Module implements ModuleInterface {
 	 * @return string
 	 */
 	public function capability() {
-		return 'manage_options';
+		return $this->capability;
 	}
 
 	/**

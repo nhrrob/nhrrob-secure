@@ -204,7 +204,11 @@ class Ip {
 	 * @return string
 	 */
 	public static function resolve( $remote, array $headers, $mode, array $trusted ) {
-		if ( 'cloudflare' === $mode ) {
+		// A request that arrives from one of Cloudflare's own addresses is Cloudflare, whatever the
+		// setting says, and that address is shared by many visitors. Its header is believed in
+		// "direct" mode too: otherwise a site put behind Cloudflare without touching this setting
+		// would lock out everyone at once. The range check is what makes the header trustworthy.
+		if ( 'cloudflare' === $mode || 'direct' === $mode ) {
 			$cf = isset( $headers['cf'] ) ? trim( $headers['cf'] ) : '';
 			if ( self::in_any( $remote, self::cloudflare_ranges() ) && false !== filter_var( $cf, FILTER_VALIDATE_IP ) ) {
 				return $cf;

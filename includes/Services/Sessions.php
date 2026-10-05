@@ -31,9 +31,10 @@ class Sessions {
 		if ( (int) Settings::get( 'idle_timeout' ) <= 0 ) {
 			return;
 		}
-		// Real page loads and REST calls count as activity; Heartbeat does not,
-		// so a tab left open in the background still times out.
+		// Real page loads (dashboard or site) and REST calls count as activity;
+		// Heartbeat does not, so a tab left open in the background still times out.
 		add_action( 'admin_init', [ $this, 'tick' ] );
+		add_action( 'template_redirect', [ $this, 'tick' ] );
 		add_filter( 'rest_pre_dispatch', [ $this, 'tick_rest' ] );
 		add_filter( 'wp_login_errors', [ $this, 'idle_notice' ] );
 	}
@@ -56,7 +57,9 @@ class Sessions {
 	 */
 	public function tick() {
 		$user_id = get_current_user_id();
-		if ( ! $user_id ) {
+		// The timeout protects accounts that can work in the dashboard. Customers and
+		// subscribers are left alone: signing a shopper out mid-visit helps nobody.
+		if ( ! $user_id || ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
 		$now  = time();

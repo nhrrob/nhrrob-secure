@@ -118,13 +118,15 @@ class Hardening {
 	}
 
 	/**
-	 * Remove the REST users endpoints for anyone who cannot list users.
+	 * Remove the REST users endpoints for visitors. Signed-in users keep them:
+	 * the editor asks for the current user and the list of authors, and core
+	 * already limits what each role can see there.
 	 *
 	 * @param array $endpoints Registered endpoints.
 	 * @return array
 	 */
 	public function hide_rest_users( $endpoints ) {
-		if ( current_user_can( 'list_users' ) ) {
+		if ( is_user_logged_in() ) {
 			return $endpoints;
 		}
 		foreach ( array_keys( $endpoints ) as $route ) {
@@ -142,8 +144,7 @@ class Hardening {
 	 */
 	public function block_author_scan() {
 		global $wp_query;
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only checks that a public query variable is present.
-		if ( isset( $_GET['author'] ) && ! is_user_logged_in() ) {
+		if ( self::asks_for_author() && ! is_user_logged_in() ) {
 			$wp_query->set_404();
 			status_header( 404 );
 			nocache_headers();
@@ -157,8 +158,18 @@ class Hardening {
 	 * @return string|false
 	 */
 	public function no_author_redirect( $redirect ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only checks that a public query variable is present.
-		return isset( $_GET['author'] ) && ! is_user_logged_in() ? false : $redirect;
+		return self::asks_for_author() && ! is_user_logged_in() ? false : $redirect;
+	}
+
+	/**
+	 * Whether the request names an author by number. WordPress reads query
+	 * variables from a form post as well as from the address.
+	 *
+	 * @return bool
+	 */
+	private static function asks_for_author() {
+		// phpcs:ignore WordPress.Security.NonceVerification -- only checks that a public query variable is present.
+		return isset( $_GET['author'] ) || isset( $_POST['author'] );
 	}
 
 	/**

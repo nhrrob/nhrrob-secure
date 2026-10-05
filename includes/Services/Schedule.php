@@ -35,8 +35,7 @@ class Schedule {
 	 */
 	public static function sync() {
 		$wanted = (string) Settings::get( 'scan_schedule' );
-		$event  = wp_get_scheduled_event( self::CRON );
-		$actual = $event && $event->schedule ? $event->schedule : 'off';
+		$actual = self::recurrence( (array) _get_cron_array() );
 		if ( $wanted === $actual ) {
 			return;
 		}
@@ -48,18 +47,61 @@ class Schedule {
 	}
 
 	/**
+	 * How often the scan is set to recur, read from the cron list. Pure.
+	 *
+	 * A run in progress also has one-off events under the same hook (the next
+	 * tick, a minute away). Those must not be mistaken for the schedule: doing
+	 * so cancelled every run after its first phase.
+	 *
+	 * @param array $crons The cron array: time => hook => key => event.
+	 * @return string daily | weekly | … | off
+	 */
+	public static function recurrence( array $crons ) {
+		foreach ( $crons as $hooks ) {
+			if ( ! is_array( $hooks ) || empty( $hooks[ self::CRON ] ) ) {
+				continue;
+			}
+			foreach ( (array) $hooks[ self::CRON ] as $event ) {
+				if ( ! empty( $event['schedule'] ) ) {
+					return (string) $event['schedule'];
+				}
+			}
+		}
+		return 'off';
+	}
+
+	/**
 	 * One tick of the scheduled run.
 	 *
 	 * @return void
 	 */
 	public static function tick() {
 		$run = Scan::get( 'scheduled' );
-		if ( ! is_array( $run ) ) {
+		if ( ! is_array( $run ) || ! isset( self::PHASES[ $run['phase'] ] ) ) {
 			$run = [
 				'phase' => 0,
 				'fresh' => true,
 			];
 		}
+		// A phase that died three times in a row (out of memory, time limit) is skipped,
+		// so one bad folder cannot keep the rest of the scan from ever running.
+		$tries = isset( $run['tries'] ) ? (int) $run['tries'] : 0;
+		if ( $tries >= 3 ) {
+			++$run['phase'];
+			$run['fresh'] = true;
+			$tries        = 0;
+			if ( ! isset( self::PHASES[ $run['phase'] ] ) ) {
+				Scan::set( 'scheduled', null );
+				self::report();
+				return;
+			}
+		}
+		// Noted before the work starts, with a retry a few minutes out in case this request dies.
+		$retry        = time() + 5 * MINUTE_IN_SECONDS;
+		$run['tries'] = $tries + 1;
+		Scan::set( 'scheduled', $run );
+		wp_schedule_single_event( $retry, self::CRON );
+
 		$phase   = self::PHASES[ $run['phase'] ];
 		$restart = ! empty( $run['fresh'] );
 		$running = false;
@@ -82,6 +124,9 @@ class Schedule {
 			$running = 'running' === $state['status'];
 		}
 
+		// The step came back: drop the retry and carry on.
+		wp_unschedule_event( $retry, self::CRON );
+		$run['tries'] = 0;
 		if ( $running ) {
 			$run['fresh'] = false;
 		} else {

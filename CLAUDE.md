@@ -20,7 +20,7 @@ Planning docs (dev-only, never shipped): `.ai/PRD.md` (free scope + the 1.3.3 au
 nhrrob-secure.php          main class, constants, activation, maybe_upgrade(), crons
 uninstall.php              per-site cleanup (respects delete_on_uninstall), user meta, .htaccess block
 includes/
-  Core/     Settings, Ip, Activity, Alerts, Upgrade, Bootstrap, Module, ModuleRegistry
+  Core/     Settings, Ip, Activity, State, Store, Alerts, Upgrade, Bootstrap, Module, ModuleRegistry
   Services/ LoginGuard, LoginUrl, BotCheck, Totp, TwoFactor, Passkeys, Passwords, Sessions, Firewall,
             Hardening, FileProtection, Scan, Vulnerabilities, Integrity, Monitor, DatabaseScan, CodeScan,
             Schedule, Summary, Checks, EventLogger
@@ -41,18 +41,18 @@ tests/                     PHPUnit + WP_Mock
 |---|---|---|
 | `nhrrob_secure_settings` (autoloaded) | every setting + `db_version` | fixed keys |
 | `nhrrob_secure_activity` | activity rows, newest first (`t,u,k,a,l,i,s,n,d`) | 1,000 rows / 256 KB / retention days |
-| `nhrrob_secure_state` | hot, small data written under attack — `lockouts` (per address: `c,u,l,x,v` + `q,ql,p` for probe lockouts), `filter_log`, `blocked` (per day) | 300 addresses / 100 rows / 7 days |
+| `nhrrob_secure_state` | hot, small data written under attack — `lockouts` (per address, or per /64 for IPv6: `c,u,l,x,v` for sign-in + `q,ql,px,pv` for probe lockouts), `filter_log`, `blocked` (per day), `denied` (last counted refusal per address) | 300 addresses / 100 rows / 7 days |
 | `nhrrob_secure_scan` | cold, large data — last result per check: `vuln`, `vuln_run`, `core`, `plugins`, `plugins_run`, `files`, `monitor`, `database`, `code` (code-scan queue + findings), `scheduled*` | lists capped; 200 code findings |
 
 **Four options, no more** (Robin, 2026-10-05: "goal is to use less options"). New features store into `state` (if written per request or per failed sign-in — keep it small) or `scan` (if large and written rarely) through `Core\State` and `Services\Scan`; they do not add an option. `state` and `scan` are separate on purpose: merging them would make every failed sign-in rewrite the scan results.
 
-User meta: `nhrrob_secure_2fa_enabled|method|secret|recovery_codes|pending|last_step|due|trusted`, `nhrrob_secure_passkeys`, `nhrrob_secure_pw_changed|pw_must`, `nhrrob_secure_last_login`, `nhrrob_secure_last_activity`. Transients: `nhrrob_secure_2fa_{md5}` (sign-in challenge, 10 min), `nhrrob_secure_pk_{id}` (passkey registration challenge), `nhrrob_secure_pw_{id}`, `nhrrob_secure_alert_{md5}`. Cookie: `nhrrob_secure_trust_{COOKIEHASH}` (trusted browser). Cron: `nhrrob_secure_vulnerability_check` (daily, reschedules itself per batch), `nhrrob_secure_scan` (daily/weekly per `scan_schedule`, walks its phases one tick a minute), `nhrrob_secure_summary` (weekly, when on).
+User meta: `nhrrob_secure_2fa_enabled|method|secret|recovery_codes|pending|last_step|due|trusted|fails`, `nhrrob_secure_passkeys`, `nhrrob_secure_pw_changed|pw_must`, `nhrrob_secure_last_login`, `nhrrob_secure_last_activity`. Transients: `nhrrob_secure_2fa_{md5}` (sign-in challenge, 10 min), `nhrrob_secure_pk_{id}` (passkey registration challenge), `nhrrob_secure_pw_{id}`, `nhrrob_secure_alert_{md5}`, `nhrrob_secure_vuln_lock` (one stepper at a time); site transient `nhrrob_secure_network` (Network Admin rows, 5 min). Cookie: `nhrrob_secure_trust_{COOKIEHASH}` (trusted browser). Cron: `nhrrob_secure_vulnerability_check` (daily, reschedules itself per batch), `nhrrob_secure_scan` (daily/weekly per `scan_schedule`, walks its phases one tick a minute), `nhrrob_secure_summary` (weekly, when on).
 
 A change of stored shape needs a migration: bump `NHRRob_Secure::DB_VERSION` and add the step to `Core\Upgrade::run()`. An install coming from 1.x migrates on its first request of any kind; later bumps wait for admin/cron/CLI.
 
 ## REST routes (`nhrrob-secure/v1`)
 
-Gate `can_manage` = `manage_options`. `can_manage_files` adds "super admin on multisite". `can_repair` adds `update_core`.
+Gate `can_manage` = `manage_options`. `can_manage_files` adds "super admin on multisite". `can_repair` adds `update_core`. On multisite the whole Scanner section (module capability `manage_network`, every route behind `can_manage_files`) is for network admins: plugin, theme and core files are shared by all sites.
 
 - `GET /dashboard` · `GET|POST /settings` · `POST /settings/import` · `GET /login` · `POST /login/unlock`
 - `GET /users` (also needs `list_users`) · `POST /users/{id}/signout`, `/reset-2fa` and `/force-password` (per-object `edit_user`) · `POST /users/force-password` (role or everyone; needs `edit_users`) · `POST /users/signout-all` (files gate)
@@ -69,13 +69,20 @@ Gate `can_manage` = `manage_options`. `can_manage_files` adds "super admin on mu
 - Moving the login address: slug validated (`Settings::slug_problem`), pretty permalinks required, tested with a loopback request and **reverted if the form does not appear**, then emailed.
 - File actions never take a free path: core repair only for files in the official checksum list **and** only when the download matches that checksum; quarantine/restore only for paths in the scan's own findings/quarantine lists, resolved with `realpath` inside `wp-content`.
 - `.htaccess` rules are removed again if the home page answers 5xx after writing them, on deactivation and on uninstall.
-- Two-factor: setup needs a working code; challenge allows 5 tries then counts as a failed sign-in; TOTP steps are single-use; secrets are stored `v1:`-encrypted (sodium secretbox, key from `wp_salt('auth')`); 1.x plain secrets are read and encrypted on first use.
+- Two-factor: setup needs a working code. **Every** wrong code counts twice: against the address (`LoginGuard::register_failure`) and against the account (`nhrrob_secure_2fa_fails`; 5 in 15 minutes pause that account's second step, 15 min doubling to 24 h, and email its owner) — a new challenge never buys new guesses. The challenge (authenticate 50) checks the address lock and the account hold itself, because it exits before `LoginGuard` (100); the bot check runs at 45 and answers the same for a right and a wrong password. A second step that is on cannot be replaced: `/2fa/begin|confirm|passkey` answer 409 until it is switched off (password needed), and `/users/{id}/reset-2fa` refuses the caller's own id. On multisite the challenge is hooked on every site, whatever that site's `twofa_enabled` says (enrolment is user meta, shared by the network). The challenge only starts when a password was submitted; TOTP steps are single-use; secrets are stored `v1:`-encrypted (sodium secretbox, key from `wp_salt('auth')`); 1.x plain secrets are read and encrypted on first use.
 - The request filter inspects path and query string of signed-out visitors. Request bodies are looked at only when `filter_forms` is on, and then only with the `traversal`, `wrapper` and `code` rules (`Firewall::match_body`) — never the SQL or script rules, which normal writing can match.
 - Probe lockout counts only 404s whose path looks like a file hunt (`Firewall::is_probe_path`); pages, images and assets never count.
 - Passkeys (`Services\Passkeys`): no library. Every sign-in checks type, challenge, origin, RP-ID hash, user-present flag, signature (OpenSSL) and that the counter moved forward. Verified against Node-generated vectors in `tests/fixtures/passkey.json` (regenerate with `node tests/fixtures/make-passkey-vectors.js`). A passkey is a second step, never a password replacement.
 - A new password clears trusted browsers and the must-change flag (`Passwords::mark_changed`).
-- `Monitor` keeps a changed item's old fingerprint until the owner accepts the change; an install or update clears all fingerprints (`upgrader_process_complete`).
-- `Ip::resolve()` believes a forwarded header only from Cloudflare's ranges (cloudflare mode) or a trusted/local proxy (proxy mode).
+- `Monitor` keeps a changed item's old fingerprint until the owner accepts the change; an install or update forgets **only the items it touched** (`Monitor::touched()`; a translation or core update forgets nothing).
+- `Ip::resolve()` believes a forwarded header only from Cloudflare's ranges (cloudflare **and** direct mode: a request from a Cloudflare address is Cloudflare) or a trusted/local proxy (proxy mode). When `ip_source` is `direct`, the request comes from a private address and carries a forwarded header, nothing is counted (`LoginGuard::address_is_shared()`) and the Dashboard says so.
+- Counters are never read-modify-written with `update_option`: `Core\Store::mutate()` (compare-and-swap) is behind `State`, `Scan::set()` and `Activity::record()`, so parallel requests cannot lose a failed sign-in or overwrite another part.
+- Lockouts: a successful sign-in forgives only its own username (`LoginGuard::forgive`); a running lock is never pruned; a probe lock (`px`) keeps an address off the public site at `init`, never off wp-login.php or a signed-in user, and cross-site requests (`Sec-Fetch-Site`) are not counted.
+- The request filter treats a pattern that fails to run as a match (never fail open) and uses atomic groups for comment runs.
+- A quarantined file's name keeps no `.php` (`CodeScan::quarantine_name`): `shell.php` → `shell_php.suspected`.
+- Activity log: sign-ins/sign-outs only for users with `edit_posts`; refused-request rows capped at 200; when full, info rows go before warnings and criticals. The idle timeout also applies only to users with `edit_posts`.
+- `Schedule::sync()` reads the recurring event only (`Schedule::recurrence`); a run's one-off tick must not be mistaken for the schedule. A phase that dies three times is skipped.
+- The bundles need the `react-jsx-runtime` handle (WordPress 6.6+); `AppPage::jsx_runtime()` provides it on 6.0–6.5, and the entry files fall back to `render()` where `createRoot` is missing. Verified on a clean WordPress 6.0.
 
 ## Add-on API
 
@@ -91,7 +98,7 @@ PHP filters `nhrrob_secure_modules`, `nhrrob_secure_app_boot`, `nhrrob_secure_ch
 npm run build          # admin/build
 npm run lint           # ESLint (text domain enforced in .eslintrc.js)
 composer run phpcs     # WordPress Coding Standards
-composer run test:unit # PHPUnit: filter corpus, TOTP vectors, address rules, lockouts, signatures, score
+composer run test:unit # PHPUnit: filter corpus, TOTP vectors, address rules, lockouts, signatures, score, review fixes
 ```
 
 `typescript` is pinned to `~6.0` in `package.json` only because the lint plugin does not load with 7.x.

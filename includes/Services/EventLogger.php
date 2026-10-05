@@ -77,7 +77,11 @@ class EventLogger {
 		}
 		update_user_meta( $user->ID, 'nhrrob_secure_last_login', time() );
 		update_user_meta( $user->ID, 'nhrrob_secure_last_activity', time() );
-		Activity::record( 'login', self::$login_kind, $login, Activity::INFO, [ 'user' => $user->ID ] );
+		// The log is for accounts that can change the site. On a shop, every customer
+		// sign-in would otherwise push the events that matter out of it.
+		if ( $user->has_cap( 'edit_posts' ) ) {
+			Activity::record( 'login', self::$login_kind, $login, Activity::INFO, [ 'user' => $user->ID ] );
+		}
 	}
 
 	/**
@@ -87,7 +91,7 @@ class EventLogger {
 	 * @return void
 	 */
 	public function on_logout( $user_id = 0 ) {
-		if ( $user_id ) {
+		if ( $user_id && user_can( (int) $user_id, 'edit_posts' ) ) {
 			Activity::record( 'login', 'logout', '', Activity::INFO, [ 'user' => (int) $user_id ] );
 		}
 	}
@@ -104,7 +108,9 @@ class EventLogger {
 			return;
 		}
 		$is_admin = in_array( 'administrator', (array) $user->roles, true );
-		Activity::record( 'user', 'created', $user->user_login, $is_admin ? Activity::CRITICAL : Activity::WARNING, [ 'detail' => implode( ', ', (array) $user->roles ) ] );
+		// A new customer or subscriber is routine; a new account that can edit the site is not.
+		$severity = $user->has_cap( 'edit_posts' ) ? Activity::WARNING : Activity::INFO;
+		Activity::record( 'user', 'created', $user->user_login, $is_admin ? Activity::CRITICAL : $severity, [ 'detail' => implode( ', ', (array) $user->roles ) ] );
 		if ( $is_admin ) {
 			$this->alert_new_admin( $user );
 		}

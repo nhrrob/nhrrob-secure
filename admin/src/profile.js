@@ -4,7 +4,13 @@
  * The QR code is drawn here in the browser; the secret is never sent to an
  * outside service.
  */
-import { createRoot, useState, useEffect, useRef } from '@wordpress/element';
+import {
+	createRoot,
+	render,
+	useState,
+	useEffect,
+	useRef,
+} from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { generate } from 'lean-qr';
@@ -499,6 +505,11 @@ function App() {
 document.addEventListener( 'DOMContentLoaded', () => {
 	const el = document.getElementById( 'nhrrob-secure-2fa-app' );
 	if ( el ) {
-		createRoot( el ).render( <App /> );
+		// createRoot() arrived in WordPress 6.2; render() covers 6.0 and 6.1.
+		if ( createRoot ) {
+			createRoot( el ).render( <App /> );
+		} else {
+			render( <App />, el );
+		}
 	}
 } );

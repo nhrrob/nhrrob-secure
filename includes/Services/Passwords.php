@@ -36,6 +36,8 @@ class Passwords {
 		add_action( 'profile_update', [ $this, 'on_profile_update' ], 10, 2 );
 		add_action( 'after_password_reset', [ $this, 'mark_changed' ] );
 		add_action( 'user_register', [ $this, 'mark_changed' ] );
+		// WordPress 6.2+: also covers passwords set by WP-CLI, WooCommerce and other code.
+		add_action( 'wp_set_password', [ $this, 'on_set_password' ], 10, 2 );
 		if ( ! Settings::safe_mode() ) {
 			add_action( 'admin_init', [ $this, 'enforce' ] );
 		}
@@ -53,6 +55,18 @@ class Passwords {
 		if ( $user && $old_user instanceof \WP_User && $user->user_pass !== $old_user->user_pass ) {
 			$this->mark_changed( $user );
 		}
+	}
+
+	/**
+	 * Note a password set through wp_set_password().
+	 *
+	 * @param string $password New password (not used).
+	 * @param int    $user_id  User id.
+	 * @return void
+	 */
+	public function on_set_password( $password, $user_id ) {
+		unset( $password );
+		$this->mark_changed( (int) $user_id );
 	}
 
 	/**
@@ -127,7 +141,8 @@ class Passwords {
 	public function enforce() {
 		global $pagenow;
 		$user = wp_get_current_user();
-		if ( ! $user->exists() || wp_doing_ajax() || ! self::user_must_change( $user ) ) {
+		// Form handlers and uploads are left alone: redirecting them would lose what was submitted.
+		if ( ! $user->exists() || wp_doing_ajax() || in_array( $pagenow, [ 'admin-post.php', 'async-upload.php' ], true ) || ! self::user_must_change( $user ) ) {
 			return;
 		}
 		add_action(

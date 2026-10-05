@@ -21,8 +21,8 @@ class FirewallTest extends TestCase {
 	}
 
 	public function testEveryRuleIsAValidPattern() {
-		foreach ( Firewall::rules() as $id => $rule ) {
-			$this->assertNotFalse( @preg_match( $rule[2], '' ), "Rule $id does not compile" );
+		foreach ( Firewall::patterns() as $id => $rule ) {
+			$this->assertNotFalse( @preg_match( $rule[1], '' ), "Rule $id does not compile" );
 		}
 	}
 
@@ -101,5 +101,24 @@ class FirewallTest extends TestCase {
 		foreach ( $hostile as $request ) {
 			$this->assertSame( $request[2], Firewall::match( $request[0], $request[1] ), 'Missed: ' . $request[0] . '?' . $request[1] );
 		}
+	}
+
+	/**
+	 * Comment runs between SQL keywords must neither hide a payload nor make
+	 * the pattern give up on a long decoy.
+	 */
+	public function testCommentPaddingCannotHideOrStallTheSqlRule() {
+		$this->assertSame( 'sqli', Firewall::match( '/', 'id=1 union/**/select/**/1,2,3' ) );
+		$this->assertSame( 'sqli', Firewall::match( '/', 'id=1 union /* a */ /* b */ all /*c*/ select null' ) );
+
+		$decoy = 'q=union' . str_repeat( '/* x */ ', 20000 ) . 'nothing&id=1 union select 1,2';
+		$start = microtime( true );
+		$this->assertSame( 'sqli', Firewall::match( '/', $decoy ) );
+		$this->assertLessThan( 1.0, microtime( true ) - $start );
+
+		// An unterminated comment after "union" is still handled quickly.
+		$start = microtime( true );
+		Firewall::match( '/', 'q=union' . str_repeat( '/* x ', 50000 ) );
+		$this->assertLessThan( 1.0, microtime( true ) - $start );
 	}
 }

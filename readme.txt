@@ -28,9 +28,9 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 
 **Login**
 
-* **Limit login attempts.** An address is locked out after repeated failures, with lockouts that get longer for repeat offenders. See who is locked out and unlock them with one click.
+* **Limit login attempts.** An address is locked out after repeated failures, with lockouts that get longer for repeat offenders. IPv6 visitors are counted per network, and a burst of parallel guesses is counted in full. See who is locked out and unlock them with one click.
 * **Move the sign-in page.** Choose your own login address; `wp-login.php` and `wp-admin` then answer "Not found" to anyone who is not signed in. The new address is tested and emailed to you before it takes effect.
-* **Two-factor authentication.** Authenticator app (Google Authenticator, Authy, 1Password and others), passkeys, or emailed codes, with recovery codes. Users set it up on their profile and must prove it works before it switches on. Require it for the roles you choose, with a grace period.
+* **Two-factor authentication.** Authenticator app (Google Authenticator, Authy, 1Password and others), passkeys, or emailed codes, with recovery codes. Users set it up on their profile and must prove it works before it switches on. Wrong codes are counted per account, so a code cannot be guessed by starting over, and the account's owner is emailed when someone has their password. Require it for the roles you choose, with a grace period.
 * **Trusted browsers.** Optionally let users skip the second step on a browser for 7, 30 or 90 days.
 * **Two-factor outside wp-admin.** The `[nhrrob_secure_2fa]` shortcode and WooCommerce's "Account details" page let customers and members enrol.
 * **Generic sign-in errors**, so the form does not confirm that a username exists.
@@ -39,14 +39,14 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 **Users & Sessions**
 
 * Every user with their role, two-factor status, last sign-in and active sessions.
-* Sign out one user or everyone else, reset a user's two-factor, and sign out idle users automatically.
+* Sign out one user or everyone else, reset a user's two-factor, and automatically sign out idle users who can work in the dashboard (customers and subscribers are left alone).
 * **Password expiry** for administrators and editors, and **"require a new password"** for one user, a role or everyone.
 
 **Firewall**
 
 * **Address rules** for IPv4 and IPv6, single addresses or ranges. Allowed addresses skip every rule and are never locked out.
 * **Request filter** for probing requests: path traversal, hunts for config and backup files, and SQL or script fragments in the address. It starts in log-only mode so you can see what it would refuse, and any match can be allowed with one click. It checks the address of visitors who are not signed in; checking submitted forms is optional and limited to rules that normal writing cannot trigger.
-* **Probe lockout.** An address that keeps asking for files that do not exist (`.php`, `.env`, backups) is locked out of the whole site. Broken links and missing images do not count.
+* **Probe lockout.** An address that keeps asking for files that do not exist (`.php`, `.env`, backups) is locked out of the public site; the sign-in form stays reachable. Broken links, missing images and requests triggered from other websites do not count.
 * **Country rule** for the sign-in page or the whole site (when your site is behind Cloudflare) and **user-agent rules**.
 
 **Hardening**
@@ -68,7 +68,7 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 
 **Activity**
 
-* Sign-ins, lockouts, user and role changes, plugin and theme changes, changes to critical site settings, and what the firewall refused.
+* Sign-ins of users who can edit the site, lockouts, user and role changes, plugin and theme changes, changes to critical site settings, and what the firewall refused. Routine entries make room first, so a busy shop or an attack cannot push the important ones out.
 * Search, filter by type and importance, export to CSV. Bursts are folded into one entry.
 * Email alerts for a new administrator, a new vulnerability, a new scan finding or a burst of lockouts, and an optional weekly summary.
 
@@ -190,7 +190,7 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 = 2.0.0 - 05/10/2026 =
 - New: a rebuilt admin screen under Tools → Secure with eight sections, light and dark themes, and settings that save as you change them.
 - New: security score out of 100 from checks of the site itself, also shown in Site Health.
-- New: lockouts by address with a list you can unlock from, longer lockouts for repeat offenders, and optional emails.
+- New: lockouts by address with a list you can unlock from, longer lockouts for repeat offenders, and optional emails. Wrong two-factor codes are counted per account and per address.
 - New: two-factor setup that requires a working code, an attempt limit on the code form, per-user choice of app or email, encrypted secrets, and a grace period for required roles.
 - New: passkeys as a second step, trusted browsers, and two-factor setup outside wp-admin (shortcode and WooCommerce account page).
 - New: password expiry and "require a new password" for a user, a role or everyone.

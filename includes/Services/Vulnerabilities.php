@@ -28,6 +28,7 @@ class Vulnerabilities {
 	const API   = 'https://www.wpvulnerability.net/';
 	const CRON  = 'nhrrob_secure_vulnerability_check';
 	const BATCH = 5;
+	const LOCK  = 'nhrrob_secure_vuln_lock';
 
 	/**
 	 * Queue everything installed for checking.
@@ -65,6 +66,16 @@ class Vulnerabilities {
 	 */
 	public static function step() {
 		$run = Scan::get( 'vuln_run' );
+		// The browser and the daily cron can both be stepping the same run. Whoever comes
+		// second waits its turn, so no item is looked up twice or reported twice.
+		if ( is_array( $run ) && get_transient( self::LOCK ) ) {
+			return [
+				'running' => true,
+				'done'    => $run['total'] - count( $run['queue'] ),
+				'total'   => $run['total'],
+			];
+		}
+		set_transient( self::LOCK, 1, MINUTE_IN_SECONDS );
 		if ( ! is_array( $run ) ) {
 			$run = self::start();
 		}
@@ -72,6 +83,9 @@ class Vulnerabilities {
 		for ( $i = 0; $i < self::BATCH && $run['queue']; $i++ ) {
 			$item   = array_shift( $run['queue'] );
 			$result = self::check_item( $item );
+			if ( $result['failed'] ) {
+				$run['failed'] = ( isset( $run['failed'] ) ? (int) $run['failed'] : 0 ) + 1;
+			}
 			if ( $result['closed'] ) {
 				$run['closed'][] = $item[3];
 			}
@@ -80,6 +94,7 @@ class Vulnerabilities {
 			}
 		}
 
+		delete_transient( self::LOCK );
 		if ( $run['queue'] ) {
 			Scan::set( 'vuln_run', $run );
 			return [
@@ -101,7 +116,7 @@ class Vulnerabilities {
 	 * Look one item up.
 	 *
 	 * @param array $item [ type, slug, version, name ].
-	 * @return array { found: array, closed: bool }
+	 * @return array { found: array, closed: bool, failed: bool }
 	 */
 	private static function check_item( array $item ) {
 		list( $type, $slug, $version, $name ) = $item;
@@ -111,8 +126,14 @@ class Vulnerabilities {
 		$out      = [
 			'found'  => [],
 			'closed' => false,
+			'failed' => false,
 		];
-		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+		// No answer, or a server error, is not the same as "nothing known": say so.
+		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) >= 500 ) {
+			$out['failed'] = true;
+			return $out;
+		}
+		if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
 			return $out;
 		}
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -190,6 +211,8 @@ class Vulnerabilities {
 	private static function finish( array $run ) {
 		$previous = Scan::get( 'vuln' );
 		$seen     = isset( $previous['seen'] ) && is_array( $previous['seen'] ) ? $previous['seen'] : [];
+		$failed   = isset( $run['failed'] ) ? (int) $run['failed'] : 0;
+		$found_id = array_values( array_unique( wp_list_pluck( $run['found'], 'id' ) ) );
 
 		usort(
 			$run['found'],
@@ -213,8 +236,11 @@ class Vulnerabilities {
 				'total'   => $run['total'],
 				'items'   => array_slice( $run['found'], 0, 100 ),
 				'closed'  => array_slice( $run['closed'], 0, 50 ),
-				// Remembered so the same finding is announced once.
-				'seen'    => array_slice( array_values( array_unique( wp_list_pluck( $run['found'], 'id' ) ) ), 0, 300 ),
+				// How many lookups got no answer; the result is incomplete when this is not zero.
+				'failed'  => $failed,
+				// Remembered so the same finding is announced once. After an incomplete run the
+				// earlier list is kept too, or the next good run would announce old findings again.
+				'seen'    => array_slice( $failed ? array_values( array_unique( array_merge( $found_id, $seen ) ) ) : $found_id, 0, 300 ),
 			]
 		);
 
@@ -268,6 +294,7 @@ class Vulnerabilities {
 			'total'   => isset( $last['total'] ) ? (int) $last['total'] : 0,
 			'items'   => isset( $last['items'] ) ? $last['items'] : [],
 			'closed'  => isset( $last['closed'] ) ? $last['closed'] : [],
+			'failed'  => isset( $last['failed'] ) ? (int) $last['failed'] : 0,
 			'running' => is_array( $run ),
 		];
 	}

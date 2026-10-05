@@ -24,8 +24,9 @@ use NHRRob\Secure\Services\TwoFactor;
  * POST /2fa/forget-browsers   end "don't ask again" on every browser
  *
  * Every route acts on the signed-in user only; no route takes a user id.
- * Switching off and re-issuing codes ask for the password again, so a stolen
- * session alone cannot weaken the account.
+ * Switching off and re-issuing codes ask for the password again, and a second
+ * step that is on cannot be replaced without switching it off first — so a
+ * stolen session alone can neither weaken the account nor swap in its own factor.
  */
 class TwoFactorController extends RestController {
 
@@ -79,6 +80,10 @@ class TwoFactorController extends RestController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function begin( $request ) {
+		$locked = $this->already_on();
+		if ( $locked ) {
+			return $locked;
+		}
 		$result = TwoFactor::begin( wp_get_current_user(), (string) $request['method'] );
 		return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
 	}
@@ -90,12 +95,29 @@ class TwoFactorController extends RestController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function confirm( $request ) {
+		$locked = $this->already_on();
+		if ( $locked ) {
+			return $locked;
+		}
 		$user   = wp_get_current_user();
 		$result = TwoFactor::confirm( $user, (string) $request['code'] );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 		return rest_ensure_response( array_merge( TwoFactor::status( $user ), $result ) );
+	}
+
+	/**
+	 * Setup is only for an account without a second step. Replacing one goes
+	 * through "switch off", which asks for the password.
+	 *
+	 * @return \WP_Error|null
+	 */
+	private function already_on() {
+		if ( ! TwoFactor::is_on( get_current_user_id() ) ) {
+			return null;
+		}
+		return new \WP_Error( 'nhrrob_secure_2fa_on', __( 'Two-factor is already on for your account. Switch it off first (that needs your password), then set up the new method.', 'nhrrob-secure' ), [ 'status' => 409 ] );
 	}
 
 	/**
@@ -111,7 +133,7 @@ class TwoFactorController extends RestController {
 		if ( $tries >= 5 ) {
 			return new \WP_Error( 'nhrrob_secure_wait', __( 'Too many wrong passwords. Try again in 15 minutes.', 'nhrrob-secure' ), [ 'status' => 429 ] );
 		}
-		if ( ! wp_check_password( (string) $request['password'], $user->user_pass, $user->ID ) ) {
+		if ( ! wp_check_password( wp_slash( (string) $request['password'] ), $user->user_pass, $user->ID ) ) {
 			set_transient( $key, $tries + 1, 15 * MINUTE_IN_SECONDS );
 			return new \WP_Error( 'nhrrob_secure_password', __( 'That is not your account password.', 'nhrrob-secure' ), [ 'status' => 403 ] );
 		}
@@ -145,6 +167,10 @@ class TwoFactorController extends RestController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function passkey( $request ) {
+		$locked = $this->already_on();
+		if ( $locked ) {
+			return $locked;
+		}
 		$user   = wp_get_current_user();
 		$result = TwoFactor::confirm_passkey( $user, (string) $request['client'], (string) $request['attestation'], (string) $request['label'] );
 		if ( is_wp_error( $result ) ) {

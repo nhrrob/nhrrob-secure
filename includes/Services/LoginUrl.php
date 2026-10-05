@@ -134,6 +134,13 @@ class LoginUrl {
 	 * @return string
 	 */
 	public function rewrite_redirect( $location ) {
+		// Only this site's own wp-login.php. Another site's address that merely contains
+		// "wp-login.php" (in its path or in a query value) is left as it is.
+		$host = wp_parse_url( $location, PHP_URL_HOST );
+		$path = (string) wp_parse_url( $location, PHP_URL_PATH );
+		if ( ( $host && strtolower( $host ) !== strtolower( (string) wp_parse_url( site_url(), PHP_URL_HOST ) ) ) || 'wp-login.php' !== basename( $path ) ) {
+			return $location;
+		}
 		return $this->rewrite( $location );
 	}
 
@@ -158,6 +165,10 @@ class LoginUrl {
 		$pagenow = 'wp-login.php';
 
 		nocache_headers();
+		// Page-cache plugins read this constant; a cached sign-in form would break the cookie test.
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- the constant caching plugins agree on.
+		}
 		require_once ABSPATH . 'wp-login.php';
 		exit;
 	}

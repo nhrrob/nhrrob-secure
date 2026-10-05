@@ -4,7 +4,7 @@
  * React and every @wordpress/* package are provided by WordPress and stay out
  * of the bundle.
  */
-import { createRoot } from '@wordpress/element';
+import { createRoot, render } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 
 import App from './app';
@@ -36,6 +36,11 @@ if ( boot.restRoot ) {
 document.addEventListener( 'DOMContentLoaded', () => {
 	const el = document.getElementById( 'nhrrob-secure-app' );
 	if ( el ) {
-		createRoot( el ).render( <App boot={ boot } /> );
+		// createRoot() arrived in WordPress 6.2; render() covers 6.0 and 6.1.
+		if ( createRoot ) {
+			createRoot( el ).render( <App boot={ boot } /> );
+		} else {
+			render( <App boot={ boot } />, el );
+		}
 	}
 } );

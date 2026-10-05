@@ -172,12 +172,103 @@ class RulesTest extends TestCase {
 		}
 		$result = LoginGuard::count_probe( $entry, 1010 );
 		$this->assertTrue( $result['locked'] );
-		$this->assertSame( 1010 + 3600, $result['entry']['x'] );
-		$this->assertSame( 1, $result['entry']['p'] );
+		// A probe lock keeps the address off the site, not off the sign-in form.
+		$this->assertSame( 1010 + 3600, $result['entry']['px'] );
+		$this->assertSame( 0, $result['entry']['x'] );
 		// Slow probing never adds up.
 		$slow = LoginGuard::count_probe( [ 'c' => 0, 'u' => [], 'l' => 0, 'x' => 0, 'v' => 0, 'q' => 9, 'ql' => 1000 ], 1000 + 601 );
 		$this->assertFalse( $slow['locked'] );
 		$this->assertSame( 1, $slow['entry']['q'] );
+	}
+
+	public function testReviewFixes() {
+		// A successful sign-in forgives only its own username, so one valid account cannot reset the count for another.
+		$entry = [ 'c' => 4, 'u' => [ 'robin' => 3, 'mallory' => 1 ], 'l' => 1000, 'x' => 0, 'v' => 0 ];
+		$kept  = LoginGuard::forgive( $entry, 'mallory' );
+		$this->assertSame( 3, $kept['c'] );
+		$this->assertSame( [ 'robin' => 3 ], $kept['u'] );
+		$this->assertNull( LoginGuard::forgive( [ 'c' => 1, 'u' => [ 'mallory' => 1 ], 'l' => 1000, 'x' => 0, 'v' => 0 ], 'mallory' ) );
+
+		// IPv6 visitors are counted per /64, so rotating the last 64 bits buys nothing.
+		$this->assertSame( LoginGuard::key( '2001:db8:1:2:aaaa::1' ), LoginGuard::key( '2001:db8:1:2:ffff:1:2:3' ) );
+		$this->assertNotSame( LoginGuard::key( '2001:db8:1:2::1' ), LoginGuard::key( '2001:db8:1:3::1' ) );
+		$this->assertSame( '203.0.113.9', LoginGuard::key( '203.0.113.9' ) );
+
+		// A flood of other addresses cannot push a running lockout out of the list.
+		$entries = [ 'locked' => [ 'c' => 5, 'u' => [], 'l' => 100, 'x' => 99999, 'v' => 1 ] ];
+		for ( $i = 0; $i < LoginGuard::MAX_ENTRIES + 50; $i++ ) {
+			$entries[ 'ip' . $i ] = [ 'c' => 1, 'u' => [], 'l' => 5000 + $i, 'x' => 0, 'v' => 0 ];
+		}
+		$pruned = LoginGuard::prune( $entries, 6000 );
+		$this->assertCount( LoginGuard::MAX_ENTRIES, $pruned );
+		$this->assertArrayHasKey( 'locked', $pruned );
+
+		// Wrong second-step codes add up per account, across challenges.
+		$state = [];
+		for ( $i = 1; $i <= 4; $i++ ) {
+			$result = \NHRRob\Secure\Services\TwoFactor::count_wrong_code( $state, 1000 + $i );
+			$state  = $result['state'];
+			$this->assertFalse( $result['held'] );
+		}
+		$result = \NHRRob\Secure\Services\TwoFactor::count_wrong_code( $state, 1005 );
+		$this->assertTrue( $result['held'] );
+		$this->assertSame( 1005 + 900, $result['state']['x'] );
+		// The next hold is longer.
+		$state = $result['state'];
+		for ( $i = 1; $i <= 5; $i++ ) {
+			$result = \NHRRob\Secure\Services\TwoFactor::count_wrong_code( $state, 3000 + $i );
+			$state  = $result['state'];
+		}
+		$this->assertSame( 3005 + 1800, $state['x'] );
+
+		// The scan schedule is read from the recurring event, not from a one-off tick of a run in progress.
+		$crons = [
+			100 => [ 'nhrrob_secure_scan' => [ 'k' => [ 'schedule' => false, 'args' => [] ] ] ],
+			900 => [ 'nhrrob_secure_scan' => [ 'k' => [ 'schedule' => 'weekly', 'args' => [], 'interval' => 604800 ] ] ],
+		];
+		$this->assertSame( 'weekly', \NHRRob\Secure\Services\Schedule::recurrence( $crons ) );
+		$this->assertSame( 'off', \NHRRob\Secure\Services\Schedule::recurrence( [ 100 => $crons[100] ] ) );
+
+		// Only what an update touched is forgotten by the file-change monitor.
+		$monitor = '\NHRRob\Secure\Services\Monitor';
+		$this->assertSame( [ 'plugin:akismet', 'plugin:woocommerce' ], $monitor::touched( [ 'type' => 'plugin', 'plugins' => [ 'akismet/akismet.php', 'woocommerce/woocommerce.php' ] ] ) );
+		$this->assertSame( [ 'theme:astra' ], $monitor::touched( [ 'type' => 'theme', 'themes' => [ 'astra' ] ] ) );
+		$this->assertSame( [ 'plugin:new-plugin' ], $monitor::touched( [ 'type' => 'plugin', 'action' => 'install' ], 'new-plugin' ) );
+		$this->assertSame( [], $monitor::touched( [ 'type' => 'translation', 'translations' => [ [ 'slug' => 'akismet' ] ] ] ) );
+		$this->assertSame( [], $monitor::touched( [ 'type' => 'core' ] ) );
+
+		// A quarantined file keeps no ".php" in its name.
+		$this->assertSame( 'uploads/2024/shell_php.suspected', CodeScan::quarantine_name( 'uploads/2024/shell.php' ) );
+		$this->assertSame( 'x_php_jpg.suspected', CodeScan::quarantine_name( 'x.php.jpg' ) );
+		$this->assertStringNotContainsString( '.php', CodeScan::quarantine_name( 'plugins/a.b/c.inc.php' ) === 'plugins/a.b/c_inc_php.suspected' ? 'ok' : '.php' );
+
+		// A request from Cloudflare is recognised without being told; nobody else's header is believed.
+		$this->assertSame( '8.8.8.8', Ip::resolve( '173.245.48.5', [ 'cf' => '8.8.8.8' ], 'direct', [] ) );
+		$this->assertSame( '198.51.100.1', Ip::resolve( '198.51.100.1', [ 'cf' => '8.8.8.8' ], 'direct', [] ) );
+
+		// Uploads check: a 404 proves nothing on a server whose rules are not ours.
+		$files = '\NHRRob\Secure\Services\FileProtection';
+		$this->assertSame( 'protected', $files::uploads_state( 403, 'nginx' ) );
+		$this->assertSame( 'unknown', $files::uploads_state( 404, 'nginx' ) );
+		$this->assertSame( 'open', $files::uploads_state( 404, 'apache' ) );
+		$this->assertSame( 'open', $files::uploads_state( 200, 'nginx' ) );
+		$this->assertSame( 'unknown', $files::uploads_state( 0, 'apache' ) );
+
+		// Rules that would shut out their own author.
+		$firewall = '\NHRRob\Secure\Services\Firewall';
+		$this->assertSame( 'Chrome', $firewall::blocked_agent( 'Mozilla/5.0 Chrome/140', [ 'curl', 'Chrome' ] ) );
+		$this->assertSame( '', $firewall::blocked_agent( 'Mozilla/5.0 Firefox/140', [ 'curl' ] ) );
+		$this->assertTrue( $firewall::country_refused( 'BD', 'allow', [ 'US' ] ) );
+		$this->assertFalse( $firewall::country_refused( 'BD', 'allow', [ 'BD' ] ) );
+		$this->assertTrue( $firewall::country_refused( 'BD', 'block', [ 'BD' ] ) );
+		$this->assertFalse( $firewall::country_refused( '', 'allow', [ 'US' ] ) );
+
+		// Very large form posts are not built into one string first.
+		$this->assertSame( 20, strlen( $firewall::flatten( [ 'a' => str_repeat( 'x', 500 ), 'b' => [ 'c' => 'y' ] ], 20 ) ) );
+
+		$this->assertSame( 3, \NHRRob\Secure\Core\Upgrade::severity( 'critical' ) );
+		$this->assertSame( 2, \NHRRob\Secure\Core\Upgrade::severity( '2' ) );
+		$this->assertSame( 1, \NHRRob\Secure\Core\Upgrade::severity( 'info' ) );
 	}
 
 	public function testFormDataRules() {

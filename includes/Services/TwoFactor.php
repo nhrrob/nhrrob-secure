@@ -33,17 +33,18 @@ class TwoFactor {
 	const META_STEP     = 'nhrrob_secure_2fa_last_step';
 	const META_DUE      = 'nhrrob_secure_2fa_due';
 	const META_TRUSTED  = 'nhrrob_secure_2fa_trusted';
+	const META_FAILS    = 'nhrrob_secure_2fa_fails';
 
 	const ACTION       = 'nhrrob_secure_2fa';
 	const MAX_ATTEMPTS = 5;
 	const CHALLENGE    = 10 * MINUTE_IN_SECONDS;
 
 	/**
-	 * Set when the current request authenticated with an application password.
+	 * Id of the user this request authenticated with an application password (0 for none).
 	 *
-	 * @var bool
+	 * @var int
 	 */
-	private $app_password = false;
+	private $app_password_user = 0;
 
 	/**
 	 * Register the hooks.
@@ -51,23 +52,31 @@ class TwoFactor {
 	 * @return void
 	 */
 	public function hooks() {
-		if ( ! Settings::get( 'twofa_enabled' ) ) {
+		$enabled = (bool) Settings::get( 'twofa_enabled' );
+		// Two-factor state is user meta, shared by every site of a network. A user who
+		// enrolled on one site must be challenged on all of them, or signing in through
+		// a site where the feature is off would skip the second step.
+		if ( ! $enabled && ! is_multisite() ) {
 			return;
 		}
-		add_action( 'show_user_profile', [ $this, 'render_profile' ] );
-		add_action( 'edit_user_profile', [ $this, 'render_profile' ] );
-		// Outside wp-admin: a shortcode for any page, and WooCommerce's "Account details".
-		add_shortcode( 'nhrrob_secure_2fa', [ $this, 'shortcode' ] );
-		add_action( 'woocommerce_after_edit_account_form', [ $this, 'render_front' ] );
+		if ( $enabled ) {
+			add_action( 'show_user_profile', [ $this, 'render_profile' ] );
+			add_action( 'edit_user_profile', [ $this, 'render_profile' ] );
+			// Outside wp-admin: a shortcode for any page, and WooCommerce's "Account details".
+			add_shortcode( 'nhrrob_secure_2fa', [ $this, 'shortcode' ] );
+			add_action( 'woocommerce_after_edit_account_form', [ $this, 'render_front' ] );
+		}
 
 		if ( Settings::safe_mode() ) {
 			return;
 		}
 		add_action( 'application_password_did_authenticate', [ $this, 'flag_app_password' ] );
-		add_filter( 'authenticate', [ $this, 'challenge' ], 50 );
+		add_filter( 'authenticate', [ $this, 'challenge' ], 50, 3 );
 		add_action( 'login_form_' . self::ACTION, [ $this, 'handle_challenge' ] );
 		add_filter( 'wp_login_errors', [ $this, 'expired_notice' ] );
-		add_action( 'admin_init', [ $this, 'enforce' ] );
+		if ( $enabled ) {
+			add_action( 'admin_init', [ $this, 'enforce' ] );
+		}
 	}
 
 	// ---- State. ----
@@ -231,7 +240,7 @@ class TwoFactor {
 		update_user_meta( $user->ID, self::META_ENABLED, 1 );
 		delete_user_meta( $user->ID, self::META_PENDING );
 		delete_user_meta( $user->ID, self::META_DUE );
-		Activity::record( 'user', '2fa_on', $user->user_login, Activity::INFO );
+		self::factor_changed( $user );
 
 		return [ 'recovery_codes' => self::new_recovery_codes( $user->ID ) ];
 	}
@@ -259,7 +268,7 @@ class TwoFactor {
 		delete_user_meta( $user->ID, self::META_PENDING );
 		delete_user_meta( $user->ID, self::META_SECRET );
 		delete_user_meta( $user->ID, self::META_DUE );
-		Activity::record( 'user', '2fa_on', $user->user_login, Activity::INFO );
+		self::factor_changed( $user );
 
 		return [ 'recovery_codes' => self::new_recovery_codes( $user->ID ) ];
 	}
@@ -271,10 +280,33 @@ class TwoFactor {
 	 * @return void
 	 */
 	public static function disable( $user ) {
-		foreach ( [ self::META_ENABLED, self::META_METHOD, self::META_SECRET, self::META_RECOVERY, self::META_PENDING, self::META_STEP, self::META_DUE, self::META_TRUSTED, Passkeys::META ] as $key ) {
+		foreach ( [ self::META_ENABLED, self::META_METHOD, self::META_SECRET, self::META_RECOVERY, self::META_PENDING, self::META_STEP, self::META_DUE, self::META_TRUSTED, self::META_FAILS, Passkeys::META ] as $key ) {
 			delete_user_meta( $user->ID, $key );
 		}
 		Activity::record( 'user', '2fa_off', $user->user_login, Activity::WARNING );
+		self::notify_user(
+			$user,
+			__( 'Two-factor was switched off for your account', 'nhrrob-secure' ),
+			[ __( 'Two-factor authentication is now off for your account. If you did not do this, change your password and contact the site administrator.', 'nhrrob-secure' ) ]
+		);
+	}
+
+	/**
+	 * After a second step was set up or replaced: forget trusted browsers and
+	 * failure counts, log it and tell the account's owner.
+	 *
+	 * @param \WP_User $user User.
+	 * @return void
+	 */
+	private static function factor_changed( $user ) {
+		delete_user_meta( $user->ID, self::META_TRUSTED );
+		delete_user_meta( $user->ID, self::META_FAILS );
+		Activity::record( 'user', '2fa_on', $user->user_login, Activity::INFO );
+		self::notify_user(
+			$user,
+			__( 'Two-factor was set up for your account', 'nhrrob-secure' ),
+			[ __( 'A second sign-in step was just set up or replaced for your account. If you did not do this, change your password and contact the site administrator.', 'nhrrob-secure' ) ]
+		);
 	}
 
 	/**
@@ -366,23 +398,152 @@ class TwoFactor {
 	// ---- Sign-in challenge. ----
 
 	/**
-	 * Note that this request used an application password.
+	 * Note which user this request authenticated with an application password.
 	 *
+	 * @param \WP_User $user The authenticated user.
 	 * @return void
 	 */
-	public function flag_app_password() {
-		$this->app_password = true;
+	public function flag_app_password( $user ) {
+		$this->app_password_user = $user instanceof \WP_User ? (int) $user->ID : 0;
+	}
+
+	/**
+	 * Pure counting of wrong second-step codes for one account. Five within
+	 * fifteen minutes put the account's second step on hold, longer each time,
+	 * whatever address or challenge they came from.
+	 *
+	 * @param array $state c: count, t: window start, x: held until, v: level.
+	 * @param int   $now   Current time.
+	 * @return array { state: array, held: bool }
+	 */
+	public static function count_wrong_code( array $state, $now ) {
+		$state = array_merge(
+			[
+				'c' => 0,
+				't' => 0,
+				'x' => 0,
+				'v' => 0,
+			],
+			$state
+		);
+		if ( $now - (int) $state['t'] > 15 * MINUTE_IN_SECONDS ) {
+			$state['c'] = 0;
+			$state['t'] = $now;
+		}
+		++$state['c'];
+		$held = $state['c'] >= self::MAX_ATTEMPTS;
+		if ( $held ) {
+			$state['x'] = $now + min( DAY_IN_SECONDS, 15 * MINUTE_IN_SECONDS * pow( 2, (int) $state['v'] ) );
+			$state['v'] = (int) $state['v'] + 1;
+			$state['c'] = 0;
+		}
+		return [
+			'state' => $state,
+			'held'  => $held,
+		];
+	}
+
+	/**
+	 * Seconds an account's second step is on hold (0 when it is not).
+	 *
+	 * @param int $user_id User id.
+	 * @return int
+	 */
+	public static function held_for( $user_id ) {
+		$state = get_user_meta( $user_id, self::META_FAILS, true );
+		return is_array( $state ) && isset( $state['x'] ) ? max( 0, (int) $state['x'] - time() ) : 0;
+	}
+
+	/**
+	 * Record a wrong second-step code. Every wrong code counts — against the
+	 * account, and against the address like a failed sign-in.
+	 *
+	 * @param \WP_User $user User.
+	 * @return bool Whether the account is now on hold.
+	 */
+	private static function wrong_code( $user ) {
+		$state  = get_user_meta( $user->ID, self::META_FAILS, true );
+		$result = self::count_wrong_code( is_array( $state ) ? $state : [], time() );
+		update_user_meta( $user->ID, self::META_FAILS, $result['state'] );
+
+		if ( Settings::get( 'limit_login' ) ) {
+			LoginGuard::register_failure( $user->user_login );
+		}
+		if ( $result['held'] ) {
+			$wait = human_time_diff( time(), (int) $result['state']['x'] );
+			Activity::record(
+				'login',
+				'2fa_failed',
+				$user->user_login,
+				Activity::CRITICAL,
+				[
+					'user'   => 0,
+					'detail' => $wait,
+				]
+			);
+			self::notify_user(
+				$user,
+				__( 'Someone has your password', 'nhrrob-secure' ),
+				[
+					__( 'Somebody entered your correct password and then several wrong two-factor codes. Two-factor stopped them, and the second step for your account is paused for a while.', 'nhrrob-secure' ),
+					__( 'If this was not you, change your password now.', 'nhrrob-secure' ),
+				]
+			);
+		}
+		return $result['held'];
+	}
+
+	/**
+	 * Email a user about a change to, or an attack on, their own second step.
+	 *
+	 * @param \WP_User $user    User.
+	 * @param string   $subject Subject, without the site name.
+	 * @param string[] $lines   Body lines.
+	 * @return void
+	 */
+	private static function notify_user( $user, $subject, array $lines ) {
+		wp_mail(
+			$user->user_email,
+			sprintf( '[%s] %s', wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ), $subject ),
+			implode( "\n\n", $lines )
+		);
 	}
 
 	/**
 	 * After a correct password, hold the sign-in until the second step is done.
 	 *
-	 * @param mixed $user Result of earlier authenticate filters.
+	 * @param mixed  $user     Result of earlier authenticate filters.
+	 * @param string $username Submitted username.
+	 * @param string $password Submitted password.
 	 * @return mixed
 	 */
-	public function challenge( $user ) {
-		if ( ! $user instanceof \WP_User || $this->app_password || ! self::is_on( $user->ID ) ) {
+	public function challenge( $user, $username = '', $password = '' ) {
+		if ( ! $user instanceof \WP_User || $this->app_password_user === (int) $user->ID || ! self::is_on( $user->ID ) ) {
 			return $user;
+		}
+		// Only a submitted password starts a challenge: an existing session revisiting wp-login.php does not.
+		if ( '' === (string) $password ) {
+			return $user;
+		}
+		// Core refuses these accounts at a later priority; do not start a challenge for them.
+		if ( is_multisite() && is_user_spammy( $user ) ) {
+			return $user;
+		}
+		// A locked-out address gets no challenge, and neither does an account whose second step is on hold.
+		$locked = LoginGuard::locked_error();
+		if ( $locked ) {
+			return $locked;
+		}
+		$hold = self::held_for( $user->ID );
+		if ( $hold > 0 ) {
+			return new \WP_Error(
+				'nhrrob_secure_2fa_hold',
+				sprintf(
+					/* translators: %s: time left, e.g. "12 mins". */
+					__( 'Too many wrong two-factor codes for this account. Try again in %s.', 'nhrrob-secure' ),
+					human_time_diff( time(), time() + $hold )
+				)
+			);
 		}
 		if ( self::is_trusted_browser( $user->ID ) ) {
 			EventLogger::$login_kind = 'success_trusted';
@@ -438,7 +599,11 @@ class TwoFactor {
 		$data = '' !== $token ? get_transient( $key ) : false;
 		$user = is_array( $data ) ? get_userdata( (int) $data['u'] ) : false;
 
-		if ( ! $user ) {
+		// A challenge issued earlier is void once the address is locked out or the account is on hold.
+		if ( ! $user || LoginGuard::locked_error() || self::held_for( $user->ID ) > 0 ) {
+			if ( $user ) {
+				delete_transient( $key );
+			}
 			wp_safe_redirect( add_query_arg( 'nhrrob_secure_expired', 1, wp_login_url() ) );
 			exit;
 		}
@@ -455,6 +620,7 @@ class TwoFactor {
 			$kind = isset( $data['c'] ) && '' !== $passkey['sig'] && Passkeys::verify( $user->ID, $data['c'], $passkey ) ? 'passkey' : $this->check_code( $user, $code, $data );
 			if ( $kind ) {
 				delete_transient( $key );
+				delete_user_meta( $user->ID, self::META_FAILS );
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- same one-time token as the code itself.
 				if ( ! empty( $_POST['nhrrob_secure_trust'] ) ) {
 					self::trust_browser( $user->ID );
@@ -462,11 +628,11 @@ class TwoFactor {
 				$this->complete( $user, $data, $kind );
 			}
 
+			// Counted per account and per address, so a fresh challenge does not buy more guesses.
+			$held = self::wrong_code( $user );
 			++$data['a'];
-			if ( $data['a'] >= self::MAX_ATTEMPTS ) {
+			if ( $held || $data['a'] >= self::MAX_ATTEMPTS || LoginGuard::locked_error() ) {
 				delete_transient( $key );
-				Activity::record( 'login', '2fa_failed', $user->user_login, Activity::WARNING, [ 'user' => 0 ] );
-				LoginGuard::register_failure( $user->user_login );
 				wp_safe_redirect( add_query_arg( 'nhrrob_secure_expired', 1, wp_login_url() ) );
 				exit;
 			}
@@ -487,7 +653,7 @@ class TwoFactor {
 	public function expired_notice( $errors ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a flag that only selects a message.
 		if ( isset( $_GET['nhrrob_secure_expired'] ) && $errors instanceof \WP_Error ) {
-			$errors->add( 'nhrrob_secure_expired', __( 'The two-factor step expired or had too many wrong codes. Sign in again.', 'nhrrob-secure' ), 'message' );
+			$errors->add( 'nhrrob_secure_expired', __( 'The two-factor step expired or had too many wrong codes. Sign in again; after several wrong codes you have to wait first.', 'nhrrob-secure' ), 'message' );
 		}
 		return $errors;
 	}
@@ -741,7 +907,8 @@ class TwoFactor {
 	public function enforce() {
 		global $pagenow;
 		$user = wp_get_current_user();
-		if ( ! $user->exists() || wp_doing_ajax() || self::is_on( $user->ID ) || ! self::is_required( $user ) ) {
+		// Form handlers and uploads are left alone: redirecting them would lose what was submitted.
+		if ( ! $user->exists() || wp_doing_ajax() || in_array( $pagenow, [ 'admin-post.php', 'async-upload.php' ], true ) || self::is_on( $user->ID ) || ! self::is_required( $user ) ) {
 			return;
 		}
 
@@ -786,6 +953,7 @@ class TwoFactor {
 		}
 		$meta = require $asset;
 		$url  = NHRROB_SECURE_URL . '/admin/build';
+		\NHRRob\Secure\Admin\AppPage::jsx_runtime();
 		wp_enqueue_script( 'nhrrob-secure-profile', $url . '/profile.js', $meta['dependencies'], $meta['version'], true );
 		wp_set_script_translations( 'nhrrob-secure-profile', 'nhrrob-secure' );
 		wp_localize_script(

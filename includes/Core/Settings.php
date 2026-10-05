@@ -200,6 +200,18 @@ class Settings {
 	}
 
 	/**
+	 * Use these settings for the rest of this request without storing them.
+	 * Only for a request that overlaps a migration another request is running.
+	 *
+	 * @param array $settings Settings.
+	 * @return void
+	 */
+	public static function prime( array $settings ) {
+		$defaults    = self::defaults();
+		self::$cache = array_merge( $defaults, array_intersect_key( $settings, $defaults ) );
+	}
+
+	/**
 	 * Set one value without validation. For internal state only (data version,
 	 * safe mode, notices) — never for user input.
 	 *
@@ -325,6 +337,9 @@ class Settings {
 				return array_slice( array_keys( $out ), 0, 50 );
 
 			case 'password_force':
+				// Changed only by the Users screen's own route; a settings save keeps what is stored.
+				return (array) $current[ $key ];
+
 			case 'request_filter_since':
 				return (int) $current[ $key ];
 

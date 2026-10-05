@@ -360,7 +360,25 @@ export function Empty( { children } ) {
 	return <p className={ P + 'empty' }>{ children }</p>;
 }
 
-export function Loading() {
+/**
+ * "Loading…", or what went wrong when the request failed — a failed request
+ * must not leave the screen waiting forever.
+ *
+ * @param {Object} root0
+ * @param {Object} root0.error The rejected request, if any.
+ */
+export function Loading( { error } ) {
+	if ( error ) {
+		return (
+			<Note tone="warn">
+				{ error.message ||
+					__(
+						'This could not be loaded. Reload the page to try again.',
+						'nhrrob-secure'
+					) }
+			</Note>
+		);
+	}
 	return (
 		<p className={ P + 'empty' }>{ __( 'Loading…', 'nhrrob-secure' ) }</p>
 	);
@@ -419,9 +437,13 @@ export function Gauge( { score } ) {
  * @return {string} Relative time.
  */
 export function ago( ts ) {
-	return ts
+	if ( ! ts ) {
+		return __( 'never', 'nhrrob-secure' );
+	}
+	// Older WordPress versions have no humanTimeDiff(); show the date there.
+	return humanTimeDiff
 		? humanTimeDiff( new Date( ts * 1000 ) )
-		: __( 'never', 'nhrrob-secure' );
+		: dateI18n( 'M j, H:i', new Date( ts * 1000 ) );
 }
 
 /**

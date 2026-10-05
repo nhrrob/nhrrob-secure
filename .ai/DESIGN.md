@@ -39,7 +39,7 @@ Neutrals lean toward the teal accent. Semantic colours (good / warning / critica
 - **Note** — info (blue) or warn (amber) block for the one thing the owner must read.
 - **Gauge** — inline SVG ring, score in the middle; teal ≥ 80, amber ≥ 50, red below.
 - **Issue list** (Dashboard) — a coloured left edge by severity, the finding in bold, a muted detail line, a severity pill and one action.
-- **Toast** bottom-right; **Confirm dialog** for anything that ends sessions, moves the login address or renames a file.
+- **Toast** bottom-right (success 3 s, errors 12 s so the text can be read); a screen whose data cannot be loaded shows a warning note instead of an endless "Loading…"; **Confirm dialog** for anything that ends sessions, moves the login address or renames a file.
 
 ## 4. Screens
 

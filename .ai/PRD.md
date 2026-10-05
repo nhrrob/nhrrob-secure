@@ -1,6 +1,6 @@
 # PRD — Secure (Free) — slug `nhrrob-secure`
 
-Status: **1.3.3 live on WP.org (fewer than 10 active installs)** · **2.0.0 built and verified 2026-10-05, uncommitted** (Robin reviews, commits and tags; one gate item open: zip size, §4.3) · Owner: Nazmul Hasan Robin (nhrrob)
+Status: **1.3.3 live on WP.org (fewer than 10 active installs)** · **2.0.0 built and verified 2026-10-05; PR #14 (dev → main) open; independent review done and fixed the same day (§4.6)** (Robin reviews, merges and tags; one gate item open: zip size, §4.3) · Owner: Nazmul Hasan Robin (nhrrob)
 Last revised: 2026-10-05
 
 > Dev-only document. Excluded from distribution (`.distignore` + `.gitattributes export-ignore`).
@@ -254,6 +254,39 @@ Robin: "we should have all major features. we should not be less than other plug
 - Weekly email summary.
 - Network Admin screen.
 - Local country database (only if the size can be justified; today it cannot).
+
+### 4.6 Independent review and fixes (2026-10-05)
+
+Robin: "do a full review of the code changes on this branch. security performance etc with a different model. check if there is any blocker or major issues. find out the issue list and fix all." Two read-only reviews were run on other models: security (1 blocker, 10 major, 14 minor) and performance/correctness (2 blockers, 11 major, 15 minor). Everything below is fixed in the code and was checked with a real request or a unit test unless it says otherwise.
+
+**Blockers**
+1. **Two-factor codes could be guessed without limit.** Five tries per challenge, but a new sign-in issued a new challenge, and the challenge ran before the lockout check. Now every wrong code counts against the account (5 in 15 minutes pause its second step, doubling to 24 h, owner emailed) and against the address; the challenge refuses a locked address itself. Drill: the fifth wrong code across three fresh challenges ended it, and the right password then got "try again in 15 minutes".
+2. **The admin app did not load on WordPress 6.0–6.5** (the bundle needs a script WordPress ships since 6.6; `createRoot` since 6.2). The script is now provided where it is missing and the entry files fall back to `render()`. Checked on a clean WordPress 6.0 (React 17): all eight screens and the profile setup render, no console errors. "Requires at least: 6.0" stays true.
+3. **The scheduled scan cancelled itself after its first phase** (the schedule check mistook the run's own next tick for a wrong schedule). Fixed and unit tested; a phase that dies three times is skipped instead of blocking the rest.
+
+**Major**
+- A stolen session could replace the second factor → setup routes refuse while one is on; an admin cannot reset their own from the Users screen; the owner is emailed on every change.
+- Multisite: signing in through a site with two-factor off skipped the step → the challenge is hooked network-wide. Scanner is for network admins only.
+- Lockouts: parallel guesses lost counts (compare-and-swap `Core\Store`), a valid account could reset the count for another (per-username forgiveness), IPv6 rotation (per /64), live locks could be pushed out of the list (never pruned).
+- Behind a proxy with the default setting one attacker locked out everyone → Cloudflare is recognised by its address ranges without being told; behind another local proxy nothing is counted until the owner sets it, and the Dashboard says so.
+- Bot check could be used to test passwords and was skipped for two-factor users → runs before the two-factor step and answers the same either way. *(Not exercised against a live provider.)*
+- Probe lockout could be triggered from another website and blocked the sign-in form → cross-site requests are not counted; the lock applies to the public site only.
+- Quarantined files kept ".php" in their name (some servers still run them) → `shell_php.suspected`.
+- "Hide usernames" broke the editor for editors and authors → applies to visitors only; also covers `author` sent by form post.
+- Request filter: a pattern that fails to run now counts as a match; comment padding can neither hide nor stall the SQL rule (unit test with a 20,000-comment decoy).
+- Refused requests cost two option writes and an activity read each → at most one write a minute per address.
+- Activity log could be flushed by an attacker or a busy shop → sign-ins logged for users who can edit the site, refused-request rows capped at 200, routine rows make room first.
+- Idle timeout signed out shoppers → only for users who can work in the dashboard; front-end page views count as activity.
+- File-change monitor forgot everything on any update, including translations → forgets only what the update touched.
+- Scan results: concurrent writers overwrote each other → per-part compare-and-swap; one vulnerability stepper at a time.
+- Database scan looked at the first 500 candidate rows only → pages through all of them within 10 seconds, says so when it ran out of time.
+- 1.x migration: 22 queries per visitor request on a never-opened site, a short window on default settings during migration, and an interrupted run never finished → first run stamps the version once, overlapping requests work from the 1.x settings in memory, each step can be repeated. Drill on a clean site: visitor-triggered migration, interrupted run, fresh first run.
+
+**Minor (fixed):** six screens had no error state (endless "Loading…") · error toasts stay 12 s · failed vulnerability lookups are reported as incomplete and no longer re-announce old findings · forced password change and required two-factor no longer redirect form posts and uploads · unreadable folders and huge folders no longer end a scan · uploads check says "could not check" for a 404 on servers whose rules are not ours · deactivation no longer creates an empty `.htaccess` · uninstall clears scheduled events even when data is kept, and finds `.htaccess` when WordPress has its own directory · no translated text before `init` in the 403 page · redirect rewriting limited to this site's own `wp-login.php`, sign-in page marked not cacheable · full sentences for plugin/theme activity rows · activity byte cap enforced at every size · large form posts are not built into one string · Network Admin rows cached 5 minutes · CSV guard covers tab and carriage return · passwords set by other code (`wp_set_password`) end trusted browsers · user-agent and country rules that would shut out their author are refused · a Dashboard warning for the published 1.x default sign-in address · `password_force` could be corrupted by its sanitize case · dead `Turnstile.php` removed.
+
+**Not changed, with the reason:** a per-username limit across all addresses (anyone could then lock the owner out by name) · setting names in "settings changed" rows stay as identifiers (a label map for ~60 keys would add size) · the 1.x login address is carried over without re-validation (keeping a working address is the point of migrating on the first request) · routes registered per user and unused CSS were raised as unconfirmed and not reproduced.
+
+**Gate re-run on the fixed code:** PHPCS clean · ESLint clean · PHPUnit 29 tests / 304 assertions on PHP 8.4 and 7.4.33 · build OK · Plugin Check: no errors · Semgrep: 0 findings in 42 files · PHPStan: no errors · endpoint probe: 69 checks / 0 failures · live drills on otm-shots (two-factor guessing, lockout from a locked address, 20 parallel wrong passwords, request filter with decoy, probe lockout incl. cross-site, scheduled run tick by tick) · clean WordPress 6.0 on PHP 8.0 in a browser · multisite on otm-ms (network-wide challenge, scanner gate, uninstall leaves nothing). **Zip: 239 KB** (226 KB before the fixes; 1.3.3 was 141 KB).
 
 ## 6. Decisions taken for the build (Robin said "go ahead and implement" on 2026-10-05 after seeing the mockup built on these recommendations)
 

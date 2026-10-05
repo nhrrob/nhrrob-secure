@@ -48,12 +48,17 @@ class Scan {
 	 * @return void
 	 */
 	public static function set( $part, $value ) {
-		$data = self::all();
-		if ( null === $value ) {
-			unset( $data[ $part ] );
-		} else {
-			$data[ $part ] = $value;
-		}
-		update_option( self::OPTION, $data, false );
+		// Only this part is replaced, on top of whatever another request stored in the meantime.
+		\NHRRob\Secure\Core\Store::mutate(
+			self::OPTION,
+			function ( $data ) use ( $part, $value ) {
+				if ( null === $value ) {
+					unset( $data[ $part ] );
+				} else {
+					$data[ $part ] = $value;
+				}
+				return $data;
+			}
+		);
 	}
 }

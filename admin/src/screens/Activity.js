@@ -26,16 +26,23 @@ export default function Activity( { settings } ) {
 	const [ severity, setSeverity ] = useState( '' );
 	const [ page, setPage ] = useState( 1 );
 
+	const [ failed, setFailed ] = useState( null );
+
 	useEffect( () => {
+		// A slow answer to an earlier search must not replace a newer one.
+		let current = true;
 		const timer = setTimeout(
 			() => {
-				api(
-					'/activity' + query( { search, type, severity, page } )
-				).then( setData );
+				api( '/activity' + query( { search, type, severity, page } ) )
+					.then( ( res ) => current && setData( res ) )
+					.catch( ( e ) => current && setFailed( e ) );
 			},
 			search ? 300 : 0
 		);
-		return () => clearTimeout( timer );
+		return () => {
+			current = false;
+			clearTimeout( timer );
+		};
 	}, [ search, type, severity, page ] );
 
 	const labels = {
@@ -139,7 +146,7 @@ export default function Activity( { settings } ) {
 					</Button>
 				</div>
 
-				{ ! data && <Loading /> }
+				{ ! data && <Loading error={ failed } /> }
 				{ data && ! data.items.length && (
 					<Empty>{ __( 'No events match.', 'nhrrob-secure' ) }</Empty>
 				) }

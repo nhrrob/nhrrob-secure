@@ -25,6 +25,9 @@ class Activity {
 	const MAX_ROWS  = 1000;
 	const MAX_BYTES = 262144;
 
+	// Refused-request rows may take at most this many of the rows.
+	const MAX_FIREWALL = 200;
+
 	const INFO     = 1;
 	const WARNING  = 2;
 	const CRITICAL = 3;
@@ -50,9 +53,8 @@ class Activity {
 	 * @return void
 	 */
 	public static function record( $type, $action, $label = '', $severity = self::INFO, array $args = [] ) {
-		$rows = self::rows();
-		$now  = time();
-		$row  = [
+		$now = time();
+		$row = [
 			't' => $now,
 			'u' => isset( $args['user'] ) ? (int) $args['user'] : get_current_user_id(),
 			'k' => (string) $type,
@@ -65,32 +67,61 @@ class Activity {
 		if ( ! empty( $args['detail'] ) ) {
 			$row['d'] = self::clip( $args['detail'], 240 );
 		}
+		$window = empty( $args['coalesce'] ) ? 0 : (int) $args['coalesce'];
 
-		// Fold a repeat of the same event into the existing row.
-		if ( ! empty( $args['coalesce'] ) ) {
-			foreach ( $rows as $index => $old ) {
-				if ( $now - $old['t'] > (int) $args['coalesce'] ) {
-					break;
-				}
-				if ( $old['k'] === $row['k'] && $old['a'] === $row['a'] && $old['l'] === $row['l'] && $old['i'] === $row['i'] ) {
-					// Under a flood, one write a minute per source is enough; the counter may run slightly low.
-					if ( 'firewall' === $row['k'] && (int) $old['n'] > 1 && $now - $old['t'] < MINUTE_IN_SECONDS ) {
-						return;
-					}
-					$row['n'] = (int) $old['n'] + 1;
-					$row['s'] = max( $row['s'], (int) $old['s'] );
-					unset( $rows[ $index ] );
-					break;
-				}
+		// Under a flood, one write a minute per source is enough; the counter may run slightly low.
+		// Checked on the cached copy first, so a refused request that changes nothing costs no write.
+		if ( $window && 'firewall' === $row['k'] ) {
+			$index = self::find( self::rows(), $row, $window, $now );
+			if ( null !== $index && $now - self::rows()[ $index ]['t'] < MINUTE_IN_SECONDS && (int) self::rows()[ $index ]['n'] > 1 ) {
+				return;
 			}
 		}
 
-		array_unshift( $rows, $row );
-		self::save( self::trim( array_values( $rows ) ) );
+		Store::mutate(
+			self::OPTION,
+			function ( $rows ) use ( $row, $window, $now ) {
+				// Fold a repeat of the same event into the existing row.
+				$index = $window ? self::find( $rows, $row, $window, $now ) : null;
+				if ( null !== $index ) {
+					$row['n'] = (int) $rows[ $index ]['n'] + 1;
+					$row['s'] = max( $row['s'], (int) $rows[ $index ]['s'] );
+					unset( $rows[ $index ] );
+				}
+				array_unshift( $rows, $row );
+				return self::trim( array_values( $rows ) );
+			}
+		);
+	}
+
+	/**
+	 * Index of a recent row for the same event from the same address.
+	 *
+	 * @param array $rows   Rows, newest first.
+	 * @param array $row    The new row.
+	 * @param int   $window Seconds to look back.
+	 * @param int   $now    Current time.
+	 * @return int|null
+	 */
+	private static function find( array $rows, array $row, $window, $now ) {
+		foreach ( $rows as $index => $old ) {
+			if ( $now - $old['t'] > $window ) {
+				break;
+			}
+			if ( $old['k'] === $row['k'] && $old['a'] === $row['a'] && $old['l'] === $row['l'] && $old['i'] === $row['i'] ) {
+				return $index;
+			}
+		}
+		return null;
 	}
 
 	/**
 	 * Apply the retention period and the size caps.
+	 *
+	 * What goes first when the log is full is chosen so an attacker, or a busy
+	 * shop, cannot push the important rows out: refused-request rows are kept
+	 * to MAX_FIREWALL, then routine (info) rows go before warnings and
+	 * criticals, oldest first.
 	 *
 	 * @param array $rows Rows, newest first.
 	 * @return array
@@ -102,19 +133,44 @@ class Activity {
 			array_pop( $rows );
 			--$count;
 		}
-		if ( $count > self::MAX_ROWS ) {
-			$rows = array_slice( $rows, 0, self::MAX_ROWS );
+
+		$firewall = 0;
+		foreach ( $rows as $index => $row ) {
+			if ( 'firewall' === $row['k'] && ++$firewall > self::MAX_FIREWALL ) {
+				unset( $rows[ $index ] );
+			}
 		}
-		// The byte check is only worth doing once the log is large.
-		$count = count( $rows );
-		while ( $count > 500 ) {
-			if ( strlen( maybe_serialize( $rows ) ) <= self::MAX_BYTES ) {
+		$rows = self::drop_oldest( array_values( $rows ), count( $rows ) - self::MAX_ROWS );
+
+		// The byte check is only worth doing once the log has some size.
+		for ( $pass = 0; $pass < 20; $pass++ ) {
+			if ( count( $rows ) <= 100 || strlen( maybe_serialize( $rows ) ) <= self::MAX_BYTES ) {
 				break;
 			}
-			$count -= 50;
-			$rows   = array_slice( $rows, 0, $count );
+			$rows = self::drop_oldest( $rows, 50 );
 		}
 		return $rows;
+	}
+
+	/**
+	 * Remove a number of rows: the oldest routine rows first, then the oldest of the rest.
+	 *
+	 * @param array $rows   Rows, newest first.
+	 * @param int   $excess How many to remove.
+	 * @return array
+	 */
+	private static function drop_oldest( array $rows, $excess ) {
+		if ( $excess <= 0 ) {
+			return $rows;
+		}
+		for ( $index = count( $rows ) - 1; $index >= 0 && $excess > 0; $index-- ) {
+			if ( (int) $rows[ $index ]['s'] <= self::INFO ) {
+				unset( $rows[ $index ] );
+				--$excess;
+			}
+		}
+		$rows = array_values( $rows );
+		return $excess > 0 ? array_slice( $rows, 0, count( $rows ) - $excess ) : $rows;
 	}
 
 	/**
@@ -251,7 +307,11 @@ class Activity {
 				break;
 			case 'login:2fa_failed':
 				/* translators: %s: username. */
-				$text = sprintf( __( 'Too many wrong two-factor codes for %s', 'nhrrob-secure' ), $label );
+				$text = '' !== $detail
+					/* translators: 1: username, 2: how long the second step is paused. */
+					? sprintf( __( 'Correct password but too many wrong two-factor codes for %1$s; second step paused for %2$s', 'nhrrob-secure' ), $label, $detail )
+					/* translators: %s: username. */
+					: sprintf( __( 'Too many wrong two-factor codes for %s', 'nhrrob-secure' ), $label );
 				break;
 			case 'login:idle':
 				$text = __( 'Signed out after being idle', 'nhrrob-secure' );
@@ -311,16 +371,27 @@ class Activity {
 			case 'theme:updated':
 			case 'theme:deleted':
 			case 'theme:switched':
-				$verbs = [
-					'activated'   => __( 'Activated', 'nhrrob-secure' ),
-					'deactivated' => __( 'Deactivated', 'nhrrob-secure' ),
-					'installed'   => __( 'Installed', 'nhrrob-secure' ),
-					'updated'     => __( 'Updated', 'nhrrob-secure' ),
-					'deleted'     => __( 'Deleted', 'nhrrob-secure' ),
-					'switched'    => __( 'Switched to', 'nhrrob-secure' ),
+				$sentences = [
+					/* translators: %s: plugin name. */
+					'plugin:activated'   => __( 'Activated the plugin %s', 'nhrrob-secure' ),
+					/* translators: %s: plugin name. */
+					'plugin:deactivated' => __( 'Deactivated the plugin %s', 'nhrrob-secure' ),
+					/* translators: %s: plugin name. */
+					'plugin:installed'   => __( 'Installed the plugin %s', 'nhrrob-secure' ),
+					/* translators: %s: plugin name. */
+					'plugin:updated'     => __( 'Updated the plugin %s', 'nhrrob-secure' ),
+					/* translators: %s: plugin name. */
+					'plugin:deleted'     => __( 'Deleted the plugin %s', 'nhrrob-secure' ),
+					/* translators: %s: theme name. */
+					'theme:installed'    => __( 'Installed the theme %s', 'nhrrob-secure' ),
+					/* translators: %s: theme name. */
+					'theme:updated'      => __( 'Updated the theme %s', 'nhrrob-secure' ),
+					/* translators: %s: theme name. */
+					'theme:deleted'      => __( 'Deleted the theme %s', 'nhrrob-secure' ),
+					/* translators: %s: theme name. */
+					'theme:switched'     => __( 'Switched to the theme %s', 'nhrrob-secure' ),
 				];
-				$what  = 'plugin' === $row['k'] ? __( 'the plugin', 'nhrrob-secure' ) : __( 'the theme', 'nhrrob-secure' );
-				$text  = $verbs[ $row['a'] ] . ' ' . $what . ' ' . $label;
+				$text      = sprintf( $sentences[ $key ], $label );
 				break;
 			case 'core:updated':
 				/* translators: %s: WordPress version. */
@@ -336,11 +407,13 @@ class Activity {
 				break;
 			case 'firewall:filter_block':
 			case 'firewall:filter_log':
-				$text = 'firewall:filter_block' === $key
+				$rules = \NHRRob\Secure\Services\Firewall::labels();
+				$rule  = isset( $rules[ $label ] ) ? $rules[ $label ] : $label;
+				$text  = 'firewall:filter_block' === $key
 					/* translators: 1: rule name, 2: request path. */
-					? sprintf( __( 'Blocked a request (%1$s): %2$s', 'nhrrob-secure' ), $detail, $label )
+					? sprintf( __( 'Blocked a request (%1$s): %2$s', 'nhrrob-secure' ), $rule, $detail )
 					/* translators: 1: rule name, 2: request path. */
-					: sprintf( __( 'Would have blocked a request (%1$s): %2$s', 'nhrrob-secure' ), $detail, $label );
+					: sprintf( __( 'Would have blocked a request (%1$s): %2$s', 'nhrrob-secure' ), $rule, $detail );
 				break;
 			case 'firewall:probe_lock':
 				/* translators: 1: number of requests, 2: how long the address is locked out. */

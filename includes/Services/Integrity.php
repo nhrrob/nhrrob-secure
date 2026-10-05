@@ -123,11 +123,16 @@ class Integrity {
 		if ( ! is_dir( $dir ) ) {
 			return $out;
 		}
-		$iterator = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ) );
-		foreach ( $iterator as $file ) {
-			if ( $file->isFile() ) {
-				$out[] = wp_normalize_path( $file->getPathname() );
+		try {
+			// A folder that cannot be read is skipped rather than ending the scan.
+			$iterator = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ), \RecursiveIteratorIterator::LEAVES_ONLY, \RecursiveIteratorIterator::CATCH_GET_CHILD );
+			foreach ( $iterator as $file ) {
+				if ( $file->isFile() ) {
+					$out[] = wp_normalize_path( $file->getPathname() );
+				}
 			}
+		} catch ( \Exception $e ) {
+			unset( $e );
 		}
 		return $out;
 	}

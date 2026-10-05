@@ -27,6 +27,7 @@ class CodeScan {
 	const BUDGET       = 4;
 	const MAX_FINDINGS = 200;
 	const SUFFIX       = '.suspected';
+	const MAX_ENTRIES  = 20000;
 
 	/**
 	 * Patterns and what they mean.
@@ -143,11 +144,7 @@ class CodeScan {
 		while ( $state['dirs'] && microtime( true ) < $stop_at && $found < self::MAX_FINDINGS ) {
 			$relative = array_pop( $state['dirs'] );
 			$dir      = '' === $relative ? $root : $root . '/' . $relative;
-			$entries  = is_readable( $dir ) ? scandir( $dir ) : false;
-			if ( false === $entries ) {
-				continue;
-			}
-			foreach ( $entries as $entry ) {
+			foreach ( self::entries( $dir ) as $entry ) {
 				if ( '.' === $entry || '..' === $entry ) {
 					continue;
 				}
@@ -185,6 +182,47 @@ class CodeScan {
 		}
 		self::save( $state );
 		return self::for_app( $state );
+	}
+
+	/**
+	 * Names in a folder, up to a limit. A cache folder can hold a million
+	 * files; reading them all at once would run the scan out of memory on
+	 * every attempt.
+	 *
+	 * @param string $dir Absolute path.
+	 * @return string[]
+	 */
+	private static function entries( $dir ) {
+		$out    = [];
+		$handle = is_readable( $dir ) ? opendir( $dir ) : false;
+		if ( false === $handle ) {
+			return $out;
+		}
+		for ( $read = 0; $read < self::MAX_ENTRIES; $read++ ) {
+			$entry = readdir( $handle );
+			if ( false === $entry ) {
+				break;
+			}
+			$out[] = $entry;
+		}
+		closedir( $handle );
+		return $out;
+	}
+
+	/**
+	 * The name a file gets in quarantine. Pure.
+	 *
+	 * No part of the new name may still look like PHP: some servers run
+	 * "shell.php.suspected" as PHP because ".php" appears in the name.
+	 *
+	 * @param string $file Path relative to wp-content.
+	 * @return string
+	 */
+	public static function quarantine_name( $file ) {
+		$slash = strrpos( $file, '/' );
+		$dir   = false === $slash ? '' : substr( $file, 0, $slash + 1 );
+		$base  = false === $slash ? $file : substr( $file, $slash + 1 );
+		return $dir . str_replace( '.', '_', $base ) . self::SUFFIX;
 	}
 
 	/**
@@ -271,7 +309,7 @@ class CodeScan {
 			return new \WP_Error( 'nhrrob_secure_unknown_file', __( 'That file is not in the scan results. Run the scan again.', 'nhrrob-secure' ), [ 'status' => 400 ] );
 		}
 		$root = trailingslashit( wp_normalize_path( (string) realpath( WP_CONTENT_DIR ) ) );
-		$real = realpath( WP_CONTENT_DIR . '/' . $file . ( 'quarantined' === $source ? self::SUFFIX : '' ) );
+		$real = realpath( WP_CONTENT_DIR . '/' . ( 'quarantined' === $source ? self::quarantine_name( $file ) : $file ) );
 		if ( false === $real || 0 !== strpos( wp_normalize_path( $real ), $root ) || ! is_file( $real ) ) {
 			return new \WP_Error( 'nhrrob_secure_missing_file', __( 'That file no longer exists.', 'nhrrob-secure' ), [ 'status' => 404 ] );
 		}
@@ -327,7 +365,7 @@ class CodeScan {
 		if ( is_wp_error( $filesystem ) ) {
 			return $filesystem;
 		}
-		if ( ! $filesystem->move( $path, $path . self::SUFFIX, false ) ) {
+		if ( ! $filesystem->move( $path, wp_normalize_path( dirname( $path ) ) . '/' . basename( self::quarantine_name( $file ) ), false ) ) {
 			return new \WP_Error( 'nhrrob_secure_write', __( 'The file could not be renamed. Check the file permissions.', 'nhrrob-secure' ), [ 'status' => 500 ] );
 		}
 
@@ -362,7 +400,7 @@ class CodeScan {
 		if ( is_wp_error( $filesystem ) ) {
 			return $filesystem;
 		}
-		$original = substr( $path, 0, -strlen( self::SUFFIX ) );
+		$original = wp_normalize_path( dirname( $path ) ) . '/' . basename( $file );
 		if ( ! $filesystem->move( $path, $original, false ) ) {
 			return new \WP_Error( 'nhrrob_secure_write', __( 'The file could not be renamed. Check the file permissions.', 'nhrrob-secure' ), [ 'status' => 500 ] );
 		}
