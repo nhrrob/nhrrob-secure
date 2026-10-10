@@ -33,8 +33,9 @@
 		<exclude-pattern>*/index.php</exclude-pattern>
 	</rule>
 
-	<!-- Minimum PHP version supported by the plugin -->
+	<!-- Every PHP version from the plugin's minimum up (PHPCompatibilityWP reads testVersion) -->
 	<config name="testVersion" value="7.4-"/>
+	<rule ref="PHPCompatibilityWP"/>
 
 	<!-- Apply full WordPress Coding Standards -->
 	<rule ref="WordPress">

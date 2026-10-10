@@ -264,6 +264,13 @@ Status values: `to do` · `done` (built and verified; the note says how) · `cov
 
 **Not done:** reCAPTCHA v3 against Google (no keys; markup and score rule only) · Semgrep and PHPStan (not installed on this machine; they run on the PR) · new screenshots for `.wordpress-org/` (the screens changed) · upgrade drill from the released 2.0.0 (no stored shape changed, so `DB_VERSION` stays 2.0.0).
 
+### 4.7 Next release — 2.2.0: AI readiness (read-only) + PHP matrix (built 2026-10-10, unreleased)
+
+- **Abilities API** (`Core\Abilities`, WordPress 6.9+, inert before): `nhrrob-secure/get-security-status` and `nhrrob-secure/list-vulnerabilities`, both read-only, both administrators only (the second with the Scanner section's network gate). Exposed to MCP through the WordPress MCP Adapter, which is not bundled (§1.2).
+- **Deliberately not built:** any ability that changes something (settings, unlock, safe mode, scans, repairs, quarantine) — §1.1: an agent acting on a wrong or injected instruction must not be able to weaken or lock the site. And any ability that returns the login address, address rules, usernames, visitor addresses or activity rows: the output goes to the agent's AI provider. Comes back only with a concrete request and an answer to both reasons.
+- **WP-CLI:** `wp nhrrob-secure status --format=json`.
+- **PHP:** supported and tested 7.4 → 8.5, plus 8.6 (non-blocking until its GA). `.github/workflows/php.yml`: PHPCS with PHPCompatibilityWP, then per version a syntax check, PHPUnit and `.github/ci/smoke.php` inside a real WordPress.
+
 ## 5. Backlog (after 2.1; all free if they ship)
 
 Built since this list was written and removed from it: passkeys, file-change monitoring, the database scan, the weekly summary and the Network Admin screen (all §4.4).
