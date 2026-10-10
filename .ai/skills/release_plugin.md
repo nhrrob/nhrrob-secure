@@ -17,6 +17,7 @@ composer run phpcs && composer run test:unit
 # Production copy, then on a throwaway site: Plugin Check, the endpoint probe
 # (python3 .github/security/probe.py … --self-service /2fa), Semgrep and PHPStan.
 ```
+The **PHP Compatibility** workflow (`.github/workflows/php.yml`) must be green on the release PR: PHPCS with PHPCompatibilityWP, and on every PHP version from 7.4 up a syntax check, the unit tests and the runtime smoke test (`wp eval-file .github/ci/smoke.php`). The newest, not yet released PHP version is allowed to fail, but read its log.
 Compare the zip size with the previous release and note it in the PR.
 
 ## Step 0: Sync Local Branches

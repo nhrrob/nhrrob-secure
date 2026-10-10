@@ -11,7 +11,7 @@
  * handler calling exit can't take the probe down:
  *
  *   wp --user=<admin> eval-file endpoint-probe.php list
- *   wp --user=<admin> eval-file endpoint-probe.php run <ajax|rest> <target> <method> <subscriber|anonymous> <subscriber_id>
+ *   wp --user=<admin> eval-file endpoint-probe.php run <ajax|rest|ability> <target> <method> <subscriber|anonymous> <subscriber_id>
  *
  * Every INSERT/UPDATE/DELETE/REPLACE/ALTER/DROP/TRUNCATE the handler attempts
  * is recorded and blocked, so the site is never modified.
@@ -101,6 +101,22 @@ function nhrprobe_targets( $dir ) {
 					'nopriv' => false,
 				];
 			}
+		}
+	}
+
+	// Abilities (WordPress 6.9+): reachable by AI agents and MCP clients.
+	foreach ( function_exists( 'wp_get_abilities' ) ? wp_get_abilities() : [] as $ability ) {
+		$callback = new ReflectionProperty( 'WP_Ability', 'execute_callback' );
+		if ( PHP_VERSION_ID < 80100 ) {
+			$callback->setAccessible( true );
+		}
+		if ( nhrprobe_owned( $callback->getValue( $ability ), $dir ) ) {
+			$targets[] = [
+				'type'   => 'ability',
+				'target' => $ability->get_name(),
+				'method' => 'RUN',
+				'nopriv' => true,
+			];
 		}
 	}
 
@@ -239,6 +255,13 @@ if ( 'ajax' === $nhrprobe_type ) {
 	// can make the full output fail json_decode() while still being a leak.
 	$nhrprobe_result['output'] = substr( $out, 0, 200 );
 	$nhrprobe_result['leak']   = (bool) preg_match( '/"success"\s*:\s*true/', $out );
+} elseif ( 'ability' === $nhrprobe_type ) {
+	// The permission check alone: execute() validates the input first, and a
+	// validation error would hide a missing capability check.
+	$allowed = function_exists( 'wp_get_ability' ) ? wp_get_ability( $nhrprobe_target )->check_permissions( nhrprobe_params() ) : true;
+
+	$nhrprobe_result['output'] = is_wp_error( $allowed ) ? $allowed->get_error_code() : wp_json_encode( $allowed );
+	$nhrprobe_result['leak']   = true === $allowed;
 } else {
 	$route = preg_replace( '/\(\?P<[^>]+>[^)]*\)/', '1', $nhrprobe_target );
 	$req   = new WP_REST_Request( $nhrprobe_method, $route );

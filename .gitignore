@@ -31,5 +31,6 @@ composer.lock
 /vendor/squizlabs
 /vendor/wp-coding-standards
 /vendor/phpcsstandards
+/vendor/phpcompatibility
 /vendor/dealerdirect
 /vendor/composer/autoload_files.php

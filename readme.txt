@@ -86,7 +86,8 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 
 * No database tables. Everything is stored in a handful of capped options.
 * No visitor is looked up with an outside service.
-* Settings can be exported and imported. WP-CLI commands are included.
+* Settings can be exported and imported. WP-CLI commands are included (`wp nhrrob-secure status --format=json` for scripts).
+* AI agent and MCP ready, read-only: on WordPress 6.9 and later, AI agents and MCP clients (through the WordPress MCP Adapter) can read the security score, the checks and the known vulnerabilities. Administrators only. No ability changes a setting.
 
 = What it is not =
 
@@ -150,6 +151,14 @@ No. A passkey is the second step after the password, like a code from an authent
 
 Put the `[nhrrob_secure_2fa]` shortcode on any page. With WooCommerce it also appears under My account → Account details.
 
+= Can an AI agent or MCP client use this plugin? =
+
+Only to read, on WordPress 6.9 or later. The plugin registers two abilities with the WordPress Abilities API: `nhrrob-secure/get-security-status` (score, checks, counts) and `nhrrob-secure/list-vulnerabilities` (the last vulnerability check). Both need an administrator. An agent cannot change a setting, unlock an address or touch a file, and it is never given the login address, your address rules, usernames, visitor addresses or the activity log. To use the abilities over MCP, install the WordPress MCP Adapter plugin; this plugin does not bundle it.
+
+= Which PHP versions are supported? =
+
+PHP 7.4 and every later version. Each change is tested on PHP 7.4 through 8.5, and on the upcoming 8.6.
+
 = Does the plugin create database tables? =
 
 No. Version 1.x created one table; 2.0 moves its contents into the activity log and removes it.
@@ -199,6 +208,12 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 10. Dark theme.
 
 == Changelog ==
+
+= 2.2.0 =
+- New: read-only AI agent and MCP support. On WordPress 6.9+ the plugin registers two abilities with the WordPress Abilities API: the security status (score, checks, counts) and the known vulnerabilities. Administrators only; nothing can be changed through them.
+- New: `wp nhrrob-secure status --format=json`.
+- Compatibility: verified on PHP 7.4 through 8.5 and on PHP 8.6 release candidates.
+- Developer: every pull request now runs the PHPCompatibilityWP ruleset plus a syntax check, the unit tests and a runtime smoke test on each supported PHP version. The security probe also covers abilities.
 
 = 2.1.0 - 05/10/2026 =
 - New: recommended setup in one step on the Dashboard, with undo.

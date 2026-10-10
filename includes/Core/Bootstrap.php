@@ -74,6 +74,8 @@ class Bootstrap {
 		( new EventLogger() )->hooks();
 		( new Monitor() )->hooks();
 		( new Passwords() )->hooks();
+		// Read-only abilities for AI agents and MCP clients (WordPress 6.9+; inert before).
+		( new Abilities() )->hooks();
 
 		add_action( Vulnerabilities::CRON, [ Vulnerabilities::class, 'cron' ] );
 		add_action( Schedule::CRON, [ Schedule::class, 'tick' ] );

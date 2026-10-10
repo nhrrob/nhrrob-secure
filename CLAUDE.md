@@ -20,7 +20,7 @@ Planning docs (dev-only, never shipped): `.ai/PRD.md` (free scope, the 1.3.3 aud
 nhrrob-secure.php          main class, constants, activation, maybe_upgrade(), crons
 uninstall.php              per-site cleanup (respects delete_on_uninstall), user meta, .htaccess block
 includes/
-  Core/     Settings, Ip, Activity, State, Store, Alerts, Upgrade, Bootstrap, Module, ModuleRegistry
+  Core/     Settings, Ip, Activity, State, Store, Alerts, Upgrade, Bootstrap, Module, ModuleRegistry, Abilities
   Services/ LoginGuard, LoginUrl, BotCheck, Honeypot, Totp, TwoFactor, Passkeys, Passwords, Sessions, Access,
             Firewall, RateLimit, Hardening, FileProtection, Permissions, Salts, Scan, Vulnerabilities,
             Integrity, Monitor, DatabaseScan, CodeScan, Schedule, Summary, Checks, Setup, EventLogger
@@ -31,8 +31,9 @@ includes/
 admin/src/                 React source: index.js, app.js, api.js, components/ (incl. Report.js, the printable report), screens/, style.scss, profile.js(+scss)
 admin/build/               compiled output (ships)
 tests/                     PHPUnit + WP_Mock
-.github/workflows/         plugin-check.yml, security.yml (PR checks), two deploy workflows
+.github/workflows/         plugin-check.yml, security.yml, php.yml (PR checks), two deploy workflows
 .github/security/          endpoint-probe.php, probe.py, phpstan.neon
+.github/ci/                smoke.php (runtime smoke test, used by php.yml)
 ```
 
 ## Stored data (all options; only the first is autoloaded)
@@ -63,6 +64,15 @@ Gate `can_manage` = `manage_options`. `can_manage_files` adds "super admin on mu
 - `GET /activity` · `GET /activity/export`
 - `GET /scanner` · `POST /scanner/vulnerabilities|plugins|themes|monitor|code` (stepped by the browser) · `POST /scanner/plugins/repair` (adds `update_plugins`) · `POST /scanner/themes/repair` (adds `update_themes`) · `POST /scanner/database` · `POST /scanner/monitor/accept` (files gate) · `POST /scanner/core` · `POST /scanner/core/repair` (repair gate) · `POST /scanner/code/view` · `POST /scanner/code/quarantine|restore` (files gate)
 - `GET /2fa` · `POST /2fa/begin|confirm|passkey|disable|recovery|forget-browsers` — any signed-in user, own account only, only while two-factor is on; `disable` and `recovery` re-check the password.
+
+## Abilities (AI agents, MCP)
+
+`Core\Abilities`, WordPress 6.9+ (the `wp_abilities_api_*` hooks only fire when something asks for the registry). Category `nhrrob-secure`, flagged `public` + `show_in_rest` + `mcp.public` so the WordPress MCP Adapter (not bundled) exposes them.
+
+- `nhrrob-secure/get-security-status` (gate `can_manage`): score, safe mode, every check without its `fix` link, and the Dashboard counts. Reads only: unlike `GET /dashboard` it never starts the file-protection check.
+- `nhrrob-secure/list-vulnerabilities` (gate `can_manage_files`, the Scanner section's): the stored result of the last check; never starts one.
+
+**Read-only, and it stays that way** (rule 1): no ability changes a setting, unlocks an address, runs a scan or touches a file. **Nothing an ability returns may identify how to reach or attack the site**, because the output goes to the agent's AI provider: no login address or slug, address rules, usernames, visitor addresses, activity rows, file paths from scans or settings. `tests/AbilitiesTest.php` pins the list, the gates and the read-only annotation; a new ability also needs the readme FAQ and PRD §4.7 updated.
 
 ## Invariants (do not weaken)
 
@@ -108,8 +118,11 @@ PHP filters `nhrrob_secure_modules`, `nhrrob_secure_app_boot`, `nhrrob_secure_ch
 npm run build          # admin/build
 npm run lint           # ESLint (text domain enforced in .eslintrc.js)
 composer run phpcs     # WordPress Coding Standards
-composer run test:unit # PHPUnit: filter corpus, TOTP vectors, address rules, lockouts, signatures, score, review fixes, 2.1 decisions (ParityTest)
+composer run test:unit # PHPUnit: filter corpus, TOTP vectors, address rules, lockouts, signatures, score, review fixes, 2.1 decisions (ParityTest), abilities
+wp eval-file .github/ci/smoke.php   # inside a WordPress install: every GET route and read-only ability, fails on any PHP notice from the plugin
 ```
+
+**PHP support: 7.4 and every later version, tested through 8.6.** `composer.json` pins `config.platform.php` to 7.4.33 so dev dependencies resolve to versions that run on every supported PHP. `composer run phpcs` includes the `PHPCompatibilityWP` ruleset (`testVersion` 7.4-). `.github/workflows/php.yml` runs on every PR: PHPCS, then per PHP version (7.4–8.5 required, 8.6 non-blocking until its GA) a syntax check, PHPUnit and `.github/ci/smoke.php` in a real WordPress. When a new PHP version reaches GA, move it from `include` into the `php` list and add the next one as experimental.
 
 `vendor/` in git is the **production** autoloader (plain PSR-4, no dev packages). `composer install` to run the tests rewrites `vendor/composer/*`; put it back with `git checkout -- vendor` before committing.
 
@@ -117,6 +130,6 @@ composer run test:unit # PHPUnit: filter corpus, TOTP vectors, address rules, lo
 
 ## Release gate (run all before a release; see `.ai/skills/release_plugin.md`)
 
-PHPCS · lint · PHPUnit · build · production copy (`rsync --exclude-from=.distignore`, `composer install --no-dev`) · Plugin Check on that copy · Semgrep `p/php` · PHPStan (`.github/security/phpstan.neon`) · endpoint probe with `--self-service /2fa`, run from inside the installed copy and regression-tested against a deliberately broken gate · PHP 7.4 lint + unit tests · upgrade from the released version on a throwaway site with a visitor making the first request · lockout drills (wrong slug, lost 2FA, own address blocked → safe mode) · multisite activate/deactivate/uninstall · zip size · doc sync (readme Key Features, this file, PRD, DESIGN) · screenshots.
+PHPCS · lint · PHPUnit · build · production copy (`rsync --exclude-from=.distignore`, `composer install --no-dev`) · Plugin Check on that copy · Semgrep `p/php` · PHPStan (`.github/security/phpstan.neon`) · endpoint probe (REST routes and abilities) with `--self-service /2fa`, run from inside the installed copy and regression-tested against a deliberately broken gate · PHP 7.4–8.6 syntax check, unit tests and smoke test (the **PHP Compatibility** workflow, `php.yml`, green on the PR) · upgrade from the released version on a throwaway site with a visitor making the first request · lockout drills (wrong slug, lost 2FA, own address blocked → safe mode) · multisite activate/deactivate/uninstall · zip size · doc sync (readme Key Features, this file, PRD, DESIGN) · screenshots.
 
 Throwaway sites used for this: `~/Sites/otm-shots` (single site, PHP 8.0; demo data seeded for screenshots) and `~/Sites/otm-ms` (multisite). Never run the probe or seed scripts on a site with real data.

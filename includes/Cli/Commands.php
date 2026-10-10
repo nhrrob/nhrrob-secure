@@ -25,14 +25,44 @@ class Commands {
 	/**
 	 * Show the score, the failed checks and what is switched on.
 	 *
+	 * ## OPTIONS
+	 *
+	 * [--format=<format>]
+	 * : json prints the same facts as one JSON object. Default is plain lines.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp nhrrob-secure status
+	 *     wp nhrrob-secure status --format=json
 	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Flags.
 	 * @return void
 	 */
-	public function status() {
+	public function status( $args = [], $assoc_args = [] ) {
 		$checks = Checks::run();
+		if ( isset( $assoc_args['format'] ) && 'json' === $assoc_args['format'] ) {
+			\WP_CLI::line(
+				(string) wp_json_encode(
+					[
+						'score'          => Checks::score( $checks ),
+						'safe_mode'      => Settings::safe_mode(),
+						'login_address'  => LoginUrl::active() ? LoginUrl::url() : 'wp-login.php',
+						'request_filter' => Settings::get( 'request_filter' ),
+						'locked_out'     => count( LoginGuard::locked() ),
+						'failed_checks'  => array_values(
+							array_filter(
+								$checks,
+								function ( $check ) {
+									return ! $check['passed'];
+								}
+							)
+						),
+					]
+				)
+			);
+			return;
+		}
 		\WP_CLI::line( sprintf( 'Score: %d / 100', Checks::score( $checks ) ) );
 		\WP_CLI::line( 'Safe mode: ' . ( Settings::safe_mode() ? 'on' : 'off' ) );
 		\WP_CLI::line( 'Login address: ' . ( LoginUrl::active() ? LoginUrl::url() : 'wp-login.php' ) );

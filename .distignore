@@ -32,6 +32,7 @@ node_modules
 /vendor/squizlabs
 /vendor/wp-coding-standards
 /vendor/phpcsstandards
+/vendor/phpcompatibility
 /vendor/dealerdirect
 
 # Additional WordPress.org exclusions

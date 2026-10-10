@@ -62,8 +62,9 @@ def main():
                                      "eval-file", opts.script, "list"])) or []
     if opts.only:
         targets = [t for t in targets if opts.only in t["target"]]
-    ajax = sum(1 for t in targets if t["type"] == "ajax")
-    print(f"Probing {ajax} AJAX actions and {len(targets) - ajax} REST endpoints as subscriber/anonymous (nonces forced valid)")
+    count = {kind: sum(1 for t in targets if t["type"] == kind) for kind in ("ajax", "rest", "ability")}
+    print(f"Probing {count['ajax']} AJAX actions, {count['rest']} REST endpoints and {count['ability']} abilities "
+          "as subscriber/anonymous (nonces forced valid)")
 
     failures = 0
     runs = 0
@@ -72,7 +73,7 @@ def main():
         roles = ["subscriber"]
         if any(f in t["target"] for f in own):
             # By design a subscriber may use these on their own account; an anonymous caller may not.
-            print(f"self   {t['type']:4} {t['method']:6} {t['target']} [subscriber allowed by design]")
+            print(f"self   {t['type']:7} {t['method']:6} {t['target']} [subscriber allowed by design]")
             roles = []
         if t["type"] == "rest" or t["nopriv"]:
             roles.append("anonymous")
@@ -84,16 +85,16 @@ def main():
             runs += 1
             if res is None:
                 failures += 1
-                print(f"ERROR  {t['type']:4} {t['method']:6} {t['target']} [{role}] probe crashed:\n{out[-400:]}")
+                print(f"ERROR  {t['type']:7} {t['method']:6} {t['target']} [{role}] probe crashed:\n{out[-400:]}")
                 continue
             if res["fail"]:
                 failures += 1
                 why = "responded successfully" if res["leak"] else "attempted DB writes"
-                print(f"FAIL   {t['type']:4} {t['method']:6} {t['target']} [{role}] {why}: {res['output'][:120]}")
+                print(f"FAIL   {t['type']:7} {t['method']:6} {t['target']} [{role}] {why}: {res['output'][:120]}")
                 for w in res["writes"][:3]:
                     print(f"         write: {w}")
             else:
-                print(f"ok     {t['type']:4} {t['method']:6} {t['target']} [{role}]")
+                print(f"ok     {t['type']:7} {t['method']:6} {t['target']} [{role}]")
 
     wp(opts.wp, ["user", "delete", sub_id, "--yes"], check=False)
     print(f"\n{runs} checks, {failures} failure(s)")
