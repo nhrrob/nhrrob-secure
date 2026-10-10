@@ -258,7 +258,7 @@ if ( 'ajax' === $nhrprobe_type ) {
 } elseif ( 'ability' === $nhrprobe_type ) {
 	// The permission check alone: execute() validates the input first, and a
 	// validation error would hide a missing capability check.
-	$allowed = wp_get_ability( $nhrprobe_target )->check_permissions( nhrprobe_params() );
+	$allowed = function_exists( 'wp_get_ability' ) ? wp_get_ability( $nhrprobe_target )->check_permissions( nhrprobe_params() ) : true;
 
 	$nhrprobe_result['output'] = is_wp_error( $allowed ) ? $allowed->get_error_code() : wp_json_encode( $allowed );
 	$nhrprobe_result['leak']   = true === $allowed;

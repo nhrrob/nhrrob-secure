@@ -49,13 +49,16 @@ class Abilities {
 	 * @return void
 	 */
 	public function register_category() {
-		wp_register_ability_category(
-			self::CATEGORY,
-			[
-				'label'       => __( 'Secure', 'nhrrob-secure' ),
-				'description' => __( 'Security score, checks and known vulnerabilities of this site.', 'nhrrob-secure' ),
-			]
-		);
+		// The hook only exists on 6.9+; the check is for Plugin Check ("Requires at least" is 6.0).
+		if ( function_exists( 'wp_register_ability_category' ) ) {
+			wp_register_ability_category(
+				self::CATEGORY,
+				[
+					'label'       => __( 'Secure', 'nhrrob-secure' ),
+					'description' => __( 'Security score, checks and known vulnerabilities of this site.', 'nhrrob-secure' ),
+				]
+			);
+		}
 	}
 
 	/**
@@ -64,8 +67,10 @@ class Abilities {
 	 * @return void
 	 */
 	public function register() {
-		foreach ( $this->definitions() as $name => $args ) {
-			wp_register_ability( $name, $args );
+		if ( function_exists( 'wp_register_ability' ) ) {
+			foreach ( $this->definitions() as $name => $args ) {
+				wp_register_ability( $name, $args );
+			}
 		}
 	}
 
