@@ -4,7 +4,7 @@ Tags: security, firewall, 2fa, limit login attempts, activity log
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -209,7 +209,7 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 
 == Changelog ==
 
-= 2.2.0 =
+= 2.2.0 - 10/10/2026 =
 - New: read-only AI agent and MCP support. On WordPress 6.9+ the plugin registers two abilities with the WordPress Abilities API: the security status (score, checks, counts) and the known vulnerabilities. Administrators only; nothing can be changed through them.
 - New: `wp nhrrob-secure status --format=json`.
 - Compatibility: verified on PHP 7.4 through 8.5 and on PHP 8.6 release candidates.
@@ -332,6 +332,9 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 - Initial beta release. Cheers!
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+Read-only AI agent and MCP support on WordPress 6.9+, a JSON status command for WP-CLI, and verified PHP 7.4 to 8.5 compatibility. No settings change.
 
 = 2.1.0 =
 New protections and tools, all off until you switch them on. Open the Dashboard for the recommended setup.
