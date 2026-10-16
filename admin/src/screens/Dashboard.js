@@ -23,6 +23,8 @@ import Report from '../components/Report';
 
 const ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 const TONE = { critical: 'bad', high: 'warn', medium: 'info', low: 'off' };
+// Matches Checks::ACKNOWLEDGEABLE: a high or critical finding always counts.
+const ACKNOWLEDGEABLE = [ 'medium', 'low' ];
 
 function severityLabel( severity ) {
 	return {
@@ -67,6 +69,8 @@ export default function Dashboard( {
 	const [ working, setWorking ] = useState( false );
 	const [ report, setReport ] = useState( false );
 	const [ showPassed, setShowPassed ] = useState( false );
+	const [ acking, setAcking ] = useState( null );
+	const [ ackNote, setAckNote ] = useState( '' );
 
 	const [ loadError, setLoadError ] = useState( null );
 
@@ -113,8 +117,40 @@ export default function Dashboard( {
 		.filter( ( key ) => ! unticked.includes( key ) );
 
 	const failed = data.checks
-		.filter( ( check ) => ! check.passed )
+		.filter( ( check ) => ! check.passed && ! check.acknowledged )
 		.sort( ( a, b ) => ORDER[ a.severity ] - ORDER[ b.severity ] );
+	const acknowledged = data.checks.filter(
+		( check ) => ! check.passed && check.acknowledged
+	);
+
+	/**
+	 * Acknowledge a check, or count it again, then show the Dashboard as it is now.
+	 *
+	 * @param {string}  id   Check id.
+	 * @param {boolean} undo Whether to count it again.
+	 */
+	const acknowledge = async ( id, undo ) => {
+		setWorking( true );
+		try {
+			setData(
+				await api(
+					undo ? '/checks/unacknowledge' : '/checks/acknowledge',
+					'POST',
+					undo ? { id } : { id, note: ackNote }
+				)
+			);
+			setAcking( null );
+			setAckNote( '' );
+			toast(
+				undo
+					? __( 'The check counts again', 'nhrrob-secure' )
+					: __( 'Acknowledged', 'nhrrob-secure' )
+			);
+		} catch ( e ) {
+			toast( e.message, 'error' );
+		}
+		setWorking( false );
+	};
 	const passed = data.checks.filter( ( check ) => check.passed );
 	const stats = data.stats;
 	const notices = data.notice ? data.notice.split( ',' ) : [];
@@ -499,6 +535,101 @@ export default function Dashboard( {
 								{ severityLabel( check.severity ) }
 							</Pill>
 							{ fix( check ) }
+							{ ACKNOWLEDGEABLE.includes( check.severity ) &&
+								acking !== check.id && (
+									<Button
+										small
+										onClick={ () => {
+											setAcking( check.id );
+											setAckNote( '' );
+										} }
+									>
+										{ __( 'Acknowledge', 'nhrrob-secure' ) }
+									</Button>
+								) }
+							{ acking === check.id && (
+								<div className="nhrrob-secure-toolbar nhrrob-secure-issue__ack">
+									<input
+										type="text"
+										className="nhrrob-secure-input"
+										maxLength={ 200 }
+										placeholder={ __(
+											'Why you are leaving it (optional)',
+											'nhrrob-secure'
+										) }
+										aria-label={ __(
+											'Note',
+											'nhrrob-secure'
+										) }
+										value={ ackNote }
+										onChange={ ( e ) =>
+											setAckNote( e.target.value )
+										}
+									/>
+									<Button
+										variant="primary"
+										small
+										disabled={ working }
+										onClick={ () =>
+											acknowledge( check.id, false )
+										}
+									>
+										{ __(
+											'Leave it on purpose',
+											'nhrrob-secure'
+										) }
+									</Button>
+									<Button
+										small
+										onClick={ () => setAcking( null ) }
+									>
+										{ __( 'Cancel', 'nhrrob-secure' ) }
+									</Button>
+									<span className="nhrrob-secure-sub">
+										{ __(
+											'It stops counting in the score and in Site Health, and counts again as soon as the finding changes.',
+											'nhrrob-secure'
+										) }
+									</span>
+								</div>
+							) }
+						</li>
+					) ) }
+					{ acknowledged.map( ( check ) => (
+						<li
+							key={ check.id }
+							className="nhrrob-secure-issue is-off"
+						>
+							<div className="nhrrob-secure-issue__main">
+								<b>{ check.label }</b>
+								<div>
+									{ sprintf(
+										/* translators: 1: person, 2: how long ago. */
+										__(
+											'Acknowledged by %1$s, %2$s',
+											'nhrrob-secure'
+										),
+										check.acknowledged.by ||
+											__(
+												'a former user',
+												'nhrrob-secure'
+											),
+										ago( check.acknowledged.at )
+									) }
+									{ check.acknowledged.note &&
+										' · ' + check.acknowledged.note }
+								</div>
+							</div>
+							<Pill>
+								{ __( 'Acknowledged', 'nhrrob-secure' ) }
+							</Pill>
+							<Button
+								small
+								disabled={ working }
+								onClick={ () => acknowledge( check.id, true ) }
+							>
+								{ __( 'Undo', 'nhrrob-secure' ) }
+							</Button>
 						</li>
 					) ) }
 					<li className="nhrrob-secure-issue is-ok">

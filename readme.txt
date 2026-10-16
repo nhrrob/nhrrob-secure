@@ -4,7 +4,7 @@ Tags: security, firewall, 2fa, limit login attempts, activity log
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,6 +27,7 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 * **Recommended setup in one step.** The safe settings that are still off are listed with a tick box each; switch them on together, and undo it if something stops working.
 * **Printable report** of the score, what to fix, what passed and the recent warnings, for your records or a client.
 * The same result appears in **Tools → Site Health**.
+* A medium or low finding you leave on purpose, such as the default `wp_` table prefix, can be acknowledged with a note: it stops counting in the score and in Site Health, stays listed with who acknowledged it and when, and counts again as soon as the finding changes.
 
 **Login**
 
@@ -61,7 +62,7 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 * Turn off XML-RPC, the theme and plugin file editor, application passwords and RSS/Atom feeds; hide usernames from visitors, the WordPress and PHP versions and the discovery links in the page head; send security headers; limit the REST API to signed-in users with a list of routes left public.
 * Require strong passwords for administrators and editors, and optionally refuse passwords found in known breaches.
 * Every switch says what could stop working, so you can decide.
-* **File protection that is verified.** The plugin requests `debug.log`, readme files and the uploads folder from your own site and shows what came back. On Apache and LiteSpeed it can add the rules for you; on nginx it shows the lines to add.
+* **File protection that is verified.** The plugin requests `debug.log`, readme files (WordPress's own `readme.html` and `license.txt` included) and the uploads folder from your own site and shows what came back. On Apache and LiteSpeed it can add the rules for you; on nginx it shows the lines to add.
 
 * **File permissions.** The key files and folders with their permissions; anything every account on the server may write to is flagged and fixed with one click.
 * **Replace the secret keys** in `wp-config.php` after a suspected break-in, which signs everyone out. The new file is checked before it replaces the old one, and the old one is put back if the site does not answer.
@@ -87,7 +88,7 @@ Everything lives in one screen under **Tools → Secure**, with a light and a da
 * No database tables. Everything is stored in a handful of capped options.
 * No visitor is looked up with an outside service.
 * Settings can be exported and imported. WP-CLI commands are included (`wp nhrrob-secure status --format=json` for scripts).
-* AI agent and MCP ready, read-only: on WordPress 6.9 and later, AI agents and MCP clients (through the WordPress MCP Adapter) can read the security score, the checks and the known vulnerabilities. Administrators only. No ability changes a setting.
+* AI agent and MCP ready: on WordPress 6.9 and later, AI agents and MCP clients (through the WordPress MCP Adapter) can read the security score, the checks and the known vulnerabilities, and fix a few failed checks by switching on the setting behind them. Administrators only. Nothing an agent can do switches protection off.
 
 = What it is not =
 
@@ -153,7 +154,7 @@ Put the `[nhrrob_secure_2fa]` shortcode on any page. With WooCommerce it also ap
 
 = Can an AI agent or MCP client use this plugin? =
 
-Only to read, on WordPress 6.9 or later. The plugin registers two abilities with the WordPress Abilities API: `nhrrob-secure/get-security-status` (score, checks, counts) and `nhrrob-secure/list-vulnerabilities` (the last vulnerability check). Both need an administrator. An agent cannot change a setting, unlock an address or touch a file, and it is never given the login address, your address rules, usernames, visitor addresses or the activity log. To use the abilities over MCP, install the WordPress MCP Adapter plugin; this plugin does not bundle it.
+Yes, on WordPress 6.9 or later. The plugin registers three abilities with the WordPress Abilities API: `nhrrob-secure/get-security-status` (score, checks, counts), `nhrrob-secure/list-vulnerabilities` (the last vulnerability check) and `nhrrob-secure/apply-fix`, which fixes one failed check by switching on the setting behind it: XML-RPC off, usernames hidden, file editor off, login attempts limited, or file protection rules written to `.htaccess`. All need an administrator. An agent can only switch these protections on, never off, and cannot unlock an address, run a scan or choose a file; it is never given the login address, your address rules, usernames, visitor addresses or the activity log. To use the abilities over MCP, install the WordPress MCP Adapter plugin; this plugin does not bundle it.
 
 = Which PHP versions are supported? =
 
@@ -208,6 +209,17 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 10. Dark theme.
 
 == Changelog ==
+
+= 2.3.0 - 16/10/2026 =
+- New: acknowledge a medium or low security check you leave on purpose, such as the default `wp_` table prefix, with an optional note. It stops counting in the score and in Site Health, stays listed with who acknowledged it and when, can be undone, is recorded in the activity log, and counts again as soon as the finding changes.
+- New: `nhrrob-secure/apply-fix` ability for AI agents and MCP clients. It fixes one failed check by switching on the setting behind it (XML-RPC off, usernames hidden, file editor off, login attempts limited, file protection). It can only switch protection on, never off.
+- New: file protection also blocks WordPress's own `readme.html` and `license.txt`, which give its version away. Sites with file protection on get the new rule on the first admin visit after updating.
+- Fixed: the uploads check reported "PHP files can run" on hosts whose firewall answers 406 instead of 403.
+- Fixed: reloading the custom sign-in page after a failed sign-in no longer asks to resubmit the form.
+- Fixed: a passing server error while the `.htaccess` rules are rewritten no longer removes rules that were already working.
+- Changed: the Site Health row names the Secure plugin, and is marked critical only when a serious check failed.
+- Changed: the authenticator app entry names the site's address, for example "Site name (example.com/blog)".
+- Changed: the recovery code buttons sit in their own row under the codes.
 
 = 2.2.0 - 10/10/2026 =
 - New: read-only AI agent and MCP support. On WordPress 6.9+ the plugin registers two abilities with the WordPress Abilities API: the security status (score, checks, counts) and the known vulnerabilities. Administrators only; nothing can be changed through them.
@@ -332,6 +344,9 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 - Initial beta release. Cheers!
 
 == Upgrade Notice ==
+
+= 2.3.0 =
+Acknowledge checks you leave on purpose, an AI ability that switches on missing protections, and WordPress's readme.html and license.txt now protected. No settings change.
 
 = 2.2.0 =
 Read-only AI agent and MCP support on WordPress 6.9+, a JSON status command for WP-CLI, and verified PHP 7.4 to 8.5 compatibility. No settings change.

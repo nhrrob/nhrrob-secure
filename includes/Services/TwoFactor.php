@@ -188,7 +188,7 @@ class TwoFactor {
 			return [
 				'method' => 'app',
 				'secret' => $secret,
-				'uri'    => Totp::uri( $secret, $user->user_email, wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) ),
+				'uri'    => Totp::uri( $secret, $user->user_email, Totp::issuer( wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ), home_url() ) ),
 			];
 		}
 

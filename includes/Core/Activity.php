@@ -401,6 +401,17 @@ class Activity {
 				/* translators: %s: comma-separated setting names. */
 				$text = sprintf( __( 'Secure settings changed: %s', 'nhrrob-secure' ), $label );
 				break;
+			case 'setting:acknowledged':
+				$text = '' !== $detail
+					/* translators: 1: security check, 2: the owner's note. */
+					? sprintf( __( 'Security check acknowledged: %1$s (%2$s)', 'nhrrob-secure' ), $label, $detail )
+					/* translators: %s: security check. */
+					: sprintf( __( 'Security check acknowledged: %s', 'nhrrob-secure' ), $label );
+				break;
+			case 'setting:unacknowledged':
+				/* translators: %s: security check. */
+				$text = sprintf( __( 'Security check no longer acknowledged: %s', 'nhrrob-secure' ), $label );
+				break;
 			case 'option:changed':
 				/* translators: 1: option name, 2: old and new value. */
 				$text = sprintf( __( 'Site setting "%1$s" changed: %2$s', 'nhrrob-secure' ), $label, $detail );

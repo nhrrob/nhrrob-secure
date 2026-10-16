@@ -92,6 +92,21 @@ class Upgrade {
 			self::remove_legacy();
 		}
 
+		// 2.3: the .htaccess rules also cover WordPress's own readme.html and license.txt.
+		// When it fails the old rules stay, so the stored check is still true.
+		if ( Settings::get( 'protect_files' ) && \NHRRob\Secure\Services\FileProtection::can_write() ) {
+			// Writing them makes several requests to the site itself. A 1.x install migrates on
+			// a visitor's request: leave this step to the next admin, cron or WP-CLI request.
+			if ( ! is_admin() && ! wp_doing_cron() && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+				Settings::set_raw( 'db_version', '2.0.0' );
+				delete_option( $lock );
+				return;
+			}
+			if ( \NHRRob\Secure\Services\FileProtection::apply( true ) ) {
+				\NHRRob\Secure\Services\FileProtection::check();
+			}
+		}
+
 		Settings::set_raw( 'db_version', $version );
 		delete_option( $lock );
 	}

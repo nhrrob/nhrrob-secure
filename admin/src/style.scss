@@ -1105,6 +1105,17 @@ span.#{$p}-chip {
 		border-left-color: var(--ns-success);
 	}
 
+	// The acknowledge form takes a line of its own under the finding.
+	&__ack.#{$p}-toolbar {
+		flex-basis: 100%;
+		padding: 0;
+		border-bottom: 0;
+
+		> .#{$p}-sub {
+			flex-basis: 100%;
+		}
+	}
+
 	&__main {
 		flex: 1;
 		min-width: 220px;

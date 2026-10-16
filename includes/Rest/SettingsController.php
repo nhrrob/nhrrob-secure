@@ -36,6 +36,8 @@ use NHRRob\Secure\Services\Vulnerabilities;
  * POST /setup             switch the chosen recommended settings on
  * POST /setup/undo        put back what /setup changed
  * POST /setup/close       keep what was applied, or stop offering the rest
+ * POST /checks/acknowledge    leave a failed check on purpose, with an optional note
+ * POST /checks/unacknowledge  count it again
  * GET  /login             addresses locked out now
  * POST /login/unlock      unlock one address (or all)
  */
@@ -62,6 +64,16 @@ class SettingsController extends RestController {
 		$this->route( '/setup', 'POST', [ $this, 'setup' ] );
 		$this->route( '/setup/undo', 'POST', [ $this, 'setup_undo' ] );
 		$this->route( '/setup/close', 'POST', [ $this, 'setup_close' ] );
+		$this->route(
+			'/checks/acknowledge',
+			'POST',
+			[ $this, 'acknowledge' ],
+			[
+				'id'   => $this->text(),
+				'note' => $this->text( false ),
+			]
+		);
+		$this->route( '/checks/unacknowledge', 'POST', [ $this, 'acknowledge' ], [ 'id' => $this->text() ] );
 		$this->route( '/login', 'GET', [ $this, 'lockouts' ] );
 		$this->route( '/login/unlock', 'POST', [ $this, 'unlock' ], [ 'ip' => $this->text( false ) ] );
 	}
@@ -213,7 +225,7 @@ class SettingsController extends RestController {
 	 * @param array $incoming Values to change.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
-	private function apply( array $incoming ) {
+	public function apply( array $incoming ) {
 		$before = Settings::all();
 		$after  = Settings::update( $incoming );
 		if ( is_wp_error( $after ) ) {
@@ -345,6 +357,18 @@ class SettingsController extends RestController {
 		$params = (array) $request->get_json_params();
 		Setup::close( ! empty( $params['dismiss'] ) );
 		return rest_ensure_response( Setup::for_app() );
+	}
+
+	/**
+	 * Acknowledge a failed check, or count it again.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function acknowledge( $request ) {
+		$undo   = '/checks/unacknowledge' === substr( $request->get_route(), -strlen( '/checks/unacknowledge' ) );
+		$result = Checks::acknowledge( sanitize_key( (string) $request->get_param( 'id' ) ), $undo ? null : (string) $request->get_param( 'note' ) );
+		return is_wp_error( $result ) ? $result : $this->dashboard();
 	}
 
 	/**
