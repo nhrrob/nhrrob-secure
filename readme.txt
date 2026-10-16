@@ -4,7 +4,7 @@ Tags: security, firewall, 2fa, limit login attempts, activity log
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -210,6 +210,17 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 
 == Changelog ==
 
+= 2.3.0 - 16/10/2026 =
+- New: acknowledge a medium or low security check you leave on purpose, such as the default `wp_` table prefix, with an optional note. It stops counting in the score and in Site Health, stays listed with who acknowledged it and when, can be undone, is recorded in the activity log, and counts again as soon as the finding changes.
+- New: `nhrrob-secure/apply-fix` ability for AI agents and MCP clients. It fixes one failed check by switching on the setting behind it (XML-RPC off, usernames hidden, file editor off, login attempts limited, file protection). It can only switch protection on, never off.
+- New: file protection also blocks WordPress's own `readme.html` and `license.txt`, which give its version away. Sites with file protection on get the new rule on the first admin visit after updating.
+- Fixed: the uploads check reported "PHP files can run" on hosts whose firewall answers 406 instead of 403.
+- Fixed: reloading the custom sign-in page after a failed sign-in no longer asks to resubmit the form.
+- Fixed: a passing server error while the `.htaccess` rules are rewritten no longer removes rules that were already working.
+- Changed: the Site Health row names the Secure plugin, and is marked critical only when a serious check failed.
+- Changed: the authenticator app entry names the site's address, for example "Site name (example.com/blog)".
+- Changed: the recovery code buttons sit in their own row under the codes.
+
 = 2.2.0 - 10/10/2026 =
 - New: read-only AI agent and MCP support. On WordPress 6.9+ the plugin registers two abilities with the WordPress Abilities API: the security status (score, checks, counts) and the known vulnerabilities. Administrators only; nothing can be changed through them.
 - New: `wp nhrrob-secure status --format=json`.
@@ -333,6 +344,9 @@ The admin app is built with `@wordpress/scripts`. The readable source is include
 - Initial beta release. Cheers!
 
 == Upgrade Notice ==
+
+= 2.3.0 =
+Acknowledge checks you leave on purpose, an AI ability that switches on missing protections, and WordPress's readme.html and license.txt now protected. No settings change.
 
 = 2.2.0 =
 Read-only AI agent and MCP support on WordPress 6.9+, a JSON status command for WP-CLI, and verified PHP 7.4 to 8.5 compatibility. No settings change.
