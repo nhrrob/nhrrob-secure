@@ -136,7 +136,8 @@ export default function Report( { data, onClose } ) {
 							<li key={ check.id }>
 								<b>{ check.label }</b>
 								<div>
-									{ check.acknowledged.by }
+									{ check.acknowledged.by ||
+										__( 'a former user', 'nhrrob-secure' ) }
 									{ ' · ' }
 									{ when( check.acknowledged.at ) }
 									{ check.acknowledged.note &&

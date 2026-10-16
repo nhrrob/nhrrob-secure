@@ -348,11 +348,14 @@ class RulesTest extends TestCase {
 	}
 
 	public function testAcknowledgementHoldsOnlyWhileTheFindingIsTheSame() {
-		$prefix = [ 'id' => 'table_prefix', 'passed' => false, 'severity' => 'low', 'label' => 'Default prefix', 'detail' => '' ];
-		$https  = [ 'id' => 'https', 'passed' => false, 'severity' => 'high', 'label' => 'No HTTPS', 'detail' => '' ];
+		WP_Mock::userFunction( 'wp_json_encode' )->andReturnUsing( 'json_encode' );
+		$prefix = [ 'id' => 'table_prefix', 'passed' => false, 'severity' => 'low', 'label' => 'Default prefix', 'detail' => '', 'facts' => null ];
+		$https  = [ 'id' => 'https', 'passed' => false, 'severity' => 'high', 'label' => 'No HTTPS', 'detail' => '', 'facts' => null ];
+		$stale  = [ 'id' => 'abandoned', 'passed' => false, 'severity' => 'medium', 'label' => '1 plugin looks abandoned.', 'detail' => 'Foo.', 'facts' => [ 'Foo' ] ];
 		$acks   = [
 			'table_prefix' => [ 'f' => Checks::fingerprint( $prefix ), 'u' => 1, 't' => 100, 'n' => 'on purpose' ],
 			'https'        => [ 'f' => Checks::fingerprint( $https ), 'u' => 1, 't' => 100, 'n' => '' ],
+			'abandoned'    => [ 'f' => Checks::fingerprint( $stale ), 'u' => 1, 't' => 100, 'n' => '' ],
 		];
 		$out = Checks::with_acknowledged( [ $prefix, $https ], $acks );
 		$this->assertSame( [ 'user' => 1, 'at' => 100, 'note' => 'on purpose' ], $out[0]['acknowledged'] );
@@ -360,8 +363,20 @@ class RulesTest extends TestCase {
 		$this->assertArrayNotHasKey( 'acknowledged', $out[1] );
 		$this->assertSame( [ $out[1] ], Checks::open( $out ) );
 
-		// The finding changed (another abandoned plugin, say): it counts again.
-		$changed = Checks::with_acknowledged( [ [ 'label' => 'Default prefix, and more' ] + $prefix ], $acks );
+		// The same finding read in another language is still acknowledged.
+		$german = Checks::with_acknowledged( [ [ 'label' => 'Ein Plugin wirkt verlassen.' ] + $stale ], $acks );
+		$this->assertArrayHasKey( 'acknowledged', $german[0] );
+
+		// The finding changed (another abandoned plugin): it counts again.
+		$changed = Checks::with_acknowledged( [ [ 'facts' => [ 'Foo', 'Bar' ] ] + $stale ], $acks );
 		$this->assertArrayNotHasKey( 'acknowledged', $changed[0] );
+	}
+
+	public function testRestoredHtaccessBlockKeepsOnlyTheRules() {
+		$files = '\NHRRob\Secure\Services\FileProtection';
+		$this->assertSame(
+			[ '<IfModule mod_rewrite.c>', 'RewriteEngine On', '</IfModule>' ],
+			$files::rule_lines( [ '# The directives (lines) between "BEGIN NHRRob Secure" and "END NHRRob Secure" are', '# dynamically generated.', '<IfModule mod_rewrite.c>', '', 'RewriteEngine On', '</IfModule>' ] )
+		);
 	}
 }

@@ -93,8 +93,9 @@ class Upgrade {
 		}
 
 		// 2.3: the .htaccess rules also cover WordPress's own readme.html and license.txt.
-		if ( Settings::get( 'protect_files' ) && \NHRRob\Secure\Services\FileProtection::can_write() ) {
-			\NHRRob\Secure\Services\FileProtection::apply( true );
+		// When it fails the old rules stay, so the stored check is still true.
+		if ( Settings::get( 'protect_files' ) && \NHRRob\Secure\Services\FileProtection::can_write() && \NHRRob\Secure\Services\FileProtection::apply( true ) ) {
+			\NHRRob\Secure\Services\FileProtection::check();
 		}
 
 		Settings::set_raw( 'db_version', $version );

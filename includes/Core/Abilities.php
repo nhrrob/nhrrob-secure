@@ -256,6 +256,7 @@ class Abilities {
 				return new \WP_Error( 'nhrrob_secure_fix', __( 'The .htaccess file could not be changed safely, so file protection was left as it was.', 'nhrrob-secure' ), [ 'status' => 500 ] );
 			}
 			FileProtection::check();
+			Activity::record( 'setting', 'changed', 'protect files', Activity::INFO );
 			$changed = true;
 		}
 

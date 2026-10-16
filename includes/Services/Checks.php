@@ -52,11 +52,12 @@ class Checks {
 	 * Run every check.
 	 *
 	 * @return array[] Each: id, label, detail, passed, severity, fix { section, label },
+	 *                 facts (what the finding is about, when it can change: a count, names, a version),
 	 *                 and acknowledged { by, at, note } when the owner left a failed check on purpose.
 	 */
 	public static function run() {
 		$checks = [];
-		$add    = function ( $id, $passed, $severity, $label, $detail, $section = '', $fix = '' ) use ( &$checks ) {
+		$add    = function ( $id, $passed, $severity, $label, $detail, $section = '', $fix = '', $facts = null ) use ( &$checks ) {
 			$checks[] = [
 				'id'       => $id,
 				'passed'   => (bool) $passed,
@@ -67,6 +68,7 @@ class Checks {
 					'section' => $section,
 					'label'   => $fix,
 				] : null,
+				'facts'    => $facts,
 			];
 		};
 
@@ -112,7 +114,8 @@ class Checks {
 				: __( 'Plugins and themes are up to date.', 'nhrrob-secure' ),
 			'',
 			'updates',
-			__( 'Go to Updates', 'nhrrob-secure' )
+			__( 'Go to Updates', 'nhrrob-secure' ),
+			$waiting
 		);
 		$closed = count( $vuln['closed'] );
 		if ( $closed ) {
@@ -134,7 +137,10 @@ class Checks {
 				'medium',
 				/* translators: %d: number of plugins. */
 				sprintf( _n( '%d plugin looks abandoned.', '%d plugins look abandoned.', count( $stale ), 'nhrrob-secure' ), count( $stale ) ),
-				implode( ', ', array_slice( $stale, 0, 8 ) ) . '. ' . __( 'The latest release on WordPress.org was not tested with any of the last three WordPress versions; look for a maintained replacement.', 'nhrrob-secure' )
+				implode( ', ', array_slice( $stale, 0, 8 ) ) . '. ' . __( 'The latest release on WordPress.org was not tested with any of the last three WordPress versions; look for a maintained replacement.', 'nhrrob-secure' ),
+				'',
+				'',
+				$stale
 			);
 		}
 
@@ -246,7 +252,10 @@ class Checks {
 			'medium',
 			/* translators: %s: PHP version. */
 			$php ? sprintf( __( 'PHP %s still gets security fixes.', 'nhrrob-secure' ), PHP_VERSION ) : sprintf( __( 'PHP %s no longer gets security fixes.', 'nhrrob-secure' ), PHP_VERSION ),
-			$php ? '' : __( 'Ask your host to move the site to a supported PHP version.', 'nhrrob-secure' )
+			$php ? '' : __( 'Ask your host to move the site to a supported PHP version.', 'nhrrob-secure' ),
+			'',
+			'',
+			PHP_VERSION
 		);
 
 		$open = [];
@@ -337,14 +346,18 @@ class Checks {
 	}
 
 	/**
-	 * What a finding says, so an acknowledgement lapses when it changes
+	 * What a finding is about, so an acknowledgement lapses when it changes
 	 * (another plugin turns abandoned, another update waits). Pure.
+	 *
+	 * Built from the check's facts, never from its text: the text is
+	 * translated into each reader's language, and an acknowledgement must hold
+	 * the same in wp-admin, the weekly email and WP-CLI.
 	 *
 	 * @param array $check Check.
 	 * @return string
 	 */
 	public static function fingerprint( array $check ) {
-		return md5( $check['label'] . "\n" . ( isset( $check['detail'] ) ? $check['detail'] : '' ) );
+		return md5( $check['id'] . "\n" . wp_json_encode( isset( $check['facts'] ) ? $check['facts'] : null ) );
 	}
 
 	/**
@@ -408,7 +421,7 @@ class Checks {
 				'f' => self::fingerprint( $found ),
 				'u' => get_current_user_id(),
 				't' => time(),
-				'n' => substr( $note, 0, 200 ),
+				'n' => mb_substr( $note, 0, 200 ),
 			];
 			Activity::record( 'setting', 'acknowledged', $found['label'], Activity::INFO, [ 'detail' => $note ] );
 		}

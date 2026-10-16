@@ -111,8 +111,10 @@ class FileProtection {
 	/**
 	 * Write or remove the rules to match the setting.
 	 *
-	 * If the site stops answering after the rules are written they are taken
-	 * out again straight away.
+	 * If the site stops answering after the rules are written, the block is
+	 * put back as it was straight away: rules that were working stay, so a
+	 * passing 5xx (a resource limit, maintenance mode) never takes away
+	 * protection the site already had.
 	 *
 	 * @param bool $on Whether protection should be on.
 	 * @return bool Whether the file now matches what was asked.
@@ -129,14 +131,34 @@ class FileProtection {
 		if ( ! $on && ! file_exists( $file ) ) {
 			return true;
 		}
+		$previous = file_exists( $file ) ? self::rule_lines( extract_from_markers( $file, self::MARKER ) ) : [];
 		if ( ! insert_with_markers( $file, self::MARKER, $on ? self::htaccess_rules() : [] ) ) {
 			return false;
 		}
 		if ( $on && 500 <= self::status_of( home_url( '/' ) ) ) {
-			insert_with_markers( $file, self::MARKER, [] );
+			insert_with_markers( $file, self::MARKER, $previous );
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * The rules of a block, without the comment lines insert_with_markers()
+	 * adds every time it writes. Pure.
+	 *
+	 * @param string[] $lines Lines between the markers.
+	 * @return string[]
+	 */
+	public static function rule_lines( array $lines ) {
+		return array_values(
+			array_filter(
+				$lines,
+				function ( $line ) {
+					$line = trim( $line );
+					return '' !== $line && '#' !== $line[0];
+				}
+			)
+		);
 	}
 
 	/**
