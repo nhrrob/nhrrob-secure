@@ -165,12 +165,26 @@ class LoginUrl {
 		$pagenow = 'wp-login.php';
 
 		nocache_headers();
+		// After a failed sign-in, reloading would post the form again and the browser
+		// asks to resubmit it. Turn the history entry into a plain visit of the page.
+		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+			add_action( 'login_footer', [ $this, 'forget_post' ] );
+		}
 		// Page-cache plugins read this constant; a cached sign-in form would break the cookie test.
 		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
 			define( 'DONOTCACHEPAGE', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- the constant caching plugins agree on.
 		}
 		require_once ABSPATH . 'wp-login.php';
 		exit;
+	}
+
+	/**
+	 * Make a reload of the page a fresh visit instead of a second post.
+	 *
+	 * @return void
+	 */
+	public function forget_post() {
+		wp_print_inline_script_tag( 'if(window.history.replaceState){window.history.replaceState(null,"",window.location.href);}' );
 	}
 
 	/**

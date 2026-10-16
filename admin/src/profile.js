@@ -214,24 +214,26 @@ function App() {
 				<pre className="nhrrob-secure-profile__codes">
 					{ codes.join( '\n' ) }
 				</pre>
-				<button
-					type="button"
-					className="button"
-					onClick={ () => {
-						window.navigator.clipboard
-							.writeText( codes.join( '\n' ) )
-							.catch( () => {} );
-					} }
-				>
-					{ __( 'Copy', 'nhrrob-secure' ) }
-				</button>{ ' ' }
-				<button
-					type="button"
-					className="button button-primary"
-					onClick={ () => setCodes( null ) }
-				>
-					{ __( 'I have saved them', 'nhrrob-secure' ) }
-				</button>
+				<p className="nhrrob-secure-profile__actions">
+					<button
+						type="button"
+						className="button"
+						onClick={ () => {
+							window.navigator.clipboard
+								.writeText( codes.join( '\n' ) )
+								.catch( () => {} );
+						} }
+					>
+						{ __( 'Copy', 'nhrrob-secure' ) }
+					</button>
+					<button
+						type="button"
+						className="button button-primary"
+						onClick={ () => setCodes( null ) }
+					>
+						{ __( 'I have saved them', 'nhrrob-secure' ) }
+					</button>
+				</p>
 			</div>
 		);
 	}

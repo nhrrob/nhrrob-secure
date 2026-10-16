@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use NHRRob\Secure\Core\Activity;
 use NHRRob\Secure\Core\Settings;
 
 /**
@@ -35,13 +36,28 @@ class Checks {
 	];
 
 	/**
+	 * Severities an owner may acknowledge, that is leave on purpose. A high or
+	 * critical finding always counts.
+	 *
+	 * @var string[]
+	 */
+	const ACKNOWLEDGEABLE = [ 'medium', 'low' ];
+
+	/**
+	 * Where acknowledgements are kept: id => { f: fingerprint, u: user id, t: time, n: note }.
+	 */
+	const ACK_PART = 'acknowledged';
+
+	/**
 	 * Run every check.
 	 *
-	 * @return array[] Each: id, label, detail, passed, severity, fix { section, label }.
+	 * @return array[] Each: id, label, detail, passed, severity, fix { section, label },
+	 *                 facts (what the finding is about, when it can change: a count, names, a version),
+	 *                 and acknowledged { by, at, note } when the owner left a failed check on purpose.
 	 */
 	public static function run() {
 		$checks = [];
-		$add    = function ( $id, $passed, $severity, $label, $detail, $section = '', $fix = '' ) use ( &$checks ) {
+		$add    = function ( $id, $passed, $severity, $label, $detail, $section = '', $fix = '', $facts = null ) use ( &$checks ) {
 			$checks[] = [
 				'id'       => $id,
 				'passed'   => (bool) $passed,
@@ -52,6 +68,7 @@ class Checks {
 					'section' => $section,
 					'label'   => $fix,
 				] : null,
+				'facts'    => $facts,
 			];
 		};
 
@@ -97,7 +114,8 @@ class Checks {
 				: __( 'Plugins and themes are up to date.', 'nhrrob-secure' ),
 			'',
 			'updates',
-			__( 'Go to Updates', 'nhrrob-secure' )
+			__( 'Go to Updates', 'nhrrob-secure' ),
+			$waiting
 		);
 		$closed = count( $vuln['closed'] );
 		if ( $closed ) {
@@ -119,7 +137,10 @@ class Checks {
 				'medium',
 				/* translators: %d: number of plugins. */
 				sprintf( _n( '%d plugin looks abandoned.', '%d plugins look abandoned.', count( $stale ), 'nhrrob-secure' ), count( $stale ) ),
-				implode( ', ', array_slice( $stale, 0, 8 ) ) . '. ' . __( 'The latest release on WordPress.org was not tested with any of the last three WordPress versions; look for a maintained replacement.', 'nhrrob-secure' )
+				implode( ', ', array_slice( $stale, 0, 8 ) ) . '. ' . __( 'The latest release on WordPress.org was not tested with any of the last three WordPress versions; look for a maintained replacement.', 'nhrrob-secure' ),
+				'',
+				'',
+				$stale
 			);
 		}
 
@@ -231,7 +252,10 @@ class Checks {
 			'medium',
 			/* translators: %s: PHP version. */
 			$php ? sprintf( __( 'PHP %s still gets security fixes.', 'nhrrob-secure' ), PHP_VERSION ) : sprintf( __( 'PHP %s no longer gets security fixes.', 'nhrrob-secure' ), PHP_VERSION ),
-			$php ? '' : __( 'Ask your host to move the site to a supported PHP version.', 'nhrrob-secure' )
+			$php ? '' : __( 'Ask your host to move the site to a supported PHP version.', 'nhrrob-secure' ),
+			'',
+			'',
+			PHP_VERSION
 		);
 
 		$open = [];
@@ -310,11 +334,126 @@ class Checks {
 		 *
 		 * @param array[] $checks Checks, each with id, passed, severity, label, detail, fix.
 		 */
-		return (array) apply_filters( 'nhrrob_secure_checks', $checks );
+		$checks = self::with_acknowledged( (array) apply_filters( 'nhrrob_secure_checks', $checks ), self::acknowledgements() );
+		foreach ( $checks as $index => $check ) {
+			if ( isset( $check['acknowledged'] ) ) {
+				$user                                   = get_userdata( $check['acknowledged']['user'] );
+				$checks[ $index ]['acknowledged']['by'] = $user ? $user->display_name : '';
+				unset( $checks[ $index ]['acknowledged']['user'] );
+			}
+		}
+		return $checks;
 	}
 
 	/**
-	 * Score out of 100: the weighted share of checks that passed.
+	 * What a finding is about, so an acknowledgement lapses when it changes
+	 * (another plugin turns abandoned, another update waits). Pure.
+	 *
+	 * Built from the check's facts, never from its text: the text is
+	 * translated into each reader's language, and an acknowledgement must hold
+	 * the same in wp-admin, the weekly email and WP-CLI.
+	 *
+	 * @param array $check Check.
+	 * @return string
+	 */
+	public static function fingerprint( array $check ) {
+		return md5( $check['id'] . "\n" . wp_json_encode( isset( $check['facts'] ) ? $check['facts'] : null ) );
+	}
+
+	/**
+	 * Mark the failed checks the owner acknowledged, while they still say the same. Pure.
+	 *
+	 * @param array[] $checks Checks.
+	 * @param array   $acks   id => { f, u, t, n }.
+	 * @return array[] Checks; acknowledged ones get acknowledged { user, at, note }.
+	 */
+	public static function with_acknowledged( array $checks, array $acks ) {
+		foreach ( $checks as $index => $check ) {
+			$ack = isset( $check['id'], $acks[ $check['id'] ] ) ? $acks[ $check['id'] ] : null;
+			if ( ! $ack || ! empty( $check['passed'] ) || ! in_array( $check['severity'], self::ACKNOWLEDGEABLE, true ) || self::fingerprint( $check ) !== $ack['f'] ) {
+				continue;
+			}
+			$checks[ $index ]['acknowledged'] = [
+				'user' => (int) $ack['u'],
+				'at'   => (int) $ack['t'],
+				'note' => (string) $ack['n'],
+			];
+		}
+		return $checks;
+	}
+
+	/**
+	 * Stored acknowledgements.
+	 *
+	 * @return array id => { f, u, t, n }
+	 */
+	private static function acknowledgements() {
+		$acks = Scan::get( self::ACK_PART );
+		return is_array( $acks ) ? $acks : [];
+	}
+
+	/**
+	 * Acknowledge a failed check, or take the acknowledgement back.
+	 *
+	 * @param string      $id   Check id.
+	 * @param string|null $note Note; null takes the acknowledgement back.
+	 * @return array|\WP_Error The check as it now stands.
+	 */
+	public static function acknowledge( $id, $note ) {
+		$found = null;
+		foreach ( self::run() as $check ) {
+			if ( $check['id'] === $id ) {
+				$found = $check;
+			}
+		}
+		if ( ! $found ) {
+			return new \WP_Error( 'nhrrob_secure_check', __( 'There is no such check.', 'nhrrob-secure' ), [ 'status' => 404 ] );
+		}
+		$acks = self::acknowledgements();
+		if ( null === $note ) {
+			unset( $acks[ $id ] );
+			Activity::record( 'setting', 'unacknowledged', $found['label'] );
+		} else {
+			if ( $found['passed'] || ! in_array( $found['severity'], self::ACKNOWLEDGEABLE, true ) ) {
+				return new \WP_Error( 'nhrrob_secure_check', __( 'Only a failed check of medium or low severity can be acknowledged.', 'nhrrob-secure' ), [ 'status' => 400 ] );
+			}
+			$acks[ $id ] = [
+				'f' => self::fingerprint( $found ),
+				'u' => get_current_user_id(),
+				't' => time(),
+				'n' => mb_substr( $note, 0, 200 ),
+			];
+			Activity::record( 'setting', 'acknowledged', $found['label'], Activity::INFO, [ 'detail' => $note ] );
+		}
+		Scan::set( self::ACK_PART, $acks ? $acks : null );
+		foreach ( self::run() as $check ) {
+			if ( $check['id'] === $id ) {
+				return $check;
+			}
+		}
+		return $found;
+	}
+
+	/**
+	 * Checks that need attention: failed and not acknowledged.
+	 *
+	 * @param array[] $checks Checks.
+	 * @return array[]
+	 */
+	public static function open( array $checks ) {
+		return array_values(
+			array_filter(
+				$checks,
+				function ( $check ) {
+					return ! $check['passed'] && empty( $check['acknowledged'] );
+				}
+			)
+		);
+	}
+
+	/**
+	 * Score out of 100: the weighted share of checks that passed. A check
+	 * the owner acknowledged counts neither way.
 	 *
 	 * @param array[] $checks Checks.
 	 * @return int
@@ -323,6 +462,9 @@ class Checks {
 		$total  = 0;
 		$passed = 0;
 		foreach ( $checks as $check ) {
+			if ( ! $check['passed'] && ! empty( $check['acknowledged'] ) ) {
+				continue;
+			}
 			$weight = isset( self::WEIGHTS[ $check['severity'] ] ) ? self::WEIGHTS[ $check['severity'] ] : 3;
 			$total += $weight;
 			if ( $check['passed'] ) {
@@ -444,29 +586,28 @@ class Checks {
 	 */
 	public static function site_health_test() {
 		$checks = self::run();
-		$failed = array_filter(
-			$checks,
-			function ( $check ) {
-				return ! $check['passed'];
-			}
-		);
+		$failed = self::open( $checks );
 		$score  = self::score( $checks );
 		$items  = '';
+		$urgent = false;
 		foreach ( $failed as $check ) {
 			$items .= '<li>' . esc_html( $check['label'] ) . '</li>';
+			$urgent = $urgent || in_array( $check['severity'], [ 'critical', 'high' ], true );
 		}
+		$source = '<p>' . esc_html__( 'These checks come from the Secure plugin (Tools → Secure), not from WordPress itself.', 'nhrrob-secure' ) . '</p>';
 
 		return [
 			'label'       => $failed
 				/* translators: %d: score out of 100. */
-				? sprintf( __( 'Your security score is %d out of 100', 'nhrrob-secure' ), $score )
-				: __( 'All security checks passed', 'nhrrob-secure' ),
-			'status'      => $score >= 80 ? ( $failed ? 'recommended' : 'good' ) : 'critical',
+				? sprintf( __( 'Secure plugin: your security score is %d out of 100', 'nhrrob-secure' ), $score )
+				: __( 'Secure plugin: all security checks passed', 'nhrrob-secure' ),
+			// Critical only when the score is low because of a serious finding.
+			'status'      => ! $failed ? 'good' : ( $score < 80 && $urgent ? 'critical' : 'recommended' ),
 			'badge'       => [
-				'label' => __( 'Security', 'nhrrob-secure' ),
+				'label' => __( 'Secure', 'nhrrob-secure' ),
 				'color' => 'blue',
 			],
-			'description' => $failed ? '<ul>' . $items . '</ul>' : '<p>' . esc_html__( 'Nothing needs your attention.', 'nhrrob-secure' ) . '</p>',
+			'description' => $source . ( $failed ? '<ul>' . $items . '</ul>' : '<p>' . esc_html__( 'Nothing needs your attention.', 'nhrrob-secure' ) . '</p>' ),
 			'actions'     => '<a href="' . esc_url( admin_url( 'tools.php?page=nhrrob-secure' ) ) . '">' . esc_html__( 'Open Secure', 'nhrrob-secure' ) . '</a>',
 			'test'        => 'nhrrob_secure',
 		];

@@ -53,4 +53,12 @@ class TotpTest extends TestCase {
 		$this->assertSame( 32, strlen( $secret ) );
 		$this->assertSame( 20, strlen( Totp::base32_decode( $secret ) ) );
 	}
+
+	public function testTheAuthenticatorEntryNamesTheSiteAddress() {
+		$this->assertSame( 'Nazmul Robin (example.com/blog)', Totp::issuer( 'Nazmul Robin', 'https://example.com/blog/' ) );
+		$this->assertSame( 'Shop (example.com)', Totp::issuer( 'Shop', 'http://example.com' ) );
+		$this->assertSame( 'example.com', Totp::issuer( '', 'https://example.com' ) );
+		// The colon of a port must not split the label: uri() turns it into a space.
+		$this->assertStringContainsString( 'issuer=Dev%20%28localhost%208080%29', Totp::uri( self::SECRET, 'a@b.c', Totp::issuer( 'Dev', 'http://localhost:8080' ) ) );
+	}
 }

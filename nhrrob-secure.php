@@ -39,7 +39,7 @@ final class NHRRob_Secure {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '2.0.0';
+	const DB_VERSION = '2.3.0';
 
 	/**
 	 * Class constructor
