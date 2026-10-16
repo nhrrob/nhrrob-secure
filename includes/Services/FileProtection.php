@@ -14,7 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 use NHRRob\Secure\Core\Settings;
 
 /**
- * Keeps debug.log, readme files and PHP in uploads from being served.
+ * Keeps debug.log, readme files (WordPress's own readme.html and
+ * license.txt, which give its version away, included) and PHP in uploads
+ * from being served.
  *
  * A file that exists is served by the web server without WordPress ever
  * loading, so this cannot be done from PHP. On Apache and LiteSpeed the
@@ -37,6 +39,7 @@ class FileProtection {
 			'RewriteEngine On',
 			'RewriteRule (^|/)debug\.log$ - [F,L,NC]',
 			'RewriteRule ^wp-content/.*/(readme|license|licence|changelog)\.(txt|md|html)$ - [F,L,NC]',
+			'RewriteRule (^|/)(readme\.html|license\.txt)$ - [F,L,NC]',
 			'RewriteRule ^wp-content/uploads/.*\.(php\d?|phtml|phar)$ - [F,L,NC]',
 			'</IfModule>',
 		];
@@ -50,11 +53,15 @@ class FileProtection {
 	public static function nginx_rules() {
 		return "location ~* /debug\\.log$ { deny all; }\n"
 			. "location ~* /wp-content/.*/(readme|license|licence|changelog)\\.(txt|md|html)$ { deny all; }\n"
+			. "location ~* /(readme\\.html|license\\.txt)$ { deny all; }\n"
 			. 'location ~* /wp-content/uploads/.*\\.(php\\d?|phtml|phar)$ { deny all; }';
 	}
 
 	/**
 	 * Which kind of web server this is.
+	 *
+	 * Outside a web request (WP-CLI) the server does not say, so the answer of
+	 * the last check made from a web request is used.
 	 *
 	 * @return string apache | nginx | other
 	 */
@@ -64,7 +71,16 @@ class FileProtection {
 		if ( $is_apache || false !== strpos( $software, 'litespeed' ) ) {
 			return 'apache';
 		}
-		return $is_nginx ? 'nginx' : 'other';
+		if ( $is_nginx ) {
+			return 'nginx';
+		}
+		if ( '' === $software ) {
+			$last = Scan::get( 'files' );
+			if ( isset( $last['server'] ) && in_array( $last['server'], [ 'apache', 'nginx' ], true ) ) {
+				return $last['server'];
+			}
+		}
+		return 'other';
 	}
 
 	/**
@@ -126,16 +142,18 @@ class FileProtection {
 	/**
 	 * What the answer to a PHP path in uploads says. Pure.
 	 *
-	 * "Forbidden" means a rule is in place. "Not found" proves nothing on a
-	 * server whose rules this plugin does not write: many hosts answer 404 for
-	 * PHP in uploads on purpose, so it is reported as unknown, not as open.
+	 * "Forbidden" means a rule is in place, and so does "Not acceptable": a
+	 * ModSecurity rule on the host refused the request before ours could.
+	 * "Not found" proves nothing on a server whose rules this plugin does not
+	 * write: many hosts answer 404 for PHP in uploads on purpose, so it is
+	 * reported as unknown, not as open.
 	 *
 	 * @param int    $status HTTP status (0 when the request failed).
 	 * @param string $server apache | nginx | other.
 	 * @return string protected | open | unknown
 	 */
 	public static function uploads_state( $status, $server ) {
-		if ( 403 === $status ) {
+		if ( 403 === $status || 406 === $status ) {
 			return 'protected';
 		}
 		if ( 0 === $status || ( 404 === $status && 'apache' !== $server ) ) {
@@ -175,12 +193,17 @@ class FileProtection {
 			'state' => $state,
 		];
 
-		$readme  = plugins_url( 'readme.txt', NHRROB_SECURE_FILE );
+		// A plugin's readme, and WordPress's own readme.html when it was not deleted.
+		$readme = plugins_url( 'readme.txt', NHRROB_SECURE_FILE );
+		$states = [ self::state( self::status_of( $readme ), [ 200 ] ) ];
+		if ( file_exists( ABSPATH . 'readme.html' ) ) {
+			$states[] = self::state( self::status_of( site_url( 'readme.html' ) ), [ 200 ] );
+		}
 		$items[] = [
 			'id'    => 'readme',
-			'label' => __( 'Plugin and theme readme files', 'nhrrob-secure' ),
+			'label' => __( 'Readme and license files', 'nhrrob-secure' ),
 			'path'  => (string) wp_parse_url( $readme, PHP_URL_PATH ),
-			'state' => self::state( self::status_of( $readme ), [ 200 ] ),
+			'state' => in_array( 'open', $states, true ) ? 'open' : ( in_array( 'unknown', $states, true ) ? 'unknown' : 'protected' ),
 		];
 
 		// No file is created: a refused request for a PHP path in uploads shows the rule is in place.

@@ -92,6 +92,11 @@ class Upgrade {
 			self::remove_legacy();
 		}
 
+		// 2.3: the .htaccess rules also cover WordPress's own readme.html and license.txt.
+		if ( Settings::get( 'protect_files' ) && \NHRRob\Secure\Services\FileProtection::can_write() ) {
+			\NHRRob\Secure\Services\FileProtection::apply( true );
+		}
+
 		Settings::set_raw( 'db_version', $version );
 		delete_option( $lock );
 	}

@@ -50,11 +50,12 @@ class Commands {
 						'login_address'  => LoginUrl::active() ? LoginUrl::url() : 'wp-login.php',
 						'request_filter' => Settings::get( 'request_filter' ),
 						'locked_out'     => count( LoginGuard::locked() ),
-						'failed_checks'  => array_values(
+						'failed_checks'  => Checks::open( $checks ),
+						'acknowledged'   => array_values(
 							array_filter(
 								$checks,
 								function ( $check ) {
-									return ! $check['passed'];
+									return ! empty( $check['acknowledged'] );
 								}
 							)
 						),
@@ -70,7 +71,7 @@ class Commands {
 		\WP_CLI::line( 'Locked-out addresses: ' . count( LoginGuard::locked() ) );
 		foreach ( $checks as $check ) {
 			if ( ! $check['passed'] ) {
-				\WP_CLI::line( sprintf( '  [%s] %s', $check['severity'], $check['label'] ) );
+				\WP_CLI::line( sprintf( '  [%s] %s%s', $check['severity'], $check['label'], empty( $check['acknowledged'] ) ? '' : ' (acknowledged)' ) );
 			}
 		}
 	}

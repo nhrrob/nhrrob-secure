@@ -74,12 +74,7 @@ class NetworkPage {
 			switch_to_blog( (int) $site->blog_id );
 			Settings::flush();
 			$checks = Checks::run();
-			$failed = 0;
-			foreach ( $checks as $check ) {
-				if ( ! $check['passed'] ) {
-					++$failed;
-				}
-			}
+			$failed = count( Checks::open( $checks ) );
 			$vuln   = Vulnerabilities::results();
 			$rows[] = [
 				'id'      => (int) $site->blog_id,

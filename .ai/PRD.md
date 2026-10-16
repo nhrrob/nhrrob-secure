@@ -271,6 +271,13 @@ Status values: `to do` · `done` (built and verified; the note says how) · `cov
 - **WP-CLI:** `wp nhrrob-secure status --format=json`.
 - **PHP:** supported and tested 7.4 → 8.5, plus 8.6 (non-blocking until its GA). `.github/workflows/php.yml`: PHPCS with PHPCompatibilityWP, then per version a syntax check, PHPUnit and `.github/ci/smoke.php` inside a real WordPress.
 
+### 4.8 Open issues #11, #12, #18–#23 (2026-10-16)
+
+- **#18 apply-fix ability.** The concrete request that §4.7 asked for. Answer to its two reasons: it can only switch **on** a fixed list of settings that cannot lock anyone out or turn a visitor away (`Abilities::FIXES`: the recommended-setup items behind the `xmlrpc`, `usernames`, `file_editor`, `limit_login` checks, plus `files`), through the settings screen's own code; it returns only the check id, whether something changed and whether the check passes now. `FileProtection::server()` falls back to the last web check's server under WP-CLI, and the ability says when it cannot write the rules.
+- **#23 acknowledge.** Medium and low checks only; stored in the `scan` option (`acknowledged`); out of the score, Site Health, weekly summary and network overview; listed on the Dashboard and in the report with who/when/note and Undo; logged; shown in `get-security-status` without the person's name. Lapses automatically when the finding's text changes.
+- **#22** Site Health row names the plugin (title, "Secure" badge, first line); critical only when the score is under 80 **and** a high/critical check failed.
+- **#21** authenticator issuer "Site name (example.com/blog)". **#20** recovery-code buttons in their own row. **#19** 406 counts as protected. **#12** reload after a failed sign-in on the moved address no longer asks to resubmit. **#11** rules (and the check) also cover WordPress's root `readme.html` and `license.txt`; DB_VERSION 2.3.0 rewrites the rules on sites that have protection on.
+
 ## 5. Backlog (after 2.1; all free if they ship)
 
 Built since this list was written and removed from it: passkeys, file-change monitoring, the database scan, the weekly summary and the Network Admin screen (all §4.4).

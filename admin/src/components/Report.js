@@ -28,7 +28,12 @@ export default function Report( { data, onClose } ) {
 			.catch( () => setEvents( [] ) );
 	}, [] );
 
-	const failed = data.checks.filter( ( check ) => ! check.passed );
+	const failed = data.checks.filter(
+		( check ) => ! check.passed && ! check.acknowledged
+	);
+	const acknowledged = data.checks.filter(
+		( check ) => ! check.passed && check.acknowledged
+	);
 	const passed = data.checks.filter( ( check ) => check.passed );
 	const stats = data.stats;
 
@@ -121,6 +126,26 @@ export default function Report( { data, onClose } ) {
 				</ul>
 			) : (
 				<p>{ __( 'Nothing needs fixing.', 'nhrrob-secure' ) }</p>
+			) }
+
+			{ acknowledged.length > 0 && (
+				<>
+					<h2>{ __( 'Acknowledged', 'nhrrob-secure' ) }</h2>
+					<ul>
+						{ acknowledged.map( ( check ) => (
+							<li key={ check.id }>
+								<b>{ check.label }</b>
+								<div>
+									{ check.acknowledged.by }
+									{ ' · ' }
+									{ when( check.acknowledged.at ) }
+									{ check.acknowledged.note &&
+										' · ' + check.acknowledged.note }
+								</div>
+							</li>
+						) ) }
+					</ul>
+				</>
 			) }
 
 			<h2>{ __( 'Passed', 'nhrrob-secure' ) }</h2>

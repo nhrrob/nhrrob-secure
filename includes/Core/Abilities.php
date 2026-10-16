@@ -11,7 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use NHRRob\Secure\Rest\SettingsController;
 use NHRRob\Secure\Services\Checks;
+use NHRRob\Secure\Services\FileProtection;
 use NHRRob\Secure\Services\Firewall;
 use NHRRob\Secure\Services\LoginGuard;
 use NHRRob\Secure\Services\Sessions;
@@ -20,9 +22,11 @@ use NHRRob\Secure\Services\Vulnerabilities;
 /**
  * What AI agents and MCP clients may ask the plugin (WordPress 6.9+).
  *
- * Read-only on purpose, and pinned by tests/AbilitiesTest.php: an agent can
- * see how the site scores and what is vulnerable, and nothing here changes a
- * setting, unlocks an address or touches a file. What an ability returns is
+ * Pinned by tests/AbilitiesTest.php. An agent can see how the site scores
+ * and what is vulnerable, and can switch on the setting behind a few failed
+ * checks (FIXES): only settings that cannot lock anyone out or turn a visitor
+ * away, never off, and through the same code as the settings screen. Nothing
+ * here unlocks an address, runs a scan or takes a free path. What an ability returns is
  * sent to the agent's AI provider, so nothing here returns the login address,
  * an address rule, a username, a visitor's address or the activity log.
  *
@@ -32,6 +36,19 @@ use NHRRob\Secure\Services\Vulnerabilities;
 class Abilities {
 
 	const CATEGORY = 'nhrrob-secure';
+
+	/**
+	 * Failed checks apply-fix can fix: check id => the settings it switches on.
+	 * Each is in the recommended setup (Services\Setup) or is file protection,
+	 * which is checked with a request and taken out again if the site breaks.
+	 */
+	const FIXES = [
+		'xmlrpc'      => [ 'disable_xmlrpc' => true ],
+		'usernames'   => [ 'hide_usernames' => true ],
+		'file_editor' => [ 'disable_file_editor' => true ],
+		'limit_login' => [ 'limit_login' => true ],
+		'files'       => [ 'protect_files' => true ],
+	];
 
 	/**
 	 * Wire hooks. Called once from Bootstrap::init().
@@ -55,7 +72,7 @@ class Abilities {
 				self::CATEGORY,
 				[
 					'label'       => __( 'Secure', 'nhrrob-secure' ),
-					'description' => __( 'Security score, checks and known vulnerabilities of this site.', 'nhrrob-secure' ),
+					'description' => __( 'Security score, checks and known vulnerabilities of this site, and fixes for some failed checks.', 'nhrrob-secure' ),
 				]
 			);
 		}
@@ -111,10 +128,17 @@ class Abilities {
 			'mcp'          => [ 'public' => true ],
 		];
 
+		$write                = $meta;
+		$write['annotations'] = [
+			'readonly'    => false,
+			'destructive' => false,
+			'idempotent'  => true,
+		];
+
 		return [
 			'nhrrob-secure/get-security-status'  => [
 				'label'               => __( 'Get security status', 'nhrrob-secure' ),
-				'description'         => __( 'Returns the security score (0-100), every security check with whether it passed, its severity and a plain explanation, whether safe mode is on, and counts: lockouts, addresses locked out now, administrators with and without two-factor, known vulnerabilities and requests blocked this week. Start here.', 'nhrrob-secure' ),
+				'description'         => __( 'Returns the security score (0-100), every security check with whether it passed, its severity and a plain explanation (a failed check the owner acknowledged, that is left on purpose, carries "acknowledged" and is not counted in the score), whether safe mode is on, and counts: lockouts, addresses locked out now, administrators with and without two-factor, known vulnerabilities and requests blocked this week. Start here.', 'nhrrob-secure' ),
 				'category'            => self::CATEGORY,
 				'execute_callback'    => [ $this, 'get_security_status' ],
 				'permission_callback' => [ $this, 'can_manage' ],
@@ -129,6 +153,26 @@ class Abilities {
 				'permission_callback' => [ $this, 'can_manage_files' ],
 				'output_schema'       => [ 'type' => 'object' ],
 				'meta'                => $meta,
+			],
+			'nhrrob-secure/apply-fix'            => [
+				'label'               => __( 'Apply a security fix', 'nhrrob-secure' ),
+				'description'         => __( 'Fixes one failed check from get-security-status by switching on the Secure setting behind it, exactly as the settings screen does: xmlrpc (turn off XML-RPC; refused while Jetpack is active), usernames (hide usernames from visitors), file_editor (turn off the file editor), limit_login (lock out repeated failed sign-ins), files (write the file protection rules to .htaccess; Apache and LiteSpeed only, and on a network only for a super admin). Returns whether the check passes now.', 'nhrrob-secure' ),
+				'category'            => self::CATEGORY,
+				'execute_callback'    => [ $this, 'apply_fix' ],
+				'permission_callback' => [ $this, 'can_manage' ],
+				'input_schema'        => [
+					'type'                 => 'object',
+					'properties'           => [
+						'check' => [
+							'type' => 'string',
+							'enum' => array_keys( self::FIXES ),
+						],
+					],
+					'required'             => [ 'check' ],
+					'additionalProperties' => false,
+				],
+				'output_schema'       => [ 'type' => 'object' ],
+				'meta'                => $write,
 			],
 		];
 	}
@@ -148,8 +192,8 @@ class Abilities {
 			'safe_mode' => Settings::safe_mode(),
 			'checks'    => array_map(
 				function ( $check ) {
-					// `fix` points at a screen of the admin app.
-					unset( $check['fix'] );
+					// `fix` points at a screen of the admin app; `by` names a person.
+					unset( $check['fix'], $check['acknowledged']['by'] );
 					return $check;
 				},
 				$checks
@@ -174,5 +218,57 @@ class Abilities {
 	 */
 	public function list_vulnerabilities() {
 		return Vulnerabilities::results();
+	}
+
+	/**
+	 * Switch on the setting behind one failed check.
+	 *
+	 * @param array $input { check: string }.
+	 * @return array|\WP_Error { check, changed, passed }
+	 */
+	public function apply_fix( $input ) {
+		$id = isset( $input['check'] ) ? (string) $input['check'] : '';
+		if ( ! isset( self::FIXES[ $id ] ) ) {
+			return new \WP_Error( 'nhrrob_secure_fix', __( 'That check cannot be fixed this way.', 'nhrrob-secure' ), [ 'status' => 400 ] );
+		}
+		if ( 'xmlrpc' === $id && class_exists( 'Jetpack' ) ) {
+			return new \WP_Error( 'nhrrob_secure_fix', __( 'Jetpack is active and needs XML-RPC, so it was left on.', 'nhrrob-secure' ), [ 'status' => 409 ] );
+		}
+		if ( 'files' === $id ) {
+			if ( ! $this->can_manage_files() ) {
+				return new \WP_Error( 'nhrrob_secure_fix', __( 'On a network only a super admin can protect files.', 'nhrrob-secure' ), [ 'status' => 403 ] );
+			}
+			if ( ! FileProtection::can_write() ) {
+				return new \WP_Error( 'nhrrob_secure_fix', __( 'Secure cannot write the rules on this server: it is not Apache or LiteSpeed (or that is not known yet; open Hardening once in wp-admin), or .htaccess is not writable. The Hardening screen shows the lines to add by hand.', 'nhrrob-secure' ), [ 'status' => 409 ] );
+			}
+		}
+
+		$patch   = array_diff_assoc( self::FIXES[ $id ], array_intersect_key( Settings::all(), self::FIXES[ $id ] ) );
+		$changed = (bool) $patch;
+		if ( $changed ) {
+			$result = ( new SettingsController() )->apply( $patch );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+		} elseif ( 'files' === $id ) {
+			// The setting is on but the rules may not be there (saved where they could not be written).
+			if ( ! FileProtection::apply( true ) ) {
+				return new \WP_Error( 'nhrrob_secure_fix', __( 'The .htaccess file could not be changed safely, so file protection was left as it was.', 'nhrrob-secure' ), [ 'status' => 500 ] );
+			}
+			FileProtection::check();
+			$changed = true;
+		}
+
+		$passed = false;
+		foreach ( Checks::run() as $check ) {
+			if ( $check['id'] === $id ) {
+				$passed = (bool) $check['passed'];
+			}
+		}
+		return [
+			'check'   => $id,
+			'changed' => $changed,
+			'passed'  => $passed,
+		];
 	}
 }

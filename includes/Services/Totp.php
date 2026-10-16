@@ -75,6 +75,26 @@ class Totp {
 	}
 
 	/**
+	 * The name an authenticator app shows for this site. Pure.
+	 *
+	 * The site name alone does not say which site it is (several sites, or a
+	 * site named after a person), and the domain alone does not either when
+	 * WordPress sits in a folder beside other sites, so the full address is added.
+	 *
+	 * @param string $name Site name.
+	 * @param string $home Home URL.
+	 * @return string e.g. "Nazmul Robin (example.com/blog)".
+	 */
+	public static function issuer( $name, $home ) {
+		$address = rtrim( (string) preg_replace( '#^[a-z][a-z0-9+.-]*://#i', '', (string) $home ), '/' );
+		$name    = trim( (string) $name );
+		if ( '' === $name || '' === $address ) {
+			return '' === $name ? $address : $name;
+		}
+		return $name . ' (' . $address . ')';
+	}
+
+	/**
 	 * The otpauth:// address an authenticator app reads from the QR code.
 	 *
 	 * @param string $secret  Base32 secret.

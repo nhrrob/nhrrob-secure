@@ -44,12 +44,7 @@ class Summary {
 	 */
 	public static function lines() {
 		$checks = Checks::run();
-		$failed = array_filter(
-			$checks,
-			function ( $check ) {
-				return ! $check['passed'];
-			}
-		);
+		$failed = Checks::open( $checks );
 
 		$since  = time() - WEEK_IN_SECONDS;
 		$counts = [

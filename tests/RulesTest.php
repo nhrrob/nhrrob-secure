@@ -249,6 +249,8 @@ class RulesTest extends TestCase {
 		// Uploads check: a 404 proves nothing on a server whose rules are not ours.
 		$files = '\NHRRob\Secure\Services\FileProtection';
 		$this->assertSame( 'protected', $files::uploads_state( 403, 'nginx' ) );
+		// ModSecurity on the host refuses it before the .htaccess rule answers.
+		$this->assertSame( 'protected', $files::uploads_state( 406, 'apache' ) );
 		$this->assertSame( 'unknown', $files::uploads_state( 404, 'nginx' ) );
 		$this->assertSame( 'open', $files::uploads_state( 404, 'apache' ) );
 		$this->assertSame( 'open', $files::uploads_state( 200, 'nginx' ) );
@@ -341,5 +343,25 @@ class RulesTest extends TestCase {
 		$this->assertSame( 0, Checks::score( [ $check( false, 'critical' ), $check( false, 'low' ) ] ) );
 		// critical 15 + high 10 passed, medium 6 + low 3 failed: 25 of 34.
 		$this->assertSame( 74, Checks::score( [ $check( true, 'critical' ), $check( true, 'high' ), $check( false, 'medium' ), $check( false, 'low' ) ] ) );
+		// An acknowledged check counts neither way.
+		$this->assertSame( 100, Checks::score( [ $check( true, 'high' ), $check( false, 'low' ) + [ 'acknowledged' => [ 'at' => 1 ] ] ] ) );
+	}
+
+	public function testAcknowledgementHoldsOnlyWhileTheFindingIsTheSame() {
+		$prefix = [ 'id' => 'table_prefix', 'passed' => false, 'severity' => 'low', 'label' => 'Default prefix', 'detail' => '' ];
+		$https  = [ 'id' => 'https', 'passed' => false, 'severity' => 'high', 'label' => 'No HTTPS', 'detail' => '' ];
+		$acks   = [
+			'table_prefix' => [ 'f' => Checks::fingerprint( $prefix ), 'u' => 1, 't' => 100, 'n' => 'on purpose' ],
+			'https'        => [ 'f' => Checks::fingerprint( $https ), 'u' => 1, 't' => 100, 'n' => '' ],
+		];
+		$out = Checks::with_acknowledged( [ $prefix, $https ], $acks );
+		$this->assertSame( [ 'user' => 1, 'at' => 100, 'note' => 'on purpose' ], $out[0]['acknowledged'] );
+		// A high-severity finding always counts.
+		$this->assertArrayNotHasKey( 'acknowledged', $out[1] );
+		$this->assertSame( [ $out[1] ], Checks::open( $out ) );
+
+		// The finding changed (another abandoned plugin, say): it counts again.
+		$changed = Checks::with_acknowledged( [ [ 'label' => 'Default prefix, and more' ] + $prefix ], $acks );
+		$this->assertArrayNotHasKey( 'acknowledged', $changed[0] );
 	}
 }
