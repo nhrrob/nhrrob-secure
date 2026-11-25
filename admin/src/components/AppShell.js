@@ -9,6 +9,12 @@ import { Icon } from './ui';
 const THEME_KEY = 'nhrrob-secure-theme';
 const NAV_KEY = 'nhrrob-secure-nav';
 
+// A theme fixed for every NHR plugin by another plugin (see .ai/DESIGN.md,
+// "Shared look"): 'light', 'dark' or 'system'. Anything else is ignored.
+const FORCED = [ 'light', 'dark', 'system' ].includes( window.nhrUi?.theme )
+	? window.nhrUi.theme
+	: '';
+
 function remember( key, value ) {
 	try {
 		window.localStorage.setItem( key, value );
@@ -44,14 +50,19 @@ export default function AppShell( {
 	const prefersDark =
 		window.matchMedia &&
 		window.matchMedia( '(prefers-color-scheme: dark)' ).matches;
-	const isDark = theme ? theme === 'dark' : prefersDark;
+	let shown = theme;
+	if ( FORCED ) {
+		shown = FORCED === 'system' ? '' : FORCED;
+	}
+	const isDark = shown ? shown === 'dark' : prefersDark;
 
 	return (
 		<div
 			className={
-				'nhrrob-secure-app' + ( collapsed ? ' is-collapsed' : '' )
+				'nhrrob-secure-app nhr-app' +
+				( collapsed ? ' is-collapsed' : '' )
 			}
-			data-theme={ theme || undefined }
+			data-theme={ shown || undefined }
 		>
 			<header className="nhrrob-secure-bar">
 				<button
@@ -77,22 +88,24 @@ export default function AppShell( {
 				</span>
 				<span className="nhrrob-secure-bar__title">{ title }</span>
 				<span className="nhrrob-secure-bar__spacer" />
-				<button
-					type="button"
-					className="nhrrob-secure-bar__btn"
-					aria-label={
-						isDark
-							? __( 'Switch to light theme', 'nhrrob-secure' )
-							: __( 'Switch to dark theme', 'nhrrob-secure' )
-					}
-					onClick={ () => {
-						const next = isDark ? 'light' : 'dark';
-						remember( THEME_KEY, next );
-						setTheme( next );
-					} }
-				>
-					<Icon name={ isDark ? 'sun' : 'moon' } />
-				</button>
+				{ ! FORCED && (
+					<button
+						type="button"
+						className="nhrrob-secure-bar__btn"
+						aria-label={
+							isDark
+								? __( 'Switch to light theme', 'nhrrob-secure' )
+								: __( 'Switch to dark theme', 'nhrrob-secure' )
+						}
+						onClick={ () => {
+							const next = isDark ? 'light' : 'dark';
+							remember( THEME_KEY, next );
+							setTheme( next );
+						} }
+					>
+						<Icon name={ isDark ? 'sun' : 'moon' } />
+					</button>
+				) }
 			</header>
 
 			<div className="nhrrob-secure-body">

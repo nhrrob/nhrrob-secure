@@ -6,11 +6,11 @@
 $p: 'nhrrob-secure';
 
 @mixin dark-tokens {
-	--ns-primary: #2cc0b8;
-	--ns-primary-600: #57d3cc;
-	--ns-grad-a: #0a6f78;
-	--ns-grad-b: #0f9384;
-	--ns-soft: #17373a;
+	--ns-primary: var(--nhr-primary, #2cc0b8);
+	--ns-primary-600: var(--nhr-primary-hover, #57d3cc);
+	--ns-grad-a: var(--nhr-grad-a, #0a6f78);
+	--ns-grad-b: var(--nhr-grad-b, #0f9384);
+	--ns-soft: var(--nhr-soft, #17373a);
 	--ns-glow: rgba(18, 165, 148, 0.3);
 	--ns-success: #3ccf8a;
 	--ns-warning: #f5a742;
@@ -20,27 +20,27 @@ $p: 'nhrrob-secure';
 	--ns-warning-bg: rgba(245, 167, 66, 0.14);
 	--ns-danger-bg: rgba(242, 104, 92, 0.15);
 	--ns-info-bg: rgba(106, 174, 242, 0.14);
-	--ns-surface: #162326;
-	--ns-bg: #0f181a;
-	--ns-sunken: #111c1f;
-	--ns-border: #24363a;
-	--ns-border-strong: #33494e;
-	--ns-text: #e3eeee;
-	--ns-muted: #93a8ad;
+	--ns-surface: var(--nhr-surface, #162326);
+	--ns-bg: var(--nhr-bg, #0f181a);
+	--ns-sunken: var(--nhr-sunken, #111c1f);
+	--ns-border: var(--nhr-border, #24363a);
+	--ns-border-strong: var(--nhr-border-strong, #33494e);
+	--ns-text: var(--nhr-text, #e3eeee);
+	--ns-muted: var(--nhr-muted, #93a8ad);
 	--ns-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
 	--ns-shadow-lg: 0 14px 38px rgba(0, 0, 0, 0.6);
 	color-scheme: dark;
 }
 
 .#{$p}-app {
-	--ns-primary: #0b8a8f;
-	--ns-primary-600: #08747a;
-	--ns-grad-a: #0a7c86;
-	--ns-grad-b: #12a594;
+	--ns-primary: var(--nhr-primary, #0b8a8f);
+	--ns-primary-600: var(--nhr-primary-hover, #08747a);
+	--ns-grad-a: var(--nhr-grad-a, #0a7c86);
+	--ns-grad-b: var(--nhr-grad-b, #12a594);
 	--ns-gradient: linear-gradient(135deg, var(--ns-grad-a) 0%, var(--ns-grad-b) 100%);
-	--ns-soft: #e6f5f4;
+	--ns-soft: var(--nhr-soft, #e6f5f4);
 	--ns-glow: rgba(11, 138, 143, 0.28);
-	--ns-on-primary: #fff;
+	--ns-on-primary: var(--nhr-on-primary, #fff);
 	--ns-on-primary-dim: rgba(255, 255, 255, 0.18);
 	--ns-success: #12a15c;
 	--ns-warning: #c96a04;
@@ -50,16 +50,16 @@ $p: 'nhrrob-secure';
 	--ns-warning-bg: #fdf1e0;
 	--ns-danger-bg: #fdecea;
 	--ns-info-bg: #e8f1fc;
-	--ns-surface: #fff;
-	--ns-bg: #f4f8f8;
-	--ns-sunken: #eef3f3;
-	--ns-border: #e1eaea;
-	--ns-border-strong: #cfdcdc;
-	--ns-text: #0f1f24;
-	--ns-muted: #5a6e74;
+	--ns-surface: var(--nhr-surface, #fff);
+	--ns-bg: var(--nhr-bg, #f4f8f8);
+	--ns-sunken: var(--nhr-sunken, #eef3f3);
+	--ns-border: var(--nhr-border, #e1eaea);
+	--ns-border-strong: var(--nhr-border-strong, #cfdcdc);
+	--ns-text: var(--nhr-text, #0f1f24);
+	--ns-muted: var(--nhr-muted, #5a6e74);
 	--ns-shadow: 0 1px 3px rgba(15, 31, 36, 0.07), 0 1px 2px rgba(15, 31, 36, 0.05);
 	--ns-shadow-lg: 0 12px 32px rgba(15, 31, 36, 0.13);
-	--ns-radius: 12px;
+	--ns-radius: var(--nhr-radius, 12px);
 	--ns-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
 	margin: 20px 0 0;
@@ -71,6 +71,7 @@ $p: 'nhrrob-secure';
 	font-size: 14px;
 	line-height: 1.5;
 	box-shadow: var(--ns-shadow);
+	font-family: var(--nhr-font, inherit);
 
 	*,
 	*::before,

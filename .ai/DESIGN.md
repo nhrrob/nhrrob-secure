@@ -29,6 +29,8 @@ Neutrals lean toward the teal accent. Semantic colours (good / warning / critica
 
 **Dark theme:** the same tokens redefined under `@media (prefers-color-scheme: dark)` guarded by `:not([data-theme="light"])`, and again under `[data-theme="dark"]`, so the app-bar toggle wins both ways. Dark mode darkens the whole screen, as in the Database Cleaner: `html:has(.nhrrob-secure-app…)` paints wp-admin's page canvas and footer with the dark background, so there is no light frame around the app. The choice is remembered in `localStorage` (`nhrrob-secure-theme`); the nav state in `nhrrob-secure-nav`.
 
+**Shared look:** the root also carries the class `nhr-app`, and 14 tokens (`primary`, `primary-600`, `on-primary`, `soft`, `grad-a`, `grad-b`, `bg`, `surface`, `sunken`, `border`, `border-strong`, `text`, `muted`, `radius`) read a shared `--nhr-*` variable first, with the values above as the fallback (`--ns-primary: var(--nhr-primary, #0b8a8f)`). The font is `var(--nhr-font, inherit)`. Nothing defines `--nhr-*` unless another NHR plugin unifies the look, so on its own the app looks as above. If `window.nhrUi.theme` is `light`, `dark` or `system`, the app uses that theme instead of the saved one and hides its toggle. The app reads both and depends on neither; it names no other plugin in the UI. Status colours, shadows and the page canvas stay its own.
+
 ## 3. Components
 
 - **Panel** — titled card; optional icon, meta text and actions in the header; `flush` for tables; `anchor` gives it the id `nhrrob-secure-panel-{anchor}` so Dashboard fixes can scroll to it (focus ring for 1.6 s).

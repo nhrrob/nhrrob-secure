@@ -69,7 +69,17 @@ class AppPage {
 		 */
 		$capability = apply_filters( 'nhrrob_secure_menu_capability', 'manage_options' );
 
-		$this->hook = add_management_page(
+		/**
+		 * Filters the menu this screen sits under: '' keeps it under Tools, a
+		 * parent menu's slug moves it there (one menu for several plugins).
+		 *
+		 * @param string $parent Parent menu slug, or ''.
+		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- shared by every NHR plugin, so it can't carry this one's prefix.
+		$parent = (string) apply_filters( 'nhr_admin_parent_menu', '' );
+
+		$this->hook = add_submenu_page(
+			'' === $parent ? 'tools.php' : $parent,
 			__( 'Secure', 'nhrrob-secure' ),
 			__( 'Secure', 'nhrrob-secure' ),
 			$capability,
