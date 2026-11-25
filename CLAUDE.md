@@ -2,7 +2,7 @@
 
 Slug `nhrrob-secure` · display name "NHR Secure – Security, Firewall, 2FA, Login Protection & Activity Log" · in-app and menu label **Secure** (Tools → Secure; never "NHR" in the UI).
 
-Planning docs (dev-only, never shipped): `.ai/PRD.md` (free scope, the 1.3.3 audit, and §4.5: what was built for 2.1 and what was deliberately left out — read it before proposing a feature), `.ai/PRD-PRO.md`, `.ai/DESIGN.md`, `.ai/design/mockup.html`, `.ai/design/brand/` (banner + icon SVG sources).
+Planning docs (dev-only, never shipped): `.ai/PRD.md` (free scope, the 1.3.3 audit, and §4.5: what was built for 2.1 and what was deliberately left out — read it before proposing a feature), `.ai/DESIGN.md`, `.ai/design/mockup.html`, `.ai/design/brand/` (banner + icon SVG sources).
 
 ## Rules that are specific to this plugin
 
@@ -135,3 +135,7 @@ wp eval-file .github/ci/smoke.php   # inside a WordPress install: every GET rout
 PHPCS · lint · PHPUnit · build · production copy (`rsync --exclude-from=.distignore`, `composer install --no-dev`) · Plugin Check on that copy · Semgrep `p/php` · PHPStan (`.github/security/phpstan.neon`) · endpoint probe (REST routes and abilities) with `--self-service /2fa`, run from inside the installed copy and regression-tested against a deliberately broken gate · PHP 7.4–8.6 syntax check, unit tests and smoke test (the **PHP Compatibility** workflow, `php.yml`, green on the PR) · upgrade from the released version on a throwaway site with a visitor making the first request · lockout drills (wrong slug, lost 2FA, own address blocked → safe mode) · multisite activate/deactivate/uninstall · zip size · doc sync (readme Key Features, this file, PRD, DESIGN) · screenshots.
 
 Throwaway sites used for this: `~/Sites/otm-shots` (single site, PHP 8.0; demo data seeded for screenshots) and `~/Sites/otm-ms` (multisite). Never run the probe or seed scripts on a site with real data.
+
+## No upsell, anywhere
+
+This repo is public. Never add an upsell or a mention of another edition (code, UI, readme, `.ai/`, issues, pull requests), and keep plans and prices out of it (PRD §1.4).

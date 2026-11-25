@@ -4,7 +4,7 @@ Status: **2.0.0 live on WP.org** · **2.1.0 (parity work, §4.5) built on `dev`,
 Last revised: 2026-10-05
 
 > Dev-only document. Excluded from distribution (`.distignore` + `.gitattributes export-ignore`).
-> Paid add-on scope: **[PRD-PRO.md](./PRD-PRO.md)** · UI/visual spec: **[DESIGN.md](./DESIGN.md)** · implementation notes: `../CLAUDE.md`.
+> UI/visual spec: **[DESIGN.md](./DESIGN.md)** · implementation notes: `../CLAUDE.md`.
 > What already shipped is recorded in `readme.txt`, not here.
 
 ## 1. Principles (non-negotiable)
@@ -28,9 +28,9 @@ This is the lesson of the 1.3.3 audit (§4.1). Every feature has to pass three t
 
 `{prefix}nhrrob_audit_log` (created by `dbDelta` since 1.2.0) is migrated into a capped, non-autoloaded option and **dropped on update**. All recorded data lives in options with a hard cap on rows and bytes.
 
-### 1.4 No PRO in the free codebase
+### 1.4 No upsell
 
-No `Pro` tags, upgrade screens, upgrade URLs or "PRO" wording anywhere in the free plugin. Only a neutral add-on API (§3). Anything free in another plugin is free here (PRD-PRO §0).
+No upsell and no mention of another edition anywhere: code, UI, readme, these docs, issues or pull requests. No tags, upgrade screens or upgrade URLs. Only a neutral add-on API (§3). Anything free in another plugin is free here.
 
 ### 1.5 No undisclosed or unnecessary external calls
 
