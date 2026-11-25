@@ -38,7 +38,7 @@ Every remote request is listed in `readme.txt` → External Services, is optiona
 
 ## 2. Product (target IA for 2.0)
 
-**Positioning (revised 2026-10-05, §4.4):** a **full security plugin that stays out of the way**: login protection, 2FA, sessions, firewall, hardening, scanner, security score and activity log. Small, no cloud account, no upsell. The two things it does not have are stated plainly in the readme: no cloud threat feed and no malware clean-up — Wordfence (5M), AIOS (1M) and Really Simple Security (3M) have research teams for those (§8).
+**Scope (decided 2026-10-05, §4.4):** a **full security plugin that stays out of the way**: login protection, 2FA, sessions, firewall, hardening, scanner, security score and activity log. Small, no cloud account, no upsell. The two things it does not have are stated plainly in the readme: no cloud threat feed and no malware clean-up, since both need a research team and a running service.
 
 **One home per action.** One sidebar app (same shell as the Database Cleaner plugin: collapsible nav, light/dark, deep links), replacing the single long page of 11 stacked cards and one global Save button.
 
@@ -149,7 +149,7 @@ PHPCS · lint · PHPUnit · build · anonymous + subscriber probe of every route
 
 ### 4.4 Full security plugin: features added after the first 2.0 build (decided 2026-10-05)
 
-Robin: "we are a security plugin" — the first build was pitched as login security only. The plugin is repositioned as a full security plugin and the gaps against the full suites (Wordfence, All-In-One Security, Kadence Security, Really Simple Security, Sucuri) are closed one by one, in this order. Everything here is free. **All 15 were built and tested on 2026-10-05.**
+Robin: "we are a security plugin" — the first build was pitched as login security only. The plugin is widened to a full security plugin, and the areas a full security plugin is expected to cover are added one by one, in this order. Everything here is free. **All 15 were built and tested on 2026-10-05.**
 
 | # | Feature | What it is | Status |
 |---|---|---|---|
@@ -188,7 +188,7 @@ Robin: "we are a security plugin" — the first build was pitched as login secur
 
 Robin, 2026-10-05: "we should have all major features. we should not be less than other plugins." Then, the same day: "add all these features. make sure no duplicate feature is added. review the whole plugin features and then implement if needed. don't make the plugin garbage."
 
-The 27 candidates below are what Wordfence, All-In-One Security, Kadence Security, Really Simple Security, Sucuri and WP Activity Log have that 2.0.0 lacked. Each one was checked against the code of 2.0.0 before anything was written, and lands in one of three groups:
+The 27 candidates below are features commonly found in WordPress security plugins that 2.0.0 lacked. Each one was checked against the code of 2.0.0 before anything was written, and lands in one of three groups:
 
 - **Build** — a real gap. Free, off by default if it can lock out or break, verified with a real request (§1.1).
 - **Covered** — the plugin or WordPress itself already does it. Building it again would give one action two homes (§2).
@@ -336,31 +336,3 @@ Robin: "do a full review of the code changes on this branch. security performanc
 - Legacy `NHRRob` / `nhrrob_secure_` identifiers stay (§3).
 - Nothing that can lock the owner out is on by default (§1.1).
 - Not a WAF and not a malware cleaner; the readme says so (§2).
-
-## 8. Market (checked 2026-10-05 via the WordPress.org API unless noted)
-
-| Plugin | Active installs | What it owns | Paid tier (from the vendor's pricing page) |
-|---|---|---|---|
-| Wordfence | 5,000,000 | WAF with rule feed, malware signatures, 2FA, login security | Premium tiers; real-time rules, IP blocklist and country blocking are paid (*pricing page did not load; not re-verified today*) |
-| Really Simple Security | 3,000,000 | SSL, hardening, vulnerabilities, 2FA | $49 / $99 / $199 per year (1 / 5 / 25 sites) |
-| WPS Hide Login | 2,000,000 | Login URL only | Free only |
-| All-In-One Security (AIOS) | 1,000,000 | Firewall, login security, 2FA, file scan | $89 / $149 / $249 / $349 per year (2 / 10 / 35 / unlimited sites) |
-| Limit Login Attempts Reloaded | 1,000,000 | Lockouts, allow/deny lists, 2FA | Country rules and cloud IP lists are paid; lifetime $104.99 / $349.99 |
-| Loginizer | 1,000,000 | Lockouts, login extras | Paid tier exists (*not checked*) |
-| Kadence Security (was Solid / iThemes) | 700,000 | Brute force, 2FA, passkeys, password rules | *Not checked* |
-| Sucuri Security | 600,000 | Audit, integrity, hardening | Cloud WAF is a paid service (*not checked*) |
-| WP Activity Log | 300,000 | Activity log | *Not checked*; alerts are a paid feature per earlier research (2026-09-27) |
-| Simple History | 300,000 | Activity log | Same note |
-| Admin and Site Enhancements | 200,000 | Includes login URL, limit attempts, hardening toggles | *Not checked* |
-| WP 2FA | 100,000 | 2FA | Premium $79–$149/yr: per-role policies, passkeys, trusted devices, WooCommerce; Enterprise $89–$199/yr |
-| Two Factor (community plugin) | 100,000 | 2FA | Free only |
-| Jetpack Protect, MalCare, NinjaFirewall, Hide My WP Ghost, Anti-Malware (GOTMLS), Login Lockdown | 100,000 each | Scanning / firewall / hiding | Mixed |
-| Patchstack | 60,000 | Virtual patching | From $69/month |
-| WPVulnerability | 10,000 | Vulnerability list (the API we use) | Free only |
-| **NHR Secure** | **< 10** | — | — |
-
-**Reading the table.** The search terms `security`, `firewall` and `malware` are held by plugins with research teams and seven-figure installs. The reachable ground is the specialist terms where a single-purpose plugin with 1–2 M installs does one job: *limit login attempts*, *hide login*, *2FA*, *activity log*. No plugin with real traction does all four in one small, account-free package with a clean UI — that is the gap. **What we already give free that others charge for:** per-role 2FA enforcement (WP 2FA Premium), country rules (Limit Login Attempts Reloaded Business, AIOS Premium).
-
-**Missing versus the market (all planned free, §4.2 / §5):** lockouts by IP with a manageable list · IPv6 · bot check on login · security headers · password rules and breached-password check · sessions for all users · plugin/theme integrity checks · a score based on site state · log filters, search and export · email alerts · passkeys · WP-CLI and a recovery path · multisite · settings import/export.
-
-Sources: `https://api.wordpress.org/plugins/info/1.2/` for every slug above · https://really-simple-ssl.com/pro/ · https://teamupdraft.com/all-in-one-security/pricing/ · https://melapress.com/wordpress-2fa/pricing/ · https://www.limitloginattempts.com/plans/ · https://patchstack.com/pricing/
